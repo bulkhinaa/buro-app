@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, MapPreview, ProgressBar } from '../../components';
 import type { DialogButton } from '../../components';
+import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { Project, REPAIR_TYPE_LABELS } from '../../types';
@@ -118,6 +119,7 @@ export function SupervisorHomeScreen({ navigation }: any) {
                   : p,
               ),
             );
+            hapticSuccess();
             showDialog(
               'Этап принят',
               'Клиент и мастер получат уведомление',

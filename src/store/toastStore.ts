@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { hapticSuccess, hapticError } from '../utils/haptics';
 
 export type ToastType = 'error' | 'success' | 'info' | 'warning';
 
@@ -25,6 +26,8 @@ export const useToastStore = create<ToastState>((set) => ({
     set({
       toast: { id: String(counter), text, type, duration },
     });
+    if (type === 'error' || type === 'warning') hapticError();
+    else if (type === 'success') hapticSuccess();
   },
 
   hide: () => set({ toast: null }),

@@ -54,6 +54,8 @@ export function SupervisorNavigator() {
         headerShadowVisible: false,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         contentStyle: { backgroundColor: colors.bgGradientEnd },
+        animation: 'slide_from_right',
+        gestureEnabled: true,
       }}
     >
       <Stack.Screen name="SupervisorTabs" component={SupervisorTabs} options={{ headerShown: false }} />

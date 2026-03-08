@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { hapticSuccess } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, SystemButton } from '../../components';
 import { colors, spacing, typography } from '../../theme';
@@ -28,6 +29,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
         id: user.id,
         name: name.trim(),
       });
+      hapticSuccess();
       // Navigation will be handled by RootNavigator detecting profile completion
     } catch (e: any) {
       Alert.alert('Ошибка', e.message || 'Не удалось сохранить профиль');

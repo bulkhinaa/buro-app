@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
   Text,
@@ -72,6 +73,7 @@ export function StageApprovalScreen({ navigation, route }: Props) {
       },
     ]);
     setDialogVisible(true);
+    hapticSuccess();
   };
 
   const handleReject = () => {

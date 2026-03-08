@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, MapPreview } from '../../components';
 import type { DialogButton } from '../../components';
+import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { Stage, STAGE_STATUS_LABELS } from '../../types';
@@ -107,6 +108,7 @@ export function MasterHomeScreen({ navigation }: any) {
                   : t,
               ),
             );
+            hapticSuccess();
           },
         },
         { text: 'Нет', style: 'cancel', onPress: () => {} },
@@ -129,6 +131,7 @@ export function MasterHomeScreen({ navigation }: any) {
             }
             setTasks((prev) => prev.filter((t) => t.id !== item.id));
             setCompletedCount((c) => c + 1);
+            hapticSuccess();
             showDialog(
               'Отправлено',
               'Задача отправлена на проверку супервайзеру',

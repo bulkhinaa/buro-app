@@ -12,6 +12,8 @@ export function AuthNavigator() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.bg },
+        animation: 'slide_from_right',
+        gestureEnabled: true,
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

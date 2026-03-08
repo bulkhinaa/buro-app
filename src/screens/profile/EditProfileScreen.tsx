@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
   Text,
@@ -39,6 +40,7 @@ export function EditProfileScreen({ navigation }: Props) {
         phone: phone.trim(),
         city: city.trim() || undefined,
       });
+      hapticSuccess();
       navigation.goBack();
     } catch {
       Alert.alert('Ошибка', 'Не удалось сохранить изменения');

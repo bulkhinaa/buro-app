@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
   Text,
@@ -255,6 +256,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         },
       ]);
       setDialogVisible(true);
+      hapticSuccess();
     } catch (e: any) {
       showToast(e.message || 'Не удалось создать проект', 'error');
     }

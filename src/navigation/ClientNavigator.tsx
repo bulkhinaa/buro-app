@@ -103,6 +103,8 @@ export function ClientNavigator() {
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         contentStyle: { backgroundColor: colors.bgGradientEnd },
         headerShadowVisible: false,
+        animation: 'slide_from_right',
+        gestureEnabled: true,
       }}
     >
       <Stack.Screen
@@ -139,22 +141,22 @@ export function ClientNavigator() {
       <Stack.Screen
         name="CaseDetail"
         component={CaseDetailScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="StageApproval"
         component={StageApprovalScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="Review"
         component={ReviewScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="ProjectComplete"
         component={ProjectCompleteScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       {/* Profile sub-screens */}
       <Stack.Screen

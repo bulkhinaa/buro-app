@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, MapPreview } from '../../components';
 import type { DialogButton } from '../../components';
+import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
 import { Project, REPAIR_TYPE_LABELS } from '../../types';
 import {
@@ -111,7 +112,7 @@ export function AdminHomeScreen({ navigation }: any) {
         }
         setRequests((prev) => prev.filter((r) => r.id !== item.id));
         setAssignedCount((c) => c + 1);
-        // Show success dialog
+        hapticSuccess();
         showDialog(
           'Назначен',
           `Супервайзер ${sv.name} назначен на проект «${item.title}»`,

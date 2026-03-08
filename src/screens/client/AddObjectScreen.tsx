@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
   Text,
@@ -268,6 +269,7 @@ export function AddObjectScreen({ navigation }: Props) {
       });
       setCreatedObjectId(object.id);
       setShowSuccess(true);
+      hapticSuccess();
     } catch {
       showToast('Не удалось добавить объект. Попробуйте ещё раз.', 'error');
     } finally {

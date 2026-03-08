@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, spacing, radius } from '../theme';
 import { glass } from '../theme/glass';
+import { hapticLight } from '../utils/haptics';
 
 /**
  * GlassTabBar — Apple Liquid Glass floating tab bar
@@ -39,6 +40,7 @@ export function GlassTabBar({
           });
 
           if (!isFocused && !event.defaultPrevented) {
+            hapticLight();
             navigation.navigate(route.name, route.params);
           }
         };

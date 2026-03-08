@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, TextArea, Card, SystemButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
@@ -61,6 +62,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   const handleSubmit = async () => {
     if (supervisorRating === 0) {
+      hapticError();
       Alert.alert('Оцените супервайзера', 'Пожалуйста, поставьте оценку');
       return;
     }
@@ -69,6 +71,7 @@ export function ReviewScreen({ navigation, route }: Props) {
     try {
       // TODO: Submit review to API
       await new Promise((resolve) => setTimeout(resolve, 500));
+      hapticSuccess();
       navigation.replace('ProjectComplete', route.params);
     } catch {
       Alert.alert('Ошибка', 'Не удалось отправить отзыв');
