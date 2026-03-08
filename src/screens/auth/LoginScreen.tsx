@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
 import { UserRole } from '../../types';
 
@@ -18,12 +26,6 @@ const SUPABASE_FUNCTIONS_URL =
 /** Production web redirect URI */
 const WEB_REDIRECT_URI = 'https://bulkhinaa.github.io/buro-app/';
 
-/**
- * Returns the correct redirect URI for the current platform.
- * - Web (production): hardcoded GitHub Pages URL
- * - Web (dev): current page URL
- * - Native: deep link scheme
- */
 const getRedirectUri = (): string => {
   if (Platform.OS === 'web') {
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -37,6 +39,7 @@ const getRedirectUri = (): string => {
 export function LoginScreen() {
   const [loading, setLoading] = useState<'yandex' | 'tinkoff' | null>(null);
   const { setUser, syncProfile } = useAuthStore();
+  const showToast = useToastStore((s) => s.show);
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
   useEffect(() => {
@@ -51,14 +54,12 @@ export function LoginScreen() {
       url.searchParams.delete('state');
       window.history.replaceState({}, '', url.toString());
 
-      // Exchange the code
       handleYandexCode(code);
     }
   }, []);
 
   /**
-   * Exchange Yandex authorization code for a Supabase session
-   * via our Edge Function.
+   * Exchange Yandex authorization code for a Supabase session.
    */
   const handleYandexCode = async (code: string) => {
     try {
@@ -66,7 +67,8 @@ export function LoginScreen() {
 
       const redirectUri = getRedirectUri();
 
-      // Call Edge Function to exchange code & create user
+      // 1. Call Edge Function to exchange code & create user
+      console.log('[YandexAuth] Exchanging code via Edge Function...');
       const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/yandex-auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,22 +77,31 @@ export function LoginScreen() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Auth failed (${res.status})`);
+        console.error('[YandexAuth] Edge Function error:', err);
+        throw new Error(err.error || `Ошибка сервера (${res.status})`);
       }
 
       const { email, otp, user_metadata } = await res.json();
+      console.log('[YandexAuth] Got OTP for:', email);
 
-      // Verify OTP to establish a real Supabase session
+      // 2. Verify OTP to establish Supabase session
+      //    generateLink({ type: 'magiclink' }) returns email_otp
+      //    which must be verified with type: 'email'
       const { data: sessionData, error: verifyError } =
         await supabase.auth.verifyOtp({
           email,
           token: otp,
-          type: 'magiclink',
+          type: 'email',
         });
 
-      if (verifyError) throw verifyError;
+      if (verifyError) {
+        console.error('[YandexAuth] verifyOtp error:', verifyError);
+        throw verifyError;
+      }
 
-      // Sync profile with Yandex user data
+      console.log('[YandexAuth] Session established for:', sessionData.user?.id);
+
+      // 3. Sync profile with Yandex user data
       if (sessionData.user) {
         await syncProfile({
           id: sessionData.user.id,
@@ -98,9 +109,14 @@ export function LoginScreen() {
           phone: user_metadata?.phone || undefined,
         });
       }
+
+      showToast('Вы успешно вошли!', 'success');
     } catch (e: any) {
-      console.error('Yandex auth error:', e);
-      Alert.alert('Ошибка', e.message || 'Не удалось войти через Яндекс ID');
+      console.error('[YandexAuth] Error:', e);
+      showToast(
+        e.message || 'Не удалось войти через Яндекс ID',
+        'error',
+      );
     } finally {
       setLoading(null);
     }
@@ -108,8 +124,6 @@ export function LoginScreen() {
 
   /**
    * Start Yandex OAuth flow.
-   * - On web: full-page redirect (works in PWA and regular browser)
-   * - On native: in-app browser via expo-web-browser
    */
   const handleYandexSignIn = async () => {
     try {
@@ -128,13 +142,10 @@ export function LoginScreen() {
       const authUrl = `https://oauth.yandex.ru/authorize?${params}`;
 
       if (Platform.OS === 'web') {
-        // Full-page redirect — works in PWA and regular browser.
-        // When Yandex redirects back, the useEffect above catches the code.
         window.location.href = authUrl;
-        return; // Page will unload
+        return;
       }
 
-      // Native: open in-app browser
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
         redirectUri,
@@ -148,18 +159,18 @@ export function LoginScreen() {
         }
       }
     } catch (e: any) {
-      console.error('Yandex sign in error:', e);
-      Alert.alert('Ошибка', e.message || 'Не удалось войти через Яндекс ID');
+      console.error('[YandexAuth] Sign in error:', e);
+      showToast(
+        e.message || 'Не удалось войти через Яндекс ID',
+        'error',
+      );
     } finally {
       setLoading(null);
     }
   };
 
-  const handleTinkoffSignIn = async () => {
-    Alert.alert(
-      'Скоро',
-      'Вход через Тинькофф ID будет доступен в следующем обновлении',
-    );
+  const handleTinkoffSignIn = () => {
+    showToast('Вход через Тинькофф ID будет доступен позже', 'info');
   };
 
   const handleDevLogin = (role: UserRole) => {
@@ -187,16 +198,30 @@ export function LoginScreen() {
         </View>
 
         <View style={styles.buttons}>
-          <Button
-            title={loading === 'yandex' ? 'Входим...' : 'Войти через Яндекс ID'}
+          {/* ── Official Yandex ID button ── */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.yandexButton,
+              pressed && styles.yandexButtonPressed,
+              loading !== null && styles.yandexButtonDisabled,
+            ]}
             onPress={handleYandexSignIn}
             disabled={loading !== null}
-            loading={loading === 'yandex'}
-            fullWidth
-            icon={
-              <Ionicons name="log-in-outline" size={20} color={colors.white} />
-            }
-          />
+          >
+            {loading === 'yandex' ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                {/* Yandex "Я" logo */}
+                <View style={styles.yandexLogo}>
+                  <Text style={styles.yandexLogoText}>Я</Text>
+                </View>
+                <Text style={styles.yandexButtonText}>
+                  Войти с Яндекс ID
+                </Text>
+              </>
+            )}
+          </Pressable>
 
           <Button
             title="Войти через Тинькофф ID"
@@ -280,6 +305,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     gap: spacing.md,
   },
+
+  // ── Official Yandex ID button ──
+  yandexButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    borderRadius: 12,
+    height: 52,
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  yandexButtonPressed: {
+    opacity: 0.85,
+  },
+  yandexButtonDisabled: {
+    opacity: 0.6,
+  },
+  yandexLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FC3F1D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  yandexLogoText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    lineHeight: 20,
+    marginTop: -1,
+  },
+  yandexButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
   terms: {
     ...typography.small,
     color: colors.textLight,
