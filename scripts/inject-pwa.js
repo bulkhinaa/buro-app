@@ -46,7 +46,7 @@ if (html.includes('name="viewport"') && !html.includes('viewport-fit=cover')) {
 if (!html.includes('background-color')) {
   html = html.replace(
     '<body>',
-    '<body style="background-color:#0A0A1A;">',
+    '<body style="background-color:#F8F5F2;">',
   );
   console.log('Dark body background added');
 }
