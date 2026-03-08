@@ -32,13 +32,21 @@
         height: 100%;
         overflow: hidden;
       }
+      /* Fixed position forces coverage of full viewport including safe areas */
       #root {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow: auto;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        overflow: hidden !important;
+      }
+      /* Force React Native root view to fill #root, not use JS-calculated height */
+      #root > div:first-child {
+        height: 100% !important;
+        min-height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
       }
     </style>
   
