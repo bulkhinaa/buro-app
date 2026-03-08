@@ -135,6 +135,7 @@ export function OnboardingScreen({ onComplete }: Props) {
         viewabilityConfig={viewabilityConfig}
         getItemLayout={getItemLayout}
         bounces={false}
+        style={{ flex: 1 }}
       />
 
       {/* Footer with dots + button, overlaid on top */}
@@ -170,12 +171,12 @@ const styles = StyleSheet.create({
   },
   slide: {
     width,
-    height: '100%',
+    height,
   },
   bgImage: {
     ...StyleSheet.absoluteFillObject,
     width,
-    height: '100%',
+    height,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
