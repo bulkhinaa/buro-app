@@ -6,6 +6,8 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
 import { colors, spacing, typography } from '../../theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
 
@@ -23,6 +25,7 @@ interface Slide {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
+  image: ImageSourcePropType;
 }
 
 const SLIDES: Slide[] = [
@@ -31,21 +34,24 @@ const SLIDES: Slide[] = [
     icon: 'home',
     title: 'Ремонт без стресса',
     subtitle:
-      'Мы берём на себя контроль за каждым этапом — от демонтажа до финальной уборки',
+      'Мы берём на себя контроль за каждым этапом —\nот демонтажа до финальной уборки',
+    image: require('../../../assets/images/onboarding/slide1.jpg'),
   },
   {
     id: '2',
     icon: 'shield-checkmark',
     title: 'Независимый контроль',
     subtitle:
-      'На каждом объекте работает супервайзер — он проверяет качество и принимает работы за вас',
+      'На каждом объекте работает супервайзер —\nон проверяет качество и принимает работы за вас',
+    image: require('../../../assets/images/onboarding/slide2.jpg'),
   },
   {
     id: '3',
     icon: 'eye',
-    title: 'Прозрачность на каждом шагу',
+    title: 'Прозрачность\nна каждом шагу',
     subtitle:
-      'Вы видите прогресс ремонта в реальном времени: фотоотчёты, этапы, сроки и расходы',
+      'Вы видите прогресс ремонта в реальном времени:\nфотоотчёты, этапы, сроки и расходы',
+    image: require('../../../assets/images/onboarding/slide3.jpg'),
   },
 ];
 
@@ -89,21 +95,34 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={styles.slide}>
-      <View style={styles.iconCircle}>
-        <Ionicons name={item.icon} size={48} color={colors.primary} />
+      {/* Background image */}
+      <Image source={item.image} style={styles.bgImage} resizeMode="cover" />
+
+      {/* Dark gradient overlay — bottom heavy for text readability */}
+      <LinearGradient
+        colors={[
+          'rgba(10, 5, 16, 0.1)',
+          'rgba(10, 5, 16, 0.3)',
+          'rgba(10, 5, 16, 0.75)',
+          'rgba(10, 5, 16, 0.92)',
+        ]}
+        locations={[0, 0.35, 0.6, 0.85]}
+        style={styles.overlay}
+      />
+
+      {/* Content positioned at bottom */}
+      <View style={styles.slideContent}>
+        <View style={styles.iconPill}>
+          <Ionicons name={item.icon} size={20} color="#FFFFFF" />
+        </View>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.subtitle}>{item.subtitle}</Text>
       </View>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.subtitle}>{item.subtitle}</Text>
     </View>
   );
 
   return (
-    <LinearGradient
-      colors={[colors.bgGradientStart, colors.bgGradientMid, colors.bgGradientEnd]}
-      locations={[0, 0.4, 1]}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <View style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -118,25 +137,27 @@ export function OnboardingScreen({ onComplete }: Props) {
         bounces={false}
       />
 
-      <View style={styles.footer}>
-        <View style={styles.dots}>
-          {SLIDES.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === activeIndex && styles.dotActive]}
-            />
-          ))}
-        </View>
+      {/* Footer with dots + button, overlaid on top */}
+      <SafeAreaView style={styles.footerSafe} edges={['bottom']} pointerEvents="box-none">
+        <View style={styles.footer} pointerEvents="box-none">
+          <View style={styles.dots}>
+            {SLIDES.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === activeIndex && styles.dotActive]}
+              />
+            ))}
+          </View>
 
-        <Button
-          title={isLast ? 'Начать' : 'Далее →'}
-          onPress={handleNext}
-          fullWidth
-          style={{ marginTop: spacing.xxl }}
-        />
-      </View>
+          <Button
+            title={isLast ? 'Начать' : 'Далее →'}
+            onPress={handleNext}
+            fullWidth
+            style={{ marginTop: spacing.xl }}
+          />
+        </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -145,49 +166,60 @@ export { ONBOARDING_KEY };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
+    backgroundColor: '#0A0510',
   },
   slide: {
     width,
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xxxl,
+    height: '100%',
   },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+  bgImage: {
+    ...StyleSheet.absoluteFillObject,
+    width,
+    height: '100%',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  slideContent: {
+    position: 'absolute',
+    bottom: 180,
+    left: 0,
+    right: 0,
+    paddingHorizontal: spacing.xl,
+  },
+  iconPill: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(123, 45, 62, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xxxl,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.1)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 4,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   title: {
-    ...typography.h1,
-    color: colors.heading,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: spacing.md,
+    lineHeight: 38,
   },
   subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.75)',
     lineHeight: 24,
+  },
+  footerSafe: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   footer: {
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.huge,
+    paddingBottom: spacing.xl,
   },
   dots: {
     flexDirection: 'row',
@@ -198,10 +230,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   dotActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#FFFFFF',
     width: 24,
   },
 });
