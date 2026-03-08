@@ -10,6 +10,12 @@ const webFullHeight = Platform.OS === 'web'
   ? ({ minHeight: '100dvh' } as any)
   : undefined;
 
+// On web, stack navigator cards use position:absolute but children may lose
+// height constraints, breaking ScrollView. This pins the wrapper to the card edges.
+const webAbsoluteFill = Platform.OS === 'web'
+  ? ({ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as any)
+  : undefined;
+
 interface ScreenWrapperProps {
   children: React.ReactNode;
   scroll?: boolean;
@@ -50,7 +56,7 @@ export function ScreenWrapper({
 
   if (plain) {
     return (
-      <SafeAreaView style={[styles.plainContainer, webFullHeight]} edges={edges}>
+      <SafeAreaView style={[styles.plainContainer, webFullHeight, webAbsoluteFill]} edges={edges}>
         {scrollable}
       </SafeAreaView>
     );
@@ -64,7 +70,7 @@ export function ScreenWrapper({
         colors.bgGradientEnd,
       ]}
       locations={[0, 0.4, 1]}
-      style={[styles.gradient, webFullHeight]}
+      style={[styles.gradient, webFullHeight, webAbsoluteFill]}
     >
       <SafeAreaView style={styles.safeArea} edges={edges}>
         {scrollable}
