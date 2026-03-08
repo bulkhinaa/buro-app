@@ -8,6 +8,7 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -23,6 +24,13 @@ import { colors, spacing, radius, typography } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// On web, @react-navigation/stack wraps screen content in a div with
+// flex: 0 0 auto + minHeight that expands to content size, breaking ScrollView.
+// Using absolute positioning forces the container to match the card's fixed bounds.
+const webAbsoluteFill = Platform.OS === 'web'
+  ? ({ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as any)
+  : undefined;
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -272,8 +280,8 @@ export function CaseDetailScreen({ navigation, route }: Props) {
   }).current;
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={[styles.container, webAbsoluteFill]}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {/* Photo Gallery */}
         <View style={styles.galleryContainer}>
           <FlatList
