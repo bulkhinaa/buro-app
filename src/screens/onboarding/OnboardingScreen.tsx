@@ -22,6 +22,13 @@ const ONBOARDING_KEY = 'hasSeenOnboarding';
 /** Warm cream background matching the 3D illustration style */
 const BG_CREAM = '#F5EFE9';
 
+/**
+ * Illustration occupies the top ~62% of the screen, stretching edge-to-edge.
+ * Text block sits at the bottom ~38%, overlapping the illustration tail
+ * for a natural layered feel.
+ */
+const ILLUSTRATION_HEIGHT = height * 0.62;
+
 interface Slide {
   id: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -97,16 +104,14 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={styles.slide}>
-      {/* 3D illustration — centered in upper portion */}
-      <View style={styles.illustrationWrap}>
-        <Image
-          source={item.image}
-          style={styles.illustration}
-          resizeMode="contain"
-        />
-      </View>
+      {/* 3D illustration — fills upper portion, edge to edge */}
+      <Image
+        source={item.image}
+        style={styles.illustration}
+        resizeMode="contain"
+      />
 
-      {/* Text content — positioned at bottom */}
+      {/* Text content — anchored at bottom, overlaps illustration tail */}
       <View style={styles.slideContent}>
         <View style={styles.iconPill}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
@@ -134,7 +139,7 @@ export function OnboardingScreen({ onComplete }: Props) {
         style={{ flex: 1 }}
       />
 
-      {/* Footer with dots + button, overlaid on top */}
+      {/* Footer with dots + button */}
       <SafeAreaView style={styles.footerSafe} edges={['bottom']} pointerEvents="box-none">
         <View style={styles.footer} pointerEvents="box-none">
           <View style={styles.dots}>
@@ -150,7 +155,7 @@ export function OnboardingScreen({ onComplete }: Props) {
             title={isLast ? 'Начать' : 'Далее →'}
             onPress={handleNext}
             fullWidth
-            style={{ marginTop: spacing.xl }}
+            style={{ marginTop: spacing.lg }}
           />
         </View>
       </SafeAreaView>
@@ -170,20 +175,16 @@ const styles = StyleSheet.create({
     height,
     backgroundColor: BG_CREAM,
   },
-  illustrationWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-    paddingBottom: 0,
-  },
   illustration: {
-    width: width * 0.92,
-    height: height * 0.48,
+    position: 'absolute',
+    top: 20,
+    left: -width * 0.04,
+    width: width * 1.08,
+    height: ILLUSTRATION_HEIGHT,
   },
   slideContent: {
     position: 'absolute',
-    bottom: 180,
+    bottom: 160,
     left: 0,
     right: 0,
     paddingHorizontal: spacing.xl,
