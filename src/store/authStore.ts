@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { User, UserRole } from '../types';
 import { supabase } from '../lib/supabase';
 import { upsertProfile, updateProfile, fetchProfile } from '../services/projectService';
+import { useMasterStore } from './masterStore';
 
 interface AuthState {
   user: User | null;
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     supabase.auth.signOut();
+    useMasterStore.getState().setActiveView('client');
     set({ user: null, isAuthenticated: false, isLoading: false });
   },
 

@@ -15,6 +15,7 @@ const WELCOME_SEEN_KEY = 'master_welcome_seen';
 const SETUP_DRAFT_KEY = 'master_setup_draft';
 const SETUP_COMPLETE_KEY = 'master_setup_complete';
 const MASTER_PROFILE_KEY = 'master_profile';
+const ACTIVE_VIEW_KEY = 'master_active_view';
 
 export interface MasterProfile {
   specializations: SpecializationId[];
@@ -40,10 +41,13 @@ interface MasterState {
   // Profile data
   profile: MasterProfile | null;
   isLoading: boolean;
+  // Active view for dual-role switching
+  activeView: 'client' | 'master';
 
   // Actions
   init: (userId: string) => Promise<void>;
   markWelcomeSeen: () => Promise<void>;
+  setActiveView: (view: 'client' | 'master') => Promise<void>;
   saveDraft: (draft: Partial<MasterSetupData>) => Promise<void>;
   completeSetup: (data: MasterSetupData) => Promise<void>;
   updateProfile: (updates: Partial<MasterProfile>) => Promise<void>;
@@ -74,22 +78,27 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   setupDraft: null,
   profile: null,
   isLoading: false,
+  activeView: 'client',
 
   init: async (userId: string) => {
     set({ isLoading: true });
     try {
-      const [welcomeSeen, setupComplete, draftJson, profileJson] = await Promise.all([
+      const [welcomeSeen, setupComplete, draftJson, profileJson, activeViewValue] = await Promise.all([
         AsyncStorage.getItem(WELCOME_SEEN_KEY),
         AsyncStorage.getItem(SETUP_COMPLETE_KEY),
         AsyncStorage.getItem(SETUP_DRAFT_KEY),
         AsyncStorage.getItem(MASTER_PROFILE_KEY),
+        AsyncStorage.getItem(ACTIVE_VIEW_KEY),
       ]);
+
+      const isSetupDone = setupComplete === 'true';
 
       set({
         welcomeSeen: welcomeSeen === 'true',
-        setupComplete: setupComplete === 'true',
+        setupComplete: isSetupDone,
         setupDraft: draftJson ? JSON.parse(draftJson) : null,
-        profile: profileJson ? JSON.parse(profileJson) : (setupComplete === 'true' ? DEFAULT_PROFILE : null),
+        profile: profileJson ? JSON.parse(profileJson) : (isSetupDone ? DEFAULT_PROFILE : null),
+        activeView: (activeViewValue === 'master' && isSetupDone) ? 'master' : 'client',
         isLoading: false,
       });
     } catch {
@@ -100,6 +109,11 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   markWelcomeSeen: async () => {
     set({ welcomeSeen: true });
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, 'true');
+  },
+
+  setActiveView: async (view: 'client' | 'master') => {
+    set({ activeView: view });
+    await AsyncStorage.setItem(ACTIVE_VIEW_KEY, view);
   },
 
   saveDraft: async (draft: Partial<MasterSetupData>) => {
@@ -129,11 +143,13 @@ export const useMasterStore = create<MasterState>((set, get) => ({
       setupComplete: true,
       setupDraft: null,
       profile,
+      activeView: 'master',
     });
 
     await Promise.all([
       AsyncStorage.setItem(SETUP_COMPLETE_KEY, 'true'),
       AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(profile)),
+      AsyncStorage.setItem(ACTIVE_VIEW_KEY, 'master'),
       AsyncStorage.removeItem(SETUP_DRAFT_KEY),
     ]);
   },

@@ -20,8 +20,21 @@ import { MyReviewsScreen } from '../screens/profile/MyReviewsScreen';
 import { SupportScreen } from '../screens/profile/SupportScreen';
 import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
+import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
+import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
+
+// Wrappers adapt onComplete prop for stack navigation
+function MasterWelcomeWrapper({ navigation }: any) {
+  return <MasterWelcomeScreen onComplete={() => navigation.replace('MasterSetup')} />;
+}
+
+function MasterSetupWrapper() {
+  // completeSetup() inside MasterSetupScreen sets activeView='master' automatically.
+  // RootNavigator re-renders and swaps ClientNavigator → MasterNavigator.
+  return <MasterSetupScreen onComplete={() => {}} />;
+}
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -188,6 +201,17 @@ export function ClientNavigator() {
         name="About"
         component={AboutScreen}
         options={{ headerTitle: 'О приложении' }}
+      />
+      {/* Master onboarding (triggered from Profile "Стать мастером") */}
+      <Stack.Screen
+        name="MasterWelcome"
+        component={MasterWelcomeWrapper}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+      />
+      <Stack.Screen
+        name="MasterSetup"
+        component={MasterSetupWrapper}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
     </Stack.Navigator>
   );

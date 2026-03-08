@@ -35,7 +35,7 @@ const navTheme = {
 
 export function RootNavigator() {
   const { isAuthenticated, user, isLoading, initAuth } = useAuthStore();
-  const { welcomeSeen, setupComplete, init: initMaster } = useMasterStore();
+  const { welcomeSeen, setupComplete, activeView, init: initMaster } = useMasterStore();
   const [showSplash, setShowSplash] = useState(true);
   const [animationDone, setAnimationDone] = useState(false);
   const [authDone, setAuthDone] = useState(false);
@@ -49,9 +49,9 @@ export function RootNavigator() {
     checkOnboarding();
   }, []);
 
-  // Initialize master store when authenticated as master
+  // Initialize master store for all authenticated users (dual-role support)
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'master') {
+    if (isAuthenticated && user) {
       initMaster(user.id).then(() => setMasterInitDone(true));
     } else {
       setMasterInitDone(true);
@@ -103,17 +103,24 @@ export function RootNavigator() {
       return <AuthNavigator />;
     }
 
-    // Master-specific flow: welcome → setup → navigator
+    // Wait for master store to load
+    if (!masterInitDone) {
+      return <View style={styles.placeholder} />;
+    }
+
+    // Direct master role: welcome → setup → navigator
     if (user.role === 'master') {
-      if (!masterInitDone) {
-        return <View style={styles.placeholder} />;
-      }
       if (!masterWelcomeDone) {
         return <MasterWelcomeScreen onComplete={() => setMasterWelcomeDone(true)} />;
       }
       if (!masterSetupDone) {
         return <MasterSetupScreen onComplete={() => setMasterSetupDone(true)} />;
       }
+      return <MasterNavigator />;
+    }
+
+    // Dual-role: client who completed master setup and switched to master view
+    if (user.role === 'client' && setupComplete && activeView === 'master') {
       return <MasterNavigator />;
     }
 
