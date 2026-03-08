@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenWrapper,
   Button,
@@ -127,6 +128,7 @@ const GOAL_OPTIONS: {
 export function AddObjectScreen({ navigation }: Props) {
   const { user } = useAuthStore();
   const { addObject } = useObjectStore();
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -506,12 +508,13 @@ export function AddObjectScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
         >
           {renderStep()}
         </ScrollView>
 
         {/* Bottom button — always active, toast on errors */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {step < TOTAL_STEPS ? (
             <Button
               title="Далее →"
@@ -606,12 +609,13 @@ function GoalCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: 'hidden' as const,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.md,
   },
   backButton: {
@@ -628,6 +632,9 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     textAlign: 'center',
     marginBottom: spacing.xs,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -746,21 +753,21 @@ const styles = StyleSheet.create({
   layoutGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -spacing.xs,
+    gap: spacing.sm,
   },
   layoutCell: {
-    width: '50%',
-    padding: spacing.xs,
+    width: '48%',
+    flexGrow: 1,
   },
   // Goal grid
   goalGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -spacing.xs,
+    gap: spacing.sm,
   },
   goalCell: {
-    width: '50%',
-    padding: spacing.xs,
+    width: '48%',
+    flexGrow: 1,
   },
   goalCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
@@ -820,6 +827,5 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
   },
 });

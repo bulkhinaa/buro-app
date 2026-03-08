@@ -8,6 +8,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 
 // Reset web outline on focused inputs
@@ -82,7 +83,7 @@ export function Input({
             style={styles.clearButton}
             hitSlop={8}
           >
-            <Text style={styles.clearIcon}>✕</Text>
+            <Ionicons name="close-circle" size={20} color={colors.textLight} />
           </Pressable>
         )}
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
@@ -140,11 +141,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     justifyContent: 'center',
-  },
-  clearIcon: {
-    fontSize: 16,
-    color: colors.textLight,
-    fontWeight: '300',
   },
   error: {
     ...typography.small,

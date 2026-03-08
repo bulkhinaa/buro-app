@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenWrapper,
   Input,
@@ -64,6 +64,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
   const { user } = useAuthStore();
   const { submitProject, isLoading } = useProjectStore();
   const showToast = useToastStore((s) => s.show);
+  const insets = useSafeAreaInsets();
 
   // Object context (if coming from ObjectDetail or AddObject)
   const objectId = route.params?.objectId as string | undefined;
@@ -255,7 +256,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
       ]);
       setDialogVisible(true);
     } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось создать проект');
+      showToast(e.message || 'Не удалось создать проект', 'error');
     }
   }, [
     user,
@@ -501,12 +502,13 @@ export function CreateProjectScreen({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
         >
           {renderCurrentStep()}
         </ScrollView>
 
         {/* Bottom buttons — always active */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {step < TOTAL_STEPS ? (
             <Button
               title="Далее →"
@@ -546,12 +548,13 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: 'hidden' as const,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.md,
   },
   backButton: {
@@ -569,9 +572,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   heading: {
     ...typography.h1,
@@ -594,7 +601,7 @@ const styles = StyleSheet.create({
   scopeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -spacing.xs,
+    gap: spacing.sm,
   },
   scopeCardFull: {
     width: '100%',
@@ -605,8 +612,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
-    marginBottom: spacing.sm,
-    marginHorizontal: spacing.xs,
     // Glass shadow
     shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
@@ -615,14 +620,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   scopeCard: {
-    width: '47%',
+    width: '48%',
+    flexGrow: 1,
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
-    margin: spacing.xs,
     // Glass shadow
     shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
@@ -741,7 +746,6 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
   },
   submitRow: {
     flexDirection: 'row',
