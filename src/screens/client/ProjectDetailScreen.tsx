@@ -88,7 +88,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
   );
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper scroll={false} edges={[]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -333,8 +333,7 @@ const styles = StyleSheet.create({
 
   // ─── Hero ───
   heroContainer: {
-    marginHorizontal: -spacing.lg,
-    marginTop: -spacing.lg,
+    marginHorizontal: -spacing.xl,
     marginBottom: spacing.lg,
   },
   heroBg: {

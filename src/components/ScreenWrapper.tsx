@@ -17,6 +17,8 @@ interface ScreenWrapperProps {
   padded?: boolean;
   /** Use plain white bg instead of gradient (for modals, etc.) */
   plain?: boolean;
+  /** SafeAreaView edges override. Default: ['top']. Pass [] when React Navigation header already handles safe area. */
+  edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
 export function ScreenWrapper({
@@ -25,6 +27,7 @@ export function ScreenWrapper({
   style,
   padded = true,
   plain = false,
+  edges = ['top'],
 }: ScreenWrapperProps) {
   const content = (
     <View style={[styles.inner, padded && styles.padded, style]}>
@@ -47,7 +50,7 @@ export function ScreenWrapper({
 
   if (plain) {
     return (
-      <SafeAreaView style={[styles.plainContainer, webFullHeight]} edges={['top']}>
+      <SafeAreaView style={[styles.plainContainer, webFullHeight]} edges={edges}>
         {scrollable}
       </SafeAreaView>
     );
@@ -63,7 +66,7 @@ export function ScreenWrapper({
       locations={[0, 0.4, 1]}
       style={[styles.gradient, webFullHeight]}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SafeAreaView style={styles.safeArea} edges={edges}>
         {scrollable}
       </SafeAreaView>
     </LinearGradient>
