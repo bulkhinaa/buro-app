@@ -53,6 +53,7 @@ interface MasterState {
   updateProfile: (updates: Partial<MasterProfile>) => Promise<void>;
   setVerificationStatus: (status: VerificationStatus) => Promise<void>;
   addPortfolioProject: (project: PortfolioProject) => Promise<void>;
+  updatePortfolioProject: (project: PortfolioProject) => Promise<void>;
   removePortfolioProject: (projectId: string) => Promise<void>;
   updatePricing: (pricing: MasterPricing[]) => Promise<void>;
 }
@@ -171,6 +172,16 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   addPortfolioProject: async (project: PortfolioProject) => {
     const current = get().profile || DEFAULT_PROFILE;
     const updated = { ...current, portfolio: [project, ...current.portfolio] };
+    set({ profile: updated });
+    await AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(updated));
+  },
+
+  updatePortfolioProject: async (project: PortfolioProject) => {
+    const current = get().profile || DEFAULT_PROFILE;
+    const updated = {
+      ...current,
+      portfolio: current.portfolio.map((p) => (p.id === project.id ? project : p)),
+    };
     set({ profile: updated });
     await AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(updated));
   },

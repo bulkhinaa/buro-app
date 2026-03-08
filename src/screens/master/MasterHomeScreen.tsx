@@ -122,7 +122,7 @@ export function MasterHomeScreen({ navigation }: any) {
 
       {/* Verification banner */}
       {!isVerified && (
-        <Pressable style={styles.verificationBanner}>
+        <Pressable style={styles.verificationBanner} onPress={() => navigation?.navigate('JumpFinance')}>
           <View style={styles.verificationIcon}>
             <Ionicons name="shield-outline" size={24} color={colors.warning} />
           </View>

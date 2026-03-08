@@ -5,13 +5,14 @@ import { ScreenWrapper, Button, CellIndicator } from '../components';
 import { colors, spacing, radius, typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
+import { SPECIALIZATION_MAP } from '../data/specializations';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, logout } = useAuthStore();
-  const { setupComplete, activeView, setActiveView } = useMasterStore();
+  const { setupComplete, activeView, setActiveView, profile } = useMasterStore();
 
   const roleLabel: Record<string, string> = {
     client: 'Клиент',
@@ -40,6 +41,7 @@ export function ProfileScreen() {
   };
 
   const isClient = user?.role === 'client';
+  const isMasterView = (isClient && setupComplete && activeView === 'master') || user?.role === 'master';
 
   return (
     <ScreenWrapper>
@@ -103,6 +105,63 @@ export function ProfileScreen() {
           onPress={() => navigation.navigate('About')}
         />
       </View>
+
+      {/* Master sections — verification, specializations, pricing */}
+      {isMasterView && profile && (
+        <View style={styles.glassMenuCard}>
+          <CellIndicator
+            variant="card"
+            icon={
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={20}
+                color={
+                  profile.verification_status === 'approved'
+                    ? colors.success
+                    : profile.verification_status === 'pending'
+                      ? colors.warning
+                      : colors.primary
+                }
+              />
+            }
+            name={
+              profile.verification_status === 'approved'
+                ? 'Верифицирован'
+                : profile.verification_status === 'pending'
+                  ? 'Верификация в процессе'
+                  : 'Пройти верификацию'
+            }
+            showChevron
+            onPress={() => navigation.navigate('JumpFinance')}
+          />
+          <CellIndicator
+            variant="card"
+            icon={<Ionicons name="pricetag-outline" size={20} color={colors.primary} />}
+            name="Мои расценки"
+            showChevron
+            onPress={() => navigation.navigate('MasterPricing')}
+          />
+        </View>
+      )}
+
+      {/* Specializations chips */}
+      {isMasterView && profile && profile.specializations.length > 0 && (
+        <View style={styles.specsSection}>
+          <Text style={styles.specsTitle}>Специализации</Text>
+          <View style={styles.specsRow}>
+            {profile.specializations.map((specId) => {
+              const spec = SPECIALIZATION_MAP[specId];
+              if (!spec) return null;
+              return (
+                <View key={specId} style={styles.specChip}>
+                  <Ionicons name={spec.icon as any} size={14} color={colors.primary} />
+                  <Text style={styles.specChipText}>{spec.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* Become master — client who hasn't set up master profile yet */}
       {isClient && !setupComplete && (
@@ -270,6 +329,34 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textLight,
     marginTop: 2,
+  },
+  specsSection: {
+    marginBottom: spacing.md,
+  },
+  specsTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: spacing.sm,
+  },
+  specsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  specChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  specChipText: {
+    ...typography.small,
+    color: colors.text,
   },
   version: {
     ...typography.caption,

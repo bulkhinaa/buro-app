@@ -4,6 +4,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MasterHomeScreen } from '../screens/master/MasterHomeScreen';
 import { MasterTaskDetailScreen } from '../screens/master/MasterTaskDetailScreen';
+import { MasterPortfolioScreen } from '../screens/master/MasterPortfolioScreen';
+import { MasterPortfolioEditScreen } from '../screens/master/MasterPortfolioEditScreen';
+import { MasterPricingScreen } from '../screens/master/MasterPricingScreen';
+import { JumpFinanceScreen } from '../screens/master/JumpFinanceScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -17,11 +21,6 @@ import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
-// Placeholder for Portfolio tab (Phase 2)
-function MasterPortfolioPlaceholder() {
-  return <MasterHomeScreen navigation={undefined as any} />;
-}
 
 function MasterTabs() {
   return (
@@ -43,7 +42,7 @@ function MasterTabs() {
       />
       <Tab.Screen
         name="Portfolio"
-        component={MasterPortfolioPlaceholder}
+        component={MasterPortfolioScreen}
         options={{
           tabBarLabel: 'Портфолио',
           tabBarIcon: ({ color, focused }) => (
@@ -89,6 +88,11 @@ export function MasterNavigator() {
         }}
       />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат с супервайзером' }} />
+      {/* Portfolio */}
+      <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerTitle: 'Портфолио' }} />
+      {/* Pricing & Verification */}
+      <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerTitle: 'Мои расценки' }} />
+      <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: 'Верификация' }} />
       {/* Profile sub-screens */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
       <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: 'Уведомления' }} />
