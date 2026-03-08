@@ -42,13 +42,27 @@ if (html.includes('name="viewport"') && !html.includes('viewport-fit=cover')) {
   console.log('viewport-fit=cover added');
 }
 
-// 2. Add dark background to body so status bar area is not white
+// 2. Set body/html to cover full viewport with dark bg for splash,
+//    then React app paints over it with the light theme.
 if (!html.includes('background-color')) {
   html = html.replace(
     '<body>',
-    '<body style="background-color:#F8F5F2;">',
+    '<body style="background-color:#0A0510;">',
   );
-  console.log('Dark body background added');
+  console.log('Splash body background added');
+}
+
+// 2b. Make html/body/root fill full viewport including safe areas
+const safeAreaCSS = `
+    <style id="pwa-safe-area">
+      html, body, #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+    </style>`;
+if (!html.includes('pwa-safe-area')) {
+  html = html.replace('</head>', safeAreaCSS + '\n  </head>');
+  console.log('Safe area CSS added');
 }
 
 // 3. Inject PWA meta tags before </head>

@@ -7,6 +7,7 @@ import {
   FlatList,
   ViewToken,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -102,6 +103,7 @@ export function OnboardingScreen({ onComplete }: Props) {
       locations={[0, 0.4, 1]}
       style={styles.container}
     >
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -133,6 +135,7 @@ export function OnboardingScreen({ onComplete }: Props) {
           style={{ marginTop: spacing.xxl }}
         />
       </View>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -141,6 +144,9 @@ export { ONBOARDING_KEY };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   slide: {
