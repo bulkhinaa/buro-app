@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Chip, GlassChip } from '../../components';
 import { colors, spacing, radius, typography, glass } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { usePortfolioStore } from '../../store/portfolioStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
@@ -36,9 +37,10 @@ export interface PortfolioCase {
   supervisorName: string;
   stagesCount: number;
   description: string;
+  likes: number;
 }
 
-const FILTER_OPTIONS = ['Все', 'Косметический', 'Стандартный', 'Капитальный', 'Дизайнерский'];
+const FILTER_OPTIONS = ['Все', 'Избранное', 'Косметический', 'Стандартный', 'Капитальный', 'Дизайнерский'];
 
 // Mock data — will be replaced with real API data
 export const MOCK_CASES: PortfolioCase[] = [
@@ -59,6 +61,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Алексей К.',
     stagesCount: 14,
     description: 'Полный ремонт квартиры',
+    likes: 47,
   },
   {
     id: '2',
@@ -77,6 +80,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Борисова Е.',
     stagesCount: 14,
     description: 'Капитальный ремонт трёхкомнатной',
+    likes: 83,
   },
   {
     id: '3',
@@ -94,6 +98,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Григорьев М.',
     stagesCount: 8,
     description: 'Обновление студии',
+    likes: 31,
   },
   {
     id: '4',
@@ -112,6 +117,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Алексей К.',
     stagesCount: 14,
     description: 'Авторский дизайн-проект',
+    likes: 124,
   },
   {
     id: '5',
@@ -129,6 +135,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Борисова Е.',
     stagesCount: 14,
     description: 'Ремонт двушки в новостройке',
+    likes: 56,
   },
   {
     id: '6',
@@ -146,6 +153,7 @@ export const MOCK_CASES: PortfolioCase[] = [
     supervisorName: 'Григорьев М.',
     stagesCount: 6,
     description: 'Быстрое обновление интерьера',
+    likes: 19,
   },
 ];
 
@@ -200,24 +208,19 @@ const STAGES_PREVIEW = ['Демонтаж', 'Электрика', 'Стяжка'
 
 export function PortfolioScreen({ navigation }: Props) {
   const [selectedFilter, setSelectedFilter] = useState('Все');
-  const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
-
-  const toggleBookmark = (id: string) => {
-    setBookmarked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const { bookmarks, toggleBookmark, toggleLike, isLiked } = usePortfolioStore();
 
   const filteredCases =
     selectedFilter === 'Все'
       ? MOCK_CASES
-      : MOCK_CASES.filter((c) => c.repairType === selectedFilter);
+      : selectedFilter === 'Избранное'
+        ? MOCK_CASES.filter((c) => bookmarks.has(c.id))
+        : MOCK_CASES.filter((c) => c.repairType === selectedFilter);
 
   const renderCase = ({ item }: { item: PortfolioCase }) => {
-    const isSaved = bookmarked.has(item.id);
+    const isSaved = bookmarks.has(item.id);
+    const liked = isLiked(item.id);
+    const likeCount = item.likes + (liked ? 1 : 0);
 
     return (
       <Pressable
@@ -249,13 +252,11 @@ export function PortfolioScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        {/* Info section — matches reference structure */}
+        {/* Info section */}
         <View style={styles.infoSection}>
           {/* Row 1: Supervisor name + rating */}
           <View style={styles.nameRow}>
-            <Text style={styles.supervisorName} numberOfLines={1}>
-              {item.supervisorName}
-            </Text>
+            <Text style={styles.supervisorLabel}>Супервайзер</Text>
             <View style={styles.ratingBadge}>
               <Ionicons name="star" size={14} color={colors.primary} />
               <Text style={styles.ratingText}>
@@ -263,47 +264,54 @@ export function PortfolioScreen({ navigation }: Props) {
               </Text>
             </View>
           </View>
+          <Text style={styles.supervisorName} numberOfLines={1}>
+            {item.supervisorName}
+          </Text>
 
-          {/* Row 2: Description + stages count chip */}
-          <View style={styles.descRow}>
-            <Text style={styles.descTitle} numberOfLines={1}>
-              {item.description}
-            </Text>
-            <View style={styles.stagesChip}>
-              <Text style={styles.stagesChipText}>+{item.stagesCount}</Text>
-            </View>
-          </View>
+          {/* Row 2: Description */}
+          <Text style={styles.descTitle} numberOfLines={1}>
+            {item.description}
+          </Text>
 
-          {/* Row 3: Location + area */}
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={16} color={colors.primary} />
-            <Text style={styles.locationText}>
-              {item.address} · {item.area}
-            </Text>
-          </View>
-
-          {/* Row 4: Cost + duration */}
+          {/* Row 3: Area + Cost + duration */}
           <Text style={styles.costText}>
-            {item.cost}
+            {item.area} · {item.cost}
             <Text style={styles.durationText}> · {item.duration}</Text>
           </Text>
 
-          {/* Row 5: Stage chips (horizontal scroll) */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.stagesScroll}
-            style={styles.stagesContainer}
-          >
-            <View style={styles.stageCalendarChip}>
-              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
-            </View>
-            {STAGES_PREVIEW.map((stage) => (
-              <View key={stage} style={styles.stageChip}>
-                <Text style={styles.stageChipText}>{stage}</Text>
+          {/* Row 4: Likes + stage chips */}
+          <View style={styles.bottomRow}>
+            <Pressable
+              style={styles.likeButton}
+              onPress={() => toggleLike(item.id)}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={liked ? 'heart' : 'heart-outline'}
+                size={20}
+                color={liked ? colors.danger : colors.textLight}
+              />
+              <Text style={[styles.likeCount, liked && { color: colors.danger }]}>
+                {likeCount}
+              </Text>
+            </Pressable>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.stagesScroll}
+              style={styles.stagesContainer}
+            >
+              <View style={styles.stageCalendarChip}>
+                <Ionicons name="calendar-outline" size={16} color={colors.primary} />
               </View>
-            ))}
-          </ScrollView>
+              {STAGES_PREVIEW.map((stage) => (
+                <View key={stage} style={styles.stageChip}>
+                  <Text style={styles.stageChipText}>{stage}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </View>
       </Pressable>
     );
@@ -344,14 +352,18 @@ export function PortfolioScreen({ navigation }: Props) {
       ) : (
         <View style={styles.emptyState}>
           <Ionicons
-            name="camera-outline"
+            name={selectedFilter === 'Избранное' ? 'bookmark-outline' : 'camera-outline'}
             size={56}
             color={colors.primary}
             style={{ marginBottom: spacing.lg }}
           />
-          <Text style={styles.emptyTitle}>Скоро здесь появятся проекты</Text>
+          <Text style={styles.emptyTitle}>
+            {selectedFilter === 'Избранное' ? 'Нет избранных проектов' : 'Скоро здесь появятся проекты'}
+          </Text>
           <Text style={styles.emptyText}>
-            Мы работаем над первыми объектами
+            {selectedFilter === 'Избранное'
+              ? 'Нажмите на закладку, чтобы сохранить проект'
+              : 'Мы работаем над первыми объектами'}
           </Text>
         </View>
       )}
@@ -460,18 +472,21 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
 
-  // Row 1: Name + rating
+  // Row 1: Supervisor label + rating
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
+  },
+  supervisorLabel: {
+    ...typography.caption,
+    color: colors.textLight,
   },
   supervisorName: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-    marginRight: spacing.sm,
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: spacing.sm,
   },
   ratingBadge: {
     flexDirection: 'row',
@@ -483,43 +498,14 @@ const styles = StyleSheet.create({
     color: colors.heading,
   },
 
-  // Row 2: Description + stages chip
-  descRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
+  // Row 2: Description
   descTitle: {
     ...typography.h3,
     color: colors.heading,
-    flex: 1,
-  },
-  stagesChip: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.full,
-    paddingVertical: 2,
-    paddingHorizontal: spacing.sm,
-  },
-  stagesChipText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-  },
-
-  // Row 3: Location
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
     marginBottom: spacing.sm,
   },
-  locationText: {
-    ...typography.small,
-    color: colors.primary,
-  },
 
-  // Row 4: Cost
+  // Row 3: Cost
   costText: {
     ...typography.h3,
     color: colors.heading,
@@ -531,15 +517,29 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
 
-  // Row 5: Stage chips
+  // Row 4: Likes + stage chips
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: spacing.xs,
+  },
+  likeCount: {
+    ...typography.small,
+    color: colors.textLight,
+    fontWeight: '600',
+  },
   stagesContainer: {
+    flex: 1,
     flexGrow: 0,
-    marginHorizontal: -spacing.lg,
-    paddingHorizontal: 0,
   },
   stagesScroll: {
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
   },
   stageCalendarChip: {
     height: 36,

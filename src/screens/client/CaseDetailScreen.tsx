@@ -316,7 +316,6 @@ export function CaseDetailScreen({ navigation, route }: Props) {
         <View style={styles.content}>
           {/* Main info */}
           <Text style={styles.title}>{caseData.repairType}</Text>
-          <Text style={styles.address}>{caseData.address}</Text>
 
           {/* Key metrics */}
           <View style={styles.metricsGrid}>
@@ -453,11 +452,6 @@ const styles = StyleSheet.create({
   title: {
     ...typography.h2,
     color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  address: {
-    ...typography.body,
-    color: colors.textLight,
     marginBottom: spacing.xxl,
   },
   metricsGrid: {
