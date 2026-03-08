@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, Stage, RepairType } from '../types';
+import { Project, Stage, RepairType, RenovationScope } from '../types';
 import {
   fetchClientProjects,
   fetchProjectStages,
@@ -28,6 +28,8 @@ interface ProjectState {
     address: string;
     areaSqm: number;
     repairType: RepairType;
+    objectId?: string;
+    scope?: RenovationScope[];
   }) => Promise<Project>;
 }
 
@@ -46,6 +48,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   loadProjects: async (clientId) => {
     set({ isLoading: true, error: null });
     try {
+      // Dev users — keep local projects, skip Supabase
+      if (clientId.startsWith('dev-')) {
+        set({ isLoading: false });
+        return;
+      }
       const projects = await fetchClientProjects(clientId);
       set({ projects, isLoading: false });
     } catch (e: any) {
@@ -63,10 +70,37 @@ export const useProjectStore = create<ProjectState>((set) => ({
     }
   },
 
-  submitProject: async ({ clientId, title, address, areaSqm, repairType }) => {
+  submitProject: async ({ clientId, title, address, areaSqm, repairType, objectId, scope }) => {
     set({ isLoading: true, error: null });
     try {
       const { min, max } = estimateCost(repairType, areaSqm);
+
+      // Dev users — create locally without Supabase
+      if (clientId.startsWith('dev-')) {
+        const localProject: Project = {
+          id: `proj-${Date.now()}`,
+          client_id: clientId,
+          title,
+          address,
+          area_sqm: areaSqm,
+          repair_type: repairType,
+          scope: scope || undefined,
+          budget_min: min,
+          budget_max: max,
+          object_id: objectId || undefined,
+          status: 'new',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const state = useProjectStore.getState();
+        set({
+          projects: [localProject, ...state.projects],
+          isLoading: false,
+        });
+        return localProject;
+      }
+
       const project = await createProjectService({
         clientId,
         title,
@@ -75,6 +109,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
         repairType,
         budgetMin: min,
         budgetMax: max,
+        objectId,
       });
 
       await generateStagesForProject(project.id, repairType, areaSqm);

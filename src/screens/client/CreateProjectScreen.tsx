@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -24,7 +25,8 @@ import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
-import { RepairType } from '../../types';
+import { useToastStore } from '../../store/toastStore';
+import { RepairType, RenovationScope } from '../../types';
 import {
   estimateCost,
   estimateTimelineDays,
@@ -33,21 +35,66 @@ import {
   REPAIR_RATES,
 } from '../../utils/calculator';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
+  route: RouteProp<any>;
 };
 
 const REPAIR_TYPES: RepairType[] = ['cosmetic', 'standard', 'premium', 'design'];
 
-export function CreateProjectScreen({ navigation }: Props) {
+// Room scopes for multi-select (excluding 'full' — handled separately)
+const ROOM_SCOPES: {
+  value: RenovationScope;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: 'kitchen', label: 'Кухня', icon: 'restaurant-outline' },
+  { value: 'bathroom', label: 'Санузел', icon: 'water-outline' },
+  { value: 'living_room', label: 'Гостиная', icon: 'tv-outline' },
+  { value: 'bedroom', label: 'Спальня', icon: 'bed-outline' },
+  { value: 'hallway', label: 'Прихожая', icon: 'enter-outline' },
+  { value: 'balcony', label: 'Балкон', icon: 'sunny-outline' },
+];
+
+const ALL_ROOM_VALUES: RenovationScope[] = ROOM_SCOPES.map((s) => s.value);
+
+export function CreateProjectScreen({ navigation, route }: Props) {
   const { user } = useAuthStore();
   const { submitProject, isLoading } = useProjectStore();
+  const showToast = useToastStore((s) => s.show);
+
+  // Object context (if coming from ObjectDetail or AddObject)
+  const objectId = route.params?.objectId as string | undefined;
+  const objectAddress = route.params?.objectAddress as string | undefined;
+  const objectArea = route.params?.objectArea as number | undefined;
+  const hasObject = !!objectId;
+
+  // Steps: from object = 2 (scope, type); standalone = 3 (address, scope, type)
+  const TOTAL_STEPS = hasObject ? 2 : 3;
+  const STEP_ADDRESS = hasObject ? -1 : 1; // -1 = doesn't exist
+  const STEP_SCOPE = hasObject ? 1 : 2;
+  const STEP_TYPE = hasObject ? 2 : 3;
 
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState('');
-  const [areaText, setAreaText] = useState('');
+
+  // Step: Address (standalone only)
+  const [address, setAddress] = useState(objectAddress || '');
+  const [addressValidated, setAddressValidated] = useState(!!objectAddress);
+  const [addressTouched, setAddressTouched] = useState(false);
+  const [areaText, setAreaText] = useState(
+    objectArea ? String(objectArea) : '',
+  );
+  const [areaTouched, setAreaTouched] = useState(false);
+
+  // Step: Scope
+  const [selectedScopes, setSelectedScopes] = useState<RenovationScope[]>([]);
+  const isFullSelected = selectedScopes.includes('full');
+
+  // Step: Type
   const [repairType, setRepairType] = useState<RepairType>('standard');
+  const [projectName, setProjectName] = useState('');
   const [comment, setComment] = useState('');
 
   // Dialog state
@@ -65,28 +112,130 @@ export function CreateProjectScreen({ navigation }: Props) {
     return { cost, days };
   }, [repairType, areaSqm]);
 
-  const canGoStep2 = address.trim().length > 0 && areaSqm > 0;
-  const canSubmit = canGoStep2;
+  // --- Scope selection logic ---
+  const handleToggleScope = useCallback(
+    (scope: RenovationScope) => {
+      if (scope === 'full') {
+        // Toggle "Вся квартира"
+        if (isFullSelected) {
+          setSelectedScopes([]);
+        } else {
+          setSelectedScopes(['full', ...ALL_ROOM_VALUES]);
+        }
+        return;
+      }
 
-  const handleNext = () => {
-    if (canGoStep2) {
+      setSelectedScopes((prev) => {
+        let next: RenovationScope[];
+        if (prev.includes(scope)) {
+          // Remove this scope and 'full' if present
+          next = prev.filter((s) => s !== scope && s !== 'full');
+        } else {
+          next = [...prev.filter((s) => s !== 'full'), scope];
+          // If all rooms selected, also add 'full'
+          const allRoomsNow = ALL_ROOM_VALUES.every((v) => next.includes(v));
+          if (allRoomsNow) {
+            next = ['full', ...ALL_ROOM_VALUES];
+          }
+        }
+        return next;
+      });
+    },
+    [isFullSelected],
+  );
+
+  // --- Validation ---
+  const canProceedAddress =
+    addressValidated && areaText.trim().length > 0 && areaSqm > 0;
+  const canProceedScope = selectedScopes.length > 0;
+
+  // Address error
+  const addressError = useMemo(() => {
+    if (!addressTouched) return undefined;
+    if (!address.trim()) return 'Введите адрес';
+    if (!addressValidated) return 'Выберите адрес из подсказок';
+    return undefined;
+  }, [address, addressValidated, addressTouched]);
+
+  // Area error
+  const areaError = useMemo(() => {
+    if (!areaTouched) return undefined;
+    if (!areaText.trim()) return 'Укажите площадь';
+    if (areaSqm <= 0) return 'Площадь должна быть больше 0';
+    return undefined;
+  }, [areaText, areaSqm, areaTouched]);
+
+  // --- Navigation ---
+  const handleNext = useCallback(() => {
+    if (step === STEP_ADDRESS) {
+      if (!canProceedAddress) {
+        setAddressTouched(true);
+        setAreaTouched(true);
+        if (!address.trim()) {
+          showToast('Введите адрес объекта');
+        } else if (!addressValidated) {
+          showToast('Выберите адрес из подсказок');
+        } else {
+          showToast('Укажите площадь объекта');
+        }
+        return;
+      }
       Keyboard.dismiss();
-      setStep(2);
     }
-  };
 
-  const handleSubmit = async () => {
-    if (!user || !canSubmit) return;
+    if (step === STEP_SCOPE) {
+      if (!canProceedScope) {
+        showToast('Выберите помещения для ремонта');
+        return;
+      }
+    }
+
+    if (step < TOTAL_STEPS) {
+      setStep(step + 1);
+    }
+  }, [
+    step,
+    STEP_ADDRESS,
+    STEP_SCOPE,
+    TOTAL_STEPS,
+    canProceedAddress,
+    canProceedScope,
+    address,
+    addressValidated,
+    showToast,
+  ]);
+
+  const handleBack = useCallback(() => {
+    if (step > 1) {
+      setStep(step - 1);
+    } else {
+      navigation.goBack();
+    }
+  }, [step, navigation]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!user) return;
+    if (isLoading) return; // Prevent double submit
     Keyboard.dismiss();
 
+    const finalAddress = hasObject ? (objectAddress || '') : address.trim();
+    const finalArea = hasObject ? (objectArea || 0) : areaSqm;
+
+    if (!finalAddress || finalArea <= 0) {
+      showToast('Не удалось получить данные об объекте');
+      return;
+    }
+
     try {
-      const title = `Ремонт: ${address.trim()}`;
+      const title = projectName.trim() || `Ремонт: ${finalAddress}`;
       const project = await submitProject({
         clientId: user.id,
         title,
-        address: address.trim(),
-        areaSqm,
+        address: finalAddress,
+        areaSqm: finalArea,
         repairType,
+        objectId,
+        scope: selectedScopes.length > 0 ? selectedScopes : undefined,
       });
       setDialogTitle('Проект создан!');
       setDialogMessage(
@@ -108,144 +257,279 @@ export function CreateProjectScreen({ navigation }: Props) {
     } catch (e: any) {
       Alert.alert('Ошибка', e.message || 'Не удалось создать проект');
     }
+  }, [
+    user,
+    isLoading,
+    hasObject,
+    objectAddress,
+    objectArea,
+    address,
+    areaSqm,
+    repairType,
+    objectId,
+    selectedScopes,
+    submitProject,
+    navigation,
+    showToast,
+  ]);
+
+  // ─── Step renderers ───
+
+  const renderAddressStep = () => (
+    <>
+      <Text style={styles.heading}>Расскажите об объекте</Text>
+      <Text style={styles.subtitle}>
+        Чем точнее данные, тем точнее расчёт
+      </Text>
+
+      <View style={styles.formSection}>
+        <AddressInput
+          placeholder="Город, улица, дом, квартира"
+          value={address}
+          onChangeText={(text) => {
+            setAddress(text);
+            if (text.length > 0) setAddressTouched(true);
+          }}
+          onValidated={setAddressValidated}
+          error={addressError}
+        />
+
+        <Input
+          placeholder="Площадь в м²"
+          value={areaText}
+          onChangeText={(text) => {
+            setAreaText(text);
+            if (text.length > 0) setAreaTouched(true);
+          }}
+          keyboardType="numeric"
+          leftIcon={
+            <Ionicons name="resize-outline" size={18} color={colors.textLight} />
+          }
+          error={areaError}
+        />
+      </View>
+    </>
+  );
+
+  const renderScopeStep = () => (
+    <>
+      <Text style={styles.heading}>Что ремонтируем?</Text>
+      <Text style={styles.subtitle}>
+        Выберите помещения для ремонта
+      </Text>
+
+      <View style={styles.scopeGrid}>
+        {/* "Вся квартира" — full width */}
+        <Pressable
+          onPress={() => handleToggleScope('full')}
+          style={[
+            styles.scopeCardFull,
+            isFullSelected && styles.scopeCardSelected,
+          ]}
+        >
+          <View style={[styles.scopeIconCircle, isFullSelected && styles.scopeIconCircleSelected]}>
+            <Ionicons
+              name="home-outline"
+              size={24}
+              color={isFullSelected ? colors.primary : colors.textLight}
+            />
+          </View>
+          <Text style={[styles.scopeLabel, isFullSelected && styles.scopeLabelSelected]}>
+            Вся квартира
+          </Text>
+          {isFullSelected && (
+            <View style={styles.scopeCheck}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+            </View>
+          )}
+        </Pressable>
+
+        {/* Individual rooms — 2 columns */}
+        {ROOM_SCOPES.map((room) => {
+          const isSelected = selectedScopes.includes(room.value);
+          return (
+            <Pressable
+              key={room.value}
+              onPress={() => handleToggleScope(room.value)}
+              style={[
+                styles.scopeCard,
+                isSelected && styles.scopeCardSelected,
+              ]}
+            >
+              <View style={[styles.scopeIconCircle, isSelected && styles.scopeIconCircleSelected]}>
+                <Ionicons
+                  name={room.icon}
+                  size={22}
+                  color={isSelected ? colors.primary : colors.textLight}
+                />
+              </View>
+              <Text style={[styles.scopeLabel, isSelected && styles.scopeLabelSelected]}>
+                {room.label}
+              </Text>
+              {isSelected && (
+                <View style={styles.scopeCheck}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderTypeStep = () => (
+    <>
+      <Text style={styles.heading}>Тип ремонта</Text>
+      <Text style={styles.subtitle}>
+        Мы рассчитаем примерную стоимость и сроки
+      </Text>
+
+      <Input
+        placeholder="Название проекта (необязательно)"
+        value={projectName}
+        onChangeText={setProjectName}
+        leftIcon={
+          <Ionicons name="pencil-outline" size={18} color={colors.textLight} />
+        }
+        style={{ marginBottom: spacing.lg }}
+      />
+
+      <View style={styles.typeGrid}>
+        {REPAIR_TYPES.map((type) => {
+          const config = REPAIR_RATES[type];
+          const isSelected = repairType === type;
+          return (
+            <Pressable
+              key={type}
+              style={[
+                styles.typeCard,
+                isSelected && styles.typeCardSelected,
+              ]}
+              onPress={() => setRepairType(type)}
+            >
+              <Ionicons
+                name={config.icon as keyof typeof Ionicons.glyphMap}
+                size={28}
+                color={isSelected ? colors.primary : colors.textLight}
+                style={{ marginBottom: spacing.sm }}
+              />
+              <Text
+                style={[
+                  styles.typeLabel,
+                  isSelected && styles.typeLabelSelected,
+                ]}
+              >
+                {config.label}
+              </Text>
+              <Text style={styles.typeRate}>
+                от {(config.rateMin / 1000).toFixed(0)}т ₽/м²
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {estimate && (
+        <Card style={styles.estimateCard}>
+          <View style={styles.estimateRow}>
+            <Text style={styles.estimateLabel}>Стоимость</Text>
+            <Text style={styles.estimateValue}>
+              {formatRubles(estimate.cost.min)} –{' '}
+              {formatRubles(estimate.cost.max)}
+            </Text>
+          </View>
+          <View style={styles.estimateDivider} />
+          <View style={styles.estimateRow}>
+            <Text style={styles.estimateLabel}>Сроки</Text>
+            <Text style={styles.estimateValueAccent}>
+              {formatTimeline(estimate.days)}
+            </Text>
+          </View>
+          <View style={styles.estimateDivider} />
+          <View style={styles.estimateRow}>
+            <Text style={styles.estimateLabel}>Этапы</Text>
+            <Text style={styles.estimateValue}>14 этапов</Text>
+          </View>
+        </Card>
+      )}
+
+      <TextArea
+        placeholder="Пожелания или комментарий к ремонту (необязательно)"
+        value={comment}
+        onChangeText={setComment}
+      />
+
+      <Text style={styles.disclaimer}>
+        * Расчёт приблизительный. Точную смету составит супервайзер после
+        осмотра объекта.
+      </Text>
+    </>
+  );
+
+  const renderCurrentStep = () => {
+    if (step === STEP_ADDRESS) return renderAddressStep();
+    if (step === STEP_SCOPE) return renderScopeStep();
+    if (step === STEP_TYPE) return renderTypeStep();
+    return null;
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper scroll={false}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
       >
-        {/* Step indicator */}
-        <View style={styles.stepIndicator}>
-          <ProgressBar progress={step === 1 ? 0.5 : 1} />
-          <Text style={styles.stepText}>Шаг {step} из 2</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <Button
+            title=""
+            onPress={handleBack}
+            variant="ghost"
+            icon={<Ionicons name="arrow-back" size={22} color={colors.heading} />}
+            style={styles.backButton}
+          />
+          <View style={styles.progressArea}>
+            <Text style={styles.stepText}>Шаг {step} из {TOTAL_STEPS}</Text>
+            <ProgressBar progress={step / TOTAL_STEPS} height={4} />
+          </View>
+          <View style={{ width: 44 }} />
         </View>
 
-        {step === 1 ? (
-          /* ===== STEP 1: Object info ===== */
-          <>
-            <Text style={styles.heading}>Расскажите об объекте</Text>
-            <Text style={styles.subtitle}>
-              Чем точнее данные, тем точнее расчёт
-            </Text>
+        {/* Content */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
+          {renderCurrentStep()}
+        </ScrollView>
 
-            <AddressInput
-              placeholder="Город, улица, дом, квартира"
-              value={address}
-              onChangeText={setAddress}
-            />
-
-            <Input
-              placeholder="Площадь в м²"
-              value={areaText}
-              onChangeText={setAreaText}
-              keyboardType="numeric"
-            />
-
+        {/* Bottom buttons — always active */}
+        <View style={styles.bottomBar}>
+          {step < TOTAL_STEPS ? (
             <Button
               title="Далее →"
               onPress={handleNext}
-              disabled={!canGoStep2}
               fullWidth
-              style={{ marginTop: spacing.xxl }}
             />
-          </>
-        ) : (
-          /* ===== STEP 2: Repair type ===== */
-          <>
-            <Text style={styles.heading}>Выберите тип ремонта</Text>
-            <Text style={styles.subtitle}>
-              Мы рассчитаем примерную стоимость и сроки
-            </Text>
-
-            <View style={styles.typeGrid}>
-              {REPAIR_TYPES.map((type) => {
-                const config = REPAIR_RATES[type];
-                const isSelected = repairType === type;
-                return (
-                  <Pressable
-                    key={type}
-                    style={[
-                      styles.typeCard,
-                      isSelected && styles.typeCardSelected,
-                    ]}
-                    onPress={() => setRepairType(type)}
-                  >
-                    <Ionicons
-                      name={config.icon as keyof typeof Ionicons.glyphMap}
-                      size={28}
-                      color={isSelected ? colors.primary : colors.textLight}
-                      style={{ marginBottom: spacing.sm }}
-                    />
-                    <Text
-                      style={[
-                        styles.typeLabel,
-                        isSelected && styles.typeLabelSelected,
-                      ]}
-                    >
-                      {config.label}
-                    </Text>
-                    <Text style={styles.typeRate}>
-                      от {(config.rateMin / 1000).toFixed(0)}т ₽/м²
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {estimate && (
-              <Card style={styles.estimateCard}>
-                <View style={styles.estimateRow}>
-                  <Text style={styles.estimateLabel}>Стоимость</Text>
-                  <Text style={styles.estimateValue}>
-                    {formatRubles(estimate.cost.min)} –{' '}
-                    {formatRubles(estimate.cost.max)}
-                  </Text>
-                </View>
-                <View style={styles.estimateDivider} />
-                <View style={styles.estimateRow}>
-                  <Text style={styles.estimateLabel}>Сроки</Text>
-                  <Text style={styles.estimateValueAccent}>
-                    {formatTimeline(estimate.days)}
-                  </Text>
-                </View>
-                <View style={styles.estimateDivider} />
-                <View style={styles.estimateRow}>
-                  <Text style={styles.estimateLabel}>Этапы</Text>
-                  <Text style={styles.estimateValue}>14 этапов</Text>
-                </View>
-              </Card>
-            )}
-
-            <TextArea
-              placeholder="Пожелания или комментарий к ремонту (необязательно)"
-              value={comment}
-              onChangeText={setComment}
-            />
-
-            <View style={styles.step2Buttons}>
+          ) : (
+            <View style={styles.submitRow}>
               <Button
                 title="← Назад"
-                onPress={() => setStep(1)}
+                onPress={handleBack}
                 variant="outline"
-                style={{ flex: 1 }}
+                style={styles.backBtn}
               />
               <Button
                 title={isLoading ? 'Создаём...' : 'Создать проект'}
                 onPress={handleSubmit}
-                disabled={!canSubmit}
                 loading={isLoading}
-                style={{ flex: 2 }}
+                style={styles.submitBtn}
               />
             </View>
-
-            <Text style={styles.disclaimer}>
-              * Расчёт приблизительный. Точную смету составит супервайзер после
-              осмотра объекта.
-            </Text>
-          </>
-        )}
+          )}
+        </View>
       </KeyboardAvoidingView>
 
       <AppDialog
@@ -260,15 +544,34 @@ export function CreateProjectScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  stepIndicator: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xxl,
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    padding: 0,
+  },
+  progressArea: {
+    flex: 1,
+    marginHorizontal: spacing.md,
   },
   stepText: {
     ...typography.caption,
     color: colors.textLight,
     textAlign: 'center',
-    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
   },
   heading: {
     ...typography.h1,
@@ -281,6 +584,83 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
     lineHeight: 22,
   },
+  formSection: {
+    marginBottom: spacing.lg,
+    zIndex: 20,
+    position: 'relative',
+  },
+
+  // ─── Scope cards ───
+  scopeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -spacing.xs,
+  },
+  scopeCardFull: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
+    marginHorizontal: spacing.xs,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  scopeCard: {
+    width: '47%',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    padding: spacing.lg,
+    margin: spacing.xs,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  scopeCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  scopeIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  scopeIconCircleSelected: {
+    backgroundColor: 'rgba(123, 45, 62, 0.1)',
+  },
+  scopeLabel: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    textAlign: 'center',
+  },
+  scopeLabelSelected: {
+    color: colors.primary,
+  },
+  scopeCheck: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+  },
+
+  // ─── Type cards ───
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -290,20 +670,25 @@ const styles = StyleSheet.create({
   typeCard: {
     width: '48%',
     flexGrow: 1,
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   typeCardSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
   },
-  // typeIcon style removed — now using Ionicons inline
   typeLabel: {
-    ...typography.smallBold,
+    ...typography.bodyBold,
     color: colors.heading,
     marginBottom: 2,
   },
@@ -314,6 +699,8 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textLight,
   },
+
+  // ─── Estimate card ───
   estimateCard: {
     borderLeftWidth: 3,
     borderLeftColor: colors.gold,
@@ -341,11 +728,6 @@ const styles = StyleSheet.create({
     ...typography.bodyBold,
     color: colors.primary,
   },
-  step2Buttons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xxl,
-  },
   disclaimer: {
     ...typography.small,
     color: colors.textLight,
@@ -353,5 +735,22 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.xxl,
     lineHeight: 18,
+  },
+
+  // ─── Bottom bar ───
+  bottomBar: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  submitRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  backBtn: {
+    flex: 1,
+  },
+  submitBtn: {
+    flex: 2,
   },
 });

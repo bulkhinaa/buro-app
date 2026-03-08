@@ -29,53 +29,235 @@ type Props = {
   route: any;
 };
 
-// Mock case data — will be replaced with API call
-const MOCK_CASE = {
-  id: 'portfolio-1',
-  repairType: 'Стандартный ремонт',
-  address: 'ул. Ленина, 15, кв. 42',
-  area: '54 м²',
-  cost: '870 000 ₽',
-  duration: '45 дней',
-  stages: '14',
-  description:
-    'Полный ремонт двухкомнатной квартиры в новостройке. Демонтаж старых покрытий, выравнивание стен, замена электрики и сантехники, укладка ламината, покраска стен, установка натяжных потолков.',
-  photos: [
-    {
-      url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-      label: 'После',
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-      label: 'До',
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-      label: 'Процесс',
-    },
-  ],
-  stagePhotos: [
-    { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=300', title: 'Демонтаж' },
-    { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=300', title: 'Электрика' },
-    { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300', title: 'Стяжка' },
-  ],
+// Full case data keyed by ID
+interface CaseData {
+  id: string;
+  repairType: string;
+  address: string;
+  area: string;
+  cost: string;
+  duration: string;
+  stages: string;
+  description: string;
+  photos: { url: string; label: string }[];
+  stagePhotos: { url: string; title: string }[];
   review: {
-    rating: 5,
-    text: 'Очень довольны результатом! Супервайзер Алексей контролировал каждый этап, все сроки соблюдены. Мастера работали аккуратно, после ремонта даже генеральная уборка не понадобилась. Рекомендуем!',
-    author: 'Анна К.',
-    date: 'Январь 2025',
-  },
+    rating: number;
+    text: string;
+    author: string;
+    date: string;
+  };
   supervisor: {
-    name: 'Алексей Петров',
-    level: 'expert' as const,
-    rating: 4.9,
-    reviewCount: 87,
+    name: string;
+    level: 'start' | 'profi' | 'expert';
+    rating: number;
+    reviewCount: number;
+  };
+}
+
+const MOCK_CASES_DETAIL: Record<string, CaseData> = {
+  '1': {
+    id: '1',
+    repairType: 'Стандартный ремонт',
+    address: 'ул. Ленина, 15, кв. 42',
+    area: '54 м²',
+    cost: '870 000 ₽',
+    duration: '45 дней',
+    stages: '14',
+    description:
+      'Полный ремонт двухкомнатной квартиры в новостройке. Демонтаж старых покрытий, выравнивание стен, замена электрики и сантехники, укладка ламината, покраска стен, установка натяжных потолков.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800', label: 'До' },
+      { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800', label: 'Процесс' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=300', title: 'Демонтаж' },
+      { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=300', title: 'Электрика' },
+      { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300', title: 'Стяжка' },
+    ],
+    review: {
+      rating: 5,
+      text: 'Очень довольны результатом! Супервайзер Алексей контролировал каждый этап, все сроки соблюдены. Мастера работали аккуратно, после ремонта даже генеральная уборка не понадобилась. Рекомендуем!',
+      author: 'Анна К.',
+      date: 'Январь 2025',
+    },
+    supervisor: {
+      name: 'Алексей Петров',
+      level: 'expert',
+      rating: 4.9,
+      reviewCount: 87,
+    },
+  },
+  '2': {
+    id: '2',
+    repairType: 'Капитальный ремонт',
+    address: 'пр. Мира, 42, кв. 18',
+    area: '78 м²',
+    cost: '1 560 000 ₽',
+    duration: '72 дня',
+    stages: '14',
+    description:
+      'Капитальный ремонт трёхкомнатной квартиры. Полная перепланировка, замена всех коммуникаций, утепление стен, новая стяжка, дизайнерская отделка ванной и кухни.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=800', label: 'До' },
+      { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800', label: 'Процесс' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300', title: 'Демонтаж' },
+      { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=300', title: 'Стяжка' },
+      { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300', title: 'Отделка' },
+    ],
+    review: {
+      rating: 5,
+      text: 'Капитальный ремонт прошёл идеально. Команда справилась за 72 дня. Особенно понравилась работа электрика и плиточника. Квартира не узнать!',
+      author: 'Михаил Д.',
+      date: 'Декабрь 2024',
+    },
+    supervisor: {
+      name: 'Елена Борисова',
+      level: 'profi',
+      rating: 4.8,
+      reviewCount: 64,
+    },
+  },
+  '3': {
+    id: '3',
+    repairType: 'Косметический ремонт',
+    address: 'ул. Пушкина, 8, кв. 5',
+    area: '38 м²',
+    cost: '285 000 ₽',
+    duration: '21 день',
+    stages: '8',
+    description:
+      'Косметический ремонт однокомнатной квартиры. Покраска стен, замена напольного покрытия, обновление потолков, установка нового плинтуса и розеток.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', label: 'До' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=300', title: 'Подготовка' },
+      { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=300', title: 'Покраска' },
+    ],
+    review: {
+      rating: 4,
+      text: 'Быстро и качественно сделали косметический ремонт. За три недели квартира преобразилась. Единственное — хотелось бы больше вариантов цвета краски.',
+      author: 'Ольга С.',
+      date: 'Февраль 2025',
+    },
+    supervisor: {
+      name: 'Максим Григорьев',
+      level: 'start',
+      rating: 4.7,
+      reviewCount: 35,
+    },
+  },
+  '4': {
+    id: '4',
+    repairType: 'Дизайнерский ремонт',
+    address: 'ул. Гагарина, 30, кв. 112',
+    area: '92 м²',
+    cost: '3 200 000 ₽',
+    duration: '90 дней',
+    stages: '14',
+    description:
+      'Дизайнерский ремонт четырёхкомнатной квартиры по авторскому проекту. Эксклюзивные материалы, встроенная мебель на заказ, умный дом, скрытая подсветка, натуральный камень в ванных.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800', label: 'До' },
+      { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800', label: 'Процесс' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300', title: 'Планировка' },
+      { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=300', title: 'Отделка' },
+      { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=300', title: 'Мебель' },
+    ],
+    review: {
+      rating: 5,
+      text: 'Превзошли все ожидания! Дизайнерский ремонт получился именно таким, как мы мечтали. Супервайзер держал всё под контролем. Каждая деталь продумана до мелочей.',
+      author: 'Дарья и Павел Н.',
+      date: 'Ноябрь 2024',
+    },
+    supervisor: {
+      name: 'Алексей Петров',
+      level: 'expert',
+      rating: 4.9,
+      reviewCount: 87,
+    },
+  },
+  '5': {
+    id: '5',
+    repairType: 'Стандартный ремонт',
+    address: 'ул. Лесная, 12, кв. 3',
+    area: '45 м²',
+    cost: '720 000 ₽',
+    duration: '38 дней',
+    stages: '14',
+    description:
+      'Стандартный ремонт двушки. Выравнивание стен и потолков, замена электрики, укладка плитки в ванной, ламинат, покраска, установка дверей и плинтусов.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=800', label: 'До' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=300', title: 'Штукатурка' },
+      { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300', title: 'Плитка' },
+    ],
+    review: {
+      rating: 5,
+      text: 'Отличный ремонт за разумные деньги. Мастера были пунктуальны и аккуратны. Супервайзер всегда был на связи и оперативно решал вопросы.',
+      author: 'Игорь В.',
+      date: 'Март 2025',
+    },
+    supervisor: {
+      name: 'Елена Борисова',
+      level: 'profi',
+      rating: 4.8,
+      reviewCount: 64,
+    },
+  },
+  '6': {
+    id: '6',
+    repairType: 'Косметический ремонт',
+    address: 'пр. Победы, 55, кв. 21',
+    area: '28 м²',
+    cost: '196 000 ₽',
+    duration: '18 дней',
+    stages: '7',
+    description:
+      'Лёгкий косметический ремонт студии. Покраска стен в светлые тона, замена линолеума на ламинат, обновление потолочного плинтуса, замена розеток и выключателей.',
+    photos: [
+      { url: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800', label: 'После' },
+      { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800', label: 'До' },
+    ],
+    stagePhotos: [
+      { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=300', title: 'Покраска' },
+      { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300', title: 'Пол' },
+    ],
+    review: {
+      rating: 4,
+      text: 'Хороший косметический ремонт за две с половиной недели. Студия стала светлее и уютнее. Цена оправдана.',
+      author: 'Наталья Р.',
+      date: 'Январь 2025',
+    },
+    supervisor: {
+      name: 'Максим Григорьев',
+      level: 'start',
+      rating: 4.7,
+      reviewCount: 35,
+    },
   },
 };
 
+// Default fallback for unknown IDs
+const DEFAULT_CASE = MOCK_CASES_DETAIL['1'];
+
 export function CaseDetailScreen({ navigation, route }: Props) {
+  const caseId: string = route.params?.caseId || '1';
+  const caseData = MOCK_CASES_DETAIL[caseId] || DEFAULT_CASE;
+
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const caseData = MOCK_CASE;
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {

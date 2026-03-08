@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps } from 'react-native';
+import { View, TextInput, Text, StyleSheet, TextInputProps, Platform } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+
+// Reset web outline on focused inputs
+const webInputReset = Platform.OS === 'web'
+  ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
+  : {};
 
 interface TextAreaProps extends Omit<TextInputProps, 'multiline'> {
   label?: string;
@@ -25,6 +30,7 @@ export function TextArea({
       <TextInput
         style={[
           styles.input,
+          webInputReset,
           { minHeight },
           focused && styles.inputFocused,
           error ? styles.inputError : undefined,
@@ -54,17 +60,17 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.bgInput,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderWidth: 0,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
     color: colors.heading,
     ...typography.body,
   },
   inputFocused: {
-    borderColor: colors.primary,
+    // No border on focus — clean look
   },
   inputError: {
+    borderWidth: 1.5,
     borderColor: colors.danger,
   },
   error: {

@@ -5,6 +5,7 @@ export interface User {
   phone: string;
   name: string;
   role: UserRole;
+  city?: string;
   avatar_url?: string;
   created_at: string;
   is_active: boolean;
@@ -23,10 +24,12 @@ export interface Project {
   id: string;
   client_id: string;
   supervisor_id?: string;
+  object_id?: string;
   title: string;
   address: string;
   area_sqm: number;
   repair_type: RepairType;
+  scope?: RenovationScope[];
   budget_min?: number;
   budget_max?: number;
   status: ProjectStatus;
@@ -100,6 +103,84 @@ export interface StageTemplate {
   order_index: number;
   checklist: string[];
 }
+
+// --- Property Objects ---
+
+export type PropertyType = 'apartment' | 'house' | 'commercial';
+
+export type RenovationGoal = 'living' | 'rental' | 'sale' | 'new_build';
+
+export type RoomCount = 0 | 1 | 2 | 3 | 4; // 0 = studio
+
+export type BathroomConfig = 'combined_1' | 'separate_1' | 'separate_2';
+
+export type KitchenType = 'separate' | 'open'; // open = kitchen-living (euro format)
+
+export type RenovationScope =
+  | 'full'        // Whole apartment
+  | 'kitchen'     // Kitchen
+  | 'bathroom'    // Bathroom
+  | 'living_room' // Living room
+  | 'bedroom'     // Bedroom
+  | 'hallway'     // Hallway/corridor
+  | 'balcony';    // Balcony/loggia
+
+export interface PropertyObject {
+  id: string;
+  user_id: string;
+  address: string;
+  total_area: number;
+  property_type: PropertyType;
+  rooms: RoomCount;
+  bathrooms: BathroomConfig;
+  kitchen_type: KitchenType;
+  renovation_goal: RenovationGoal;
+  layout_id: string | null;
+  custom_layout_url: string | null;
+  created_at: string;
+}
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  apartment: 'Квартира',
+  house: 'Дом',
+  commercial: 'Коммерция',
+};
+
+export const RENOVATION_GOAL_LABELS: Record<RenovationGoal, string> = {
+  living: 'Для себя',
+  rental: 'Для сдачи',
+  sale: 'Для продажи',
+  new_build: 'После покупки',
+};
+
+export const ROOM_COUNT_LABELS: Record<RoomCount, string> = {
+  0: 'Студия',
+  1: '1-комнатная',
+  2: '2-комнатная',
+  3: '3-комнатная',
+  4: '4+ комнатная',
+};
+
+export const BATHROOM_LABELS: Record<BathroomConfig, string> = {
+  combined_1: '1 совмещённый',
+  separate_1: '1 раздельный',
+  separate_2: '2 раздельных',
+};
+
+export const KITCHEN_TYPE_LABELS: Record<KitchenType, string> = {
+  separate: 'Отдельная',
+  open: 'Кухня-гостиная',
+};
+
+export const RENOVATION_SCOPE_LABELS: Record<RenovationScope, string> = {
+  full: 'Вся квартира',
+  kitchen: 'Кухня',
+  bathroom: 'Санузел',
+  living_room: 'Гостиная',
+  bedroom: 'Спальня',
+  hallway: 'Прихожая',
+  balcony: 'Балкон',
+};
 
 export const REPAIR_TYPE_LABELS: Record<RepairType, string> = {
   cosmetic: 'Косметический',

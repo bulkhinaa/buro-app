@@ -17,6 +17,11 @@ export const colors = {
   bgElevated: '#F2EDE6',
   bgInput: '#F9F7F4',
 
+  /** Liquid Glass gradient stops (top → bottom) */
+  bgGradientStart: '#F3EDE8',
+  bgGradientMid: '#EDE5DF',
+  bgGradientEnd: '#F8F5F2',
+
   text: '#3D3D3D',
   textLight: '#8E8E93',
   textBright: '#1A1A1A',

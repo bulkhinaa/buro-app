@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
 import { colors, spacing, typography } from '../../theme';
 
@@ -96,7 +97,11 @@ export function OnboardingScreen({ onComplete }: Props) {
   );
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.bgGradientStart, colors.bgGradientMid, colors.bgGradientEnd]}
+      locations={[0, 0.4, 1]}
+      style={styles.container}
+    >
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -128,7 +133,7 @@ export function OnboardingScreen({ onComplete }: Props) {
           style={{ marginTop: spacing.xxl }}
         />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -137,7 +142,6 @@ export { ONBOARDING_KEY };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   slide: {
     width,
@@ -150,10 +154,18 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xxxl,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.1)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   title: {
     ...typography.h1,

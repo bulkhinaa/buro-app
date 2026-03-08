@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../types';
 import { supabase } from '../lib/supabase';
-import { upsertProfile, fetchProfile } from '../services/projectService';
+import { upsertProfile, updateProfile, fetchProfile } from '../services/projectService';
 
 interface AuthState {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthState {
   logout: () => void;
   initAuth: () => Promise<void>;
   syncProfile: (authUser: { id: string; name: string; phone?: string }) => Promise<void>;
+  saveProfile: (updates: { name?: string; phone?: string; city?: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -43,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               phone: profile.phone || '',
               name: profile.name || '',
               role: profile.role as UserRole,
+              city: profile.city,
               avatar_url: profile.avatar_url,
               created_at: profile.created_at,
               is_active: profile.is_active,
@@ -70,6 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             phone: profile.phone || '',
             name: profile.name || '',
             role: profile.role as UserRole,
+            city: profile.city,
             avatar_url: profile.avatar_url,
             created_at: profile.created_at,
             is_active: profile.is_active,
@@ -80,6 +83,31 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch {
       set({ isLoading: false });
+    }
+  },
+
+  saveProfile: async (updates) => {
+    const state = useAuthStore.getState();
+    const user = state.user;
+    if (!user) return;
+
+    // Optimistic local update
+    set({
+      user: {
+        ...user,
+        ...updates,
+      },
+    });
+
+    // Dev users (id starts with "dev-") — skip API call
+    if (user.id.startsWith('dev-')) return;
+
+    try {
+      await updateProfile(user.id, updates);
+    } catch {
+      // Revert on failure
+      set({ user });
+      throw new Error('Failed to save profile');
     }
   },
 }));

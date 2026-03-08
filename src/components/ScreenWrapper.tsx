@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing } from '../theme';
 
 interface ScreenWrapperProps {
@@ -8,6 +9,8 @@ interface ScreenWrapperProps {
   scroll?: boolean;
   style?: ViewStyle;
   padded?: boolean;
+  /** Use plain white bg instead of gradient (for modals, etc.) */
+  plain?: boolean;
 }
 
 export function ScreenWrapper({
@@ -15,6 +18,7 @@ export function ScreenWrapper({
   scroll = true,
   style,
   padded = true,
+  plain = false,
 }: ScreenWrapperProps) {
   const content = (
     <View style={[styles.inner, padded && styles.padded, style]}>
@@ -22,26 +26,52 @@ export function ScreenWrapper({
     </View>
   );
 
+  const scrollable = scroll ? (
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {content}
+    </ScrollView>
+  ) : (
+    content
+  );
+
+  if (plain) {
+    return (
+      <SafeAreaView style={styles.plainContainer} edges={['top']}>
+        {scrollable}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {scroll ? (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {content}
-        </ScrollView>
-      ) : (
-        content
-      )}
-    </SafeAreaView>
+    <LinearGradient
+      colors={[
+        colors.bgGradientStart,
+        colors.bgGradientMid,
+        colors.bgGradientEnd,
+      ]}
+      locations={[0, 0.4, 1]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {scrollable}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradient: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  plainContainer: {
     flex: 1,
     backgroundColor: colors.bg,
   },

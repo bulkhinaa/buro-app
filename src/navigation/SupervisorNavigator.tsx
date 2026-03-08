@@ -5,6 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
+import { MyReviewsScreen } from '../screens/profile/MyReviewsScreen';
+import { SupportScreen } from '../screens/profile/SupportScreen';
+import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
+import { AboutScreen } from '../screens/profile/AboutScreen';
+import { NotificationsScreen } from '../screens/client/NotificationsScreen';
+import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -13,17 +20,9 @@ const Stack = createNativeStackNavigator();
 function SupervisorTabs() {
   return (
     <Tab.Navigator
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          paddingBottom: 4,
-          height: 56,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tab.Screen
@@ -50,16 +49,23 @@ export function SupervisorNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: colors.bgGradientStart },
         headerTintColor: colors.primary,
         headerShadowVisible: false,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
-        contentStyle: { backgroundColor: colors.bg },
+        contentStyle: { backgroundColor: colors.bgGradientEnd },
       }}
     >
       <Stack.Screen name="SupervisorTabs" component={SupervisorTabs} options={{ headerShown: false }} />
       <Stack.Screen name="SupervisorProjectDetail" component={SupervisorHomeScreen} options={{ headerTitle: 'Проект' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат проекта' }} />
+      {/* Profile sub-screens */}
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
+      <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: 'Уведомления' }} />
+      <Stack.Screen name="MyReviews" component={MyReviewsScreen} options={{ headerTitle: 'Мои отзывы' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ headerTitle: 'Поддержка' }} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: 'Документы' }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: 'О приложении' }} />
     </Stack.Navigator>
   );
 }

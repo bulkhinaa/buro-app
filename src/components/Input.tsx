@@ -6,8 +6,14 @@ import {
   StyleSheet,
   TextInputProps,
   Pressable,
+  Platform,
 } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+
+// Reset web outline on focused inputs
+const webInputReset = Platform.OS === 'web'
+  ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
+  : {};
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -58,6 +64,7 @@ export function Input({
         <TextInput
           style={[
             styles.input,
+            webInputReset,
             leftIcon ? styles.inputWithLeftIcon : undefined,
             (showClear || rightIcon) ? styles.inputWithRightContent : undefined,
             style,
@@ -99,13 +106,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.bgInput,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderWidth: 0,
   },
   inputRowFocused: {
-    borderColor: colors.primary,
+    // No border on focus — clean look
   },
   inputRowError: {
+    borderWidth: 1.5,
     borderColor: colors.danger,
   },
   input: {

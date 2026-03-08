@@ -28,7 +28,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "BURO.",
+      "shortName": "BURO.",
+      "themeColor": "#7B2D3E",
+      "backgroundColor": "#FFFFFF"
     },
     "plugins": [
       "expo-web-browser",

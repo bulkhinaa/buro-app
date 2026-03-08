@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Project, Stage, StageTemplate, RepairType } from '../types';
+import { Project, Stage, StageTemplate, RepairType, PropertyObject } from '../types';
 import { estimateTimelineDays } from '../utils/calculator';
 
 // ---------- PROFILE ----------
@@ -25,6 +25,18 @@ export async function upsertProfile(params: {
   if (error) throw error;
 }
 
+export async function updateProfile(
+  userId: string,
+  updates: { name?: string; phone?: string; city?: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+
+  if (error) throw error;
+}
+
 export async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
@@ -34,6 +46,72 @@ export async function fetchProfile(userId: string) {
 
   if (error && error.code !== 'PGRST116') throw error;
   return data;
+}
+
+// ---------- OBJECTS ----------
+
+export async function createObject(params: {
+  userId: string;
+  address: string;
+  totalArea: number;
+  propertyType: string;
+  rooms: number;
+  bathrooms: string;
+  kitchenType: string;
+  renovationGoal: string;
+  layoutId: string | null;
+  customLayoutUrl: string | null;
+}): Promise<PropertyObject> {
+  const { data, error } = await supabase
+    .from('objects')
+    .insert({
+      user_id: params.userId,
+      address: params.address,
+      total_area: params.totalArea,
+      property_type: params.propertyType,
+      rooms: params.rooms,
+      bathrooms: params.bathrooms,
+      kitchen_type: params.kitchenType,
+      renovation_goal: params.renovationGoal,
+      layout_id: params.layoutId,
+      custom_layout_url: params.customLayoutUrl,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as PropertyObject;
+}
+
+export async function fetchUserObjects(userId: string): Promise<PropertyObject[]> {
+  const { data, error } = await supabase
+    .from('objects')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data as PropertyObject[]) || [];
+}
+
+export async function deleteObject(objectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('objects')
+    .delete()
+    .eq('id', objectId);
+
+  if (error) throw error;
+}
+
+export async function fetchObjectProjects(objectId: string): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('object_id', objectId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data as Project[]) || [];
 }
 
 // ---------- PROJECTS ----------
@@ -68,6 +146,7 @@ export async function createProject(params: {
   repairType: RepairType;
   budgetMin: number;
   budgetMax: number;
+  objectId?: string;
 }): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
@@ -79,6 +158,7 @@ export async function createProject(params: {
       repair_type: params.repairType,
       budget_min: params.budgetMin,
       budget_max: params.budgetMax,
+      object_id: params.objectId || null,
       status: 'new',
     })
     .select()

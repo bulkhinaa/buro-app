@@ -110,20 +110,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   list: {
-    paddingBottom: spacing.huge,
+    paddingBottom: 100,
   },
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.04)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 1,
   },
   notificationUnread: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    borderColor: 'rgba(123, 45, 62, 0.15)',
   },
   iconCircle: {
     width: 36,

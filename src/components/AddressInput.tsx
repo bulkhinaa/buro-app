@@ -7,8 +7,14 @@ import {
   Pressable,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+
+// Reset web outline on focused inputs
+const webInputReset = Platform.OS === 'web'
+  ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
+  : {};
 
 interface AddressSuggestion {
   display_name: string;
@@ -22,6 +28,7 @@ interface AddressInputProps {
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
+  onValidated?: (validated: boolean) => void;
   error?: string;
 }
 
@@ -34,6 +41,7 @@ export function AddressInput({
   placeholder,
   value,
   onChangeText,
+  onValidated,
   error,
 }: AddressInputProps) {
   const [focused, setFocused] = useState(false);
@@ -76,6 +84,9 @@ export function AddressInput({
       return;
     }
 
+    // User is typing manually — invalidate previous selection
+    onValidated?.(false);
+
     if (timerRef.current) clearTimeout(timerRef.current);
 
     if (text.length < MIN_CHARS) {
@@ -94,6 +105,7 @@ export function AddressInput({
     // Clean up the display name: take a shorter readable version
     const short = formatAddress(item.display_name);
     onChangeText(short);
+    onValidated?.(true);
     setSuggestions([]);
     setShowDropdown(false);
   };
@@ -111,6 +123,7 @@ export function AddressInput({
         <TextInput
           style={[
             styles.input,
+            webInputReset,
             focused && styles.inputFocused,
             error && styles.inputError,
           ]}
@@ -186,18 +199,18 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.bgInput,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
     borderRadius: radius.lg,
+    borderWidth: 0,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
     color: colors.heading,
     ...typography.body,
   },
   inputFocused: {
-    borderColor: colors.primary,
+    // No border on focus — clean look
   },
   inputError: {
+    borderWidth: 1.5,
     borderColor: colors.danger,
   },
   loadingIndicator: {

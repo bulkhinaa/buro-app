@@ -8,6 +8,7 @@ interface ChipProps {
   avatarUri?: string;
   selected?: boolean;
   onPress?: () => void;
+  size?: 'sm' | 'md';
 }
 
 export function Chip({
@@ -16,11 +17,15 @@ export function Chip({
   avatarUri,
   selected = false,
   onPress,
+  size = 'md',
 }: ChipProps) {
+  const isSmall = size === 'sm';
+
   const content = (
     <View
       style={[
         styles.chip,
+        isSmall && styles.chipSmall,
         selected && styles.chipSelected,
       ]}
     >
@@ -28,7 +33,15 @@ export function Chip({
       {avatarUri && (
         <Image source={{ uri: avatarUri }} style={styles.avatar} />
       )}
-      <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+      <Text
+        style={[
+          styles.label,
+          isSmall && styles.labelSmall,
+          selected && styles.labelSelected,
+        ]}
+      >
+        {label}
+      </Text>
     </View>
   );
 
@@ -47,16 +60,21 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: radius.full,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  chipSmall: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
   },
   chipSelected: {
     backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: 'rgba(123, 45, 62, 0.15)',
   },
   emoji: {
     fontSize: 16,
@@ -71,6 +89,9 @@ const styles = StyleSheet.create({
   label: {
     ...typography.body,
     color: colors.primary,
+  },
+  labelSmall: {
+    ...typography.small,
   },
   labelSelected: {
     color: colors.primary,

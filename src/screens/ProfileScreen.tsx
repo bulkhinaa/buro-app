@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, Button, CellIndicator } from '../components';
-import { colors, spacing, typography } from '../theme';
+import { ScreenWrapper, Button, CellIndicator } from '../components';
+import { colors, spacing, radius, typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export function ProfileScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, logout } = useAuthStore();
 
   const roleLabel = {
@@ -13,6 +16,17 @@ export function ProfileScreen() {
     master: 'Мастер',
     supervisor: 'Супервайзер',
     admin: 'Администратор',
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Выход',
+      'Вы уверены, что хотите выйти из аккаунта?',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        { text: 'Выйти', style: 'destructive', onPress: logout },
+      ],
+    );
   };
 
   return (
@@ -29,63 +43,65 @@ export function ProfileScreen() {
         )}
         <Text style={styles.name}>{user?.name || 'Имя не указано'}</Text>
         <Text style={styles.role}>{roleLabel[user?.role || 'client']}</Text>
+        {user?.city ? <Text style={styles.city}>{user.city}</Text> : null}
         {user?.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
       </View>
 
-      <View style={styles.menuCard}>
+      <View style={styles.glassMenuCard}>
         <CellIndicator
           variant="card"
           icon={<Ionicons name="create-outline" size={20} color={colors.primary} />}
           name="Редактировать профиль"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('EditProfile')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="notifications-outline" size={20} color={colors.primary} />}
           name="Уведомления"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('NotificationsStack')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="clipboard-outline" size={20} color={colors.primary} />}
           name="Мои отзывы"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('MyReviews')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="chatbubble-outline" size={20} color={colors.primary} />}
           name="Поддержка"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('Support')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="document-outline" size={20} color={colors.primary} />}
           name="Документы"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('Documents')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="information-circle-outline" size={20} color={colors.primary} />}
           name="О приложении"
           showChevron
-          onPress={() => {}}
+          onPress={() => navigation.navigate('About')}
         />
       </View>
 
       <Button
         title="Выйти из аккаунта"
-        onPress={logout}
+        onPress={handleLogout}
         variant="outline"
         fullWidth
         style={{ marginTop: spacing.xxl }}
       />
 
       <Text style={styles.version}>Версия 1.0.0</Text>
+      <View style={{ height: 60 }} />
     </ScreenWrapper>
   );
 }
@@ -128,14 +144,29 @@ const styles = StyleSheet.create({
     color: colors.gold,
     marginBottom: spacing.xs,
   },
+  city: {
+    ...typography.small,
+    color: colors.textLight,
+    marginBottom: spacing.xs,
+  },
   phone: {
     ...typography.body,
     color: colors.textLight,
   },
-  menuCard: {
+  glassMenuCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    padding: spacing.xs,
     marginBottom: spacing.md,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  // menuIcon style removed — now using Ionicons
   version: {
     ...typography.caption,
     color: colors.textLight,
