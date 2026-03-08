@@ -26,7 +26,7 @@ const pwaTags = `
     <link rel="manifest" href="${baseUrl}/manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BURO.">
     <link rel="apple-touch-icon" href="${baseUrl}/pwa-icon-192.png">`;
 

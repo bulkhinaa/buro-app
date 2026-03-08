@@ -19,7 +19,7 @@
   "start_url": "/buro-app/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#7B2D3E",
-  "background_color": "#FFFFFF",
+  "theme_color": "#0A0A1A",
+  "background_color": "#0A0A1A",
   "scope": "/buro-app/"
 }

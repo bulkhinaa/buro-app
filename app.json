@@ -33,8 +33,8 @@
       "output": "single",
       "name": "BURO.",
       "shortName": "BURO.",
-      "themeColor": "#7B2D3E",
-      "backgroundColor": "#FFFFFF"
+      "themeColor": "#0A0A1A",
+      "backgroundColor": "#0A0A1A"
     },
     "experiments": {
       "baseUrl": "/buro-app"
