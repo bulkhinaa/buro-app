@@ -33,11 +33,31 @@ const pwaTags = `
     <link rel="icon" type="image/png" sizes="192x192" href="${baseUrl}/pwa-icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="${baseUrl}/pwa-icon-512.png">`;
 
-// Inject before </head>
+// 1. Add viewport-fit=cover to viewport meta tag (required for black-translucent status bar)
+if (html.includes('name="viewport"') && !html.includes('viewport-fit=cover')) {
+  html = html.replace(
+    /(<meta[^>]*name="viewport"[^>]*content="[^"]*)/,
+    '$1, viewport-fit=cover',
+  );
+  console.log('viewport-fit=cover added');
+}
+
+// 2. Add dark background to body so status bar area is not white
+if (!html.includes('background-color')) {
+  html = html.replace(
+    '<body>',
+    '<body style="background-color:#0A0A1A;">',
+  );
+  console.log('Dark body background added');
+}
+
+// 3. Inject PWA meta tags before </head>
 if (!html.includes('rel="manifest"')) {
   html = html.replace('</head>', pwaTags + '\n  </head>');
-  fs.writeFileSync(distHtml, html, 'utf-8');
-  console.log('PWA meta tags injected into dist/index.html (baseUrl: ' + (baseUrl || '/') + ')');
+  console.log('PWA meta tags injected (baseUrl: ' + (baseUrl || '/') + ')');
 } else {
   console.log('PWA meta tags already present');
 }
+
+fs.writeFileSync(distHtml, html, 'utf-8');
+console.log('dist/index.html updated');
