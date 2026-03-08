@@ -269,6 +269,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#0A0510',
     zIndex: 999,
+    ...(isWeb ? { minHeight: '100dvh' as any } : {}),
   },
   topGlow: {
     position: 'absolute',

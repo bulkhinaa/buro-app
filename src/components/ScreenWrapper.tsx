@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, ViewStyle } from 'react-native';
+import { View, StyleSheet, ScrollView, ViewStyle, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing } from '../theme';
+
+// On web (iOS PWA), flex:1 doesn't extend behind the home indicator.
+// Using 100dvh forces the gradient to cover the full viewport including safe areas.
+const webFullHeight = Platform.OS === 'web'
+  ? ({ minHeight: '100dvh' } as any)
+  : undefined;
 
 interface ScreenWrapperProps {
   children: React.ReactNode;
@@ -41,7 +47,7 @@ export function ScreenWrapper({
 
   if (plain) {
     return (
-      <SafeAreaView style={styles.plainContainer} edges={['top']}>
+      <SafeAreaView style={[styles.plainContainer, webFullHeight]} edges={['top']}>
         {scrollable}
       </SafeAreaView>
     );
@@ -55,7 +61,7 @@ export function ScreenWrapper({
         colors.bgGradientEnd,
       ]}
       locations={[0, 0.4, 1]}
-      style={styles.gradient}
+      style={[styles.gradient, webFullHeight]}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {scrollable}

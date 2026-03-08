@@ -56,7 +56,8 @@ Deno.serve(async (req: Request) => {
 
     if (!tokenData.access_token) {
       console.error('Yandex token exchange failed:', tokenData);
-      return jsonError('Failed to exchange authorization code', 400);
+      const detail = tokenData.error_description || tokenData.error || 'unknown';
+      return jsonError(`Failed to exchange authorization code: ${detail}`, 400);
     }
 
     // ── 2. Fetch user info from Yandex ──

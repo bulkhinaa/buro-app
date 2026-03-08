@@ -42,22 +42,29 @@ if (html.includes('name="viewport"') && !html.includes('viewport-fit=cover')) {
   console.log('viewport-fit=cover added');
 }
 
-// 2. Set body/html to cover full viewport with dark bg for splash,
-//    then React app paints over it with the light theme.
-if (!html.includes('background-color')) {
-  html = html.replace(
-    '<body>',
-    '<body style="background-color:#0A0510;">',
-  );
-  console.log('Splash body background added');
-}
-
-// 2b. Make html/body/root fill full viewport including safe areas
+// 2. Ensure full viewport coverage including iOS safe areas
+// iOS PWA reads html/body background synchronously at load time.
+// The min-height trick compensates for content shift caused by black-translucent status bar.
 const safeAreaCSS = `
     <style id="pwa-safe-area">
-      html, body, #root {
-        min-height: 100vh;
-        min-height: 100dvh;
+      html {
+        margin: 0;
+        padding: 0;
+        min-height: calc(100% + env(safe-area-inset-top));
+        background-color: #F3EDE8;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background-color: #F3EDE8;
+      }
+      #root {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        display: flex;
+        flex: 1;
       }
     </style>`;
 if (!html.includes('pwa-safe-area')) {

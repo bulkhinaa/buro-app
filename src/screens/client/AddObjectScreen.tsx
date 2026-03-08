@@ -246,7 +246,10 @@ export function AddObjectScreen({ navigation }: Props) {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      showToast('Ошибка авторизации. Перезайдите в приложение.', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const object = await addObject({
@@ -264,7 +267,7 @@ export function AddObjectScreen({ navigation }: Props) {
       setCreatedObjectId(object.id);
       setShowSuccess(true);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось добавить объект. Попробуйте ещё раз.');
+      showToast('Не удалось добавить объект. Попробуйте ещё раз.', 'error');
     } finally {
       setSaving(false);
     }

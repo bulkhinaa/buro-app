@@ -67,26 +67,56 @@ export function LoginScreen() {
 
       const redirectUri = getRedirectUri();
 
+      // iOS Safari can fail fetch before page is fully loaded after redirect
+      if (Platform.OS === 'web') {
+        await new Promise<void>((resolve) => {
+          if (document.readyState === 'complete') {
+            resolve();
+          } else {
+            window.addEventListener('load', () => resolve(), { once: true });
+          }
+        });
+      }
+
       // 1. Call Edge Function to exchange code & create user
-      console.log('[YandexAuth] Exchanging code via Edge Function...');
-      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/yandex-auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, redirect_uri: redirectUri }),
-      });
+      console.log('[YandexAuth] Step 1: Exchanging code via Edge Function...');
+      console.log('[YandexAuth] redirect_uri:', redirectUri);
+      console.log('[YandexAuth] code (first 10 chars):', code.substring(0, 10));
+
+      let res!: Response;
+      const MAX_RETRIES = 3;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          res = await fetch(`${SUPABASE_FUNCTIONS_URL}/yandex-auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, redirect_uri: redirectUri }),
+          });
+          break; // success
+        } catch (fetchErr: any) {
+          console.warn(`[YandexAuth] Fetch attempt ${attempt}/${MAX_RETRIES} failed:`, fetchErr.message);
+          if (attempt === MAX_RETRIES) {
+            console.error('[YandexAuth] FETCH FAILED after all retries:', fetchErr);
+            throw new Error(`Сетевая ошибка: ${fetchErr.message}`);
+          }
+          // Wait before retry (1s, 2s)
+          await new Promise((r) => setTimeout(r, attempt * 1000));
+        }
+      }
+
+      console.log('[YandexAuth] Step 1 done, status:', res.status);
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error('[YandexAuth] Edge Function error:', err);
+        console.error('[YandexAuth] Edge Function error:', JSON.stringify(err));
         throw new Error(err.error || `Ошибка сервера (${res.status})`);
       }
 
-      const { email, otp, user_metadata } = await res.json();
-      console.log('[YandexAuth] Got OTP for:', email);
+      const responseData = await res.json();
+      const { email, otp, user_metadata } = responseData;
+      console.log('[YandexAuth] Step 2: Got OTP for:', email);
 
       // 2. Verify OTP to establish Supabase session
-      //    generateLink({ type: 'magiclink' }) returns email_otp
-      //    which must be verified with type: 'email'
       const { data: sessionData, error: verifyError } =
         await supabase.auth.verifyOtp({
           email,
@@ -95,24 +125,32 @@ export function LoginScreen() {
         });
 
       if (verifyError) {
-        console.error('[YandexAuth] verifyOtp error:', verifyError);
-        throw verifyError;
+        console.error('[YandexAuth] Step 2 FAILED - verifyOtp:', JSON.stringify(verifyError));
+        throw new Error(`Ошибка OTP: ${verifyError.message}`);
       }
 
-      console.log('[YandexAuth] Session established for:', sessionData.user?.id);
+      console.log('[YandexAuth] Step 3: Session established for:', sessionData.user?.id);
 
       // 3. Sync profile with Yandex user data
       if (sessionData.user) {
-        await syncProfile({
-          id: sessionData.user.id,
-          name: user_metadata?.name || '',
-          phone: user_metadata?.phone || undefined,
-        });
+        try {
+          await syncProfile({
+            id: sessionData.user.id,
+            name: user_metadata?.name || '',
+            phone: user_metadata?.phone || undefined,
+          });
+          console.log('[YandexAuth] Step 4: Profile synced OK');
+        } catch (profileErr: any) {
+          console.error('[YandexAuth] Step 4 FAILED - syncProfile:', profileErr);
+          // Don't block login if profile sync fails
+          showToast('Вошли, но профиль не синхронизирован', 'warning');
+          return;
+        }
       }
 
       showToast('Вы успешно вошли!', 'success');
     } catch (e: any) {
-      console.error('[YandexAuth] Error:', e);
+      console.error('[YandexAuth] FINAL ERROR:', e.message, e);
       showToast(
         e.message || 'Не удалось войти через Яндекс ID',
         'error',
