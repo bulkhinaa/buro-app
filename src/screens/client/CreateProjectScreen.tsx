@@ -435,9 +435,8 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         <Card style={styles.estimateCard}>
           <View style={styles.estimateRow}>
             <Text style={styles.estimateLabel}>Стоимость</Text>
-            <Text style={styles.estimateValue}>
-              {formatRubles(estimate.cost.min)} –{' '}
-              {formatRubles(estimate.cost.max)}
+            <Text style={styles.estimateValue} numberOfLines={1} adjustsFontSizeToFit>
+              {formatRubles(estimate.cost.min)} – {formatRubles(estimate.cost.max)}
             </Text>
           </View>
           <View style={styles.estimateDivider} />
@@ -724,14 +723,19 @@ const styles = StyleSheet.create({
   estimateLabel: {
     ...typography.body,
     color: colors.textLight,
+    marginRight: spacing.sm,
   },
   estimateValue: {
     ...typography.bodyBold,
     color: colors.heading,
+    flex: 1,
+    textAlign: 'right',
   },
   estimateValueAccent: {
     ...typography.bodyBold,
     color: colors.primary,
+    flex: 1,
+    textAlign: 'right',
   },
   disclaimer: {
     ...typography.small,

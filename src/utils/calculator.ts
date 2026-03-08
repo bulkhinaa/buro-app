@@ -29,7 +29,8 @@ export function estimateTimelineDays(repairType: RepairType, areaSqm: number): n
 }
 
 export function formatRubles(amount: number): string {
-  return amount.toLocaleString('ru-RU') + ' \u20BD';
+  // Use non-breaking space (\u00A0) so ₽ never wraps to next line
+  return amount.toLocaleString('ru-RU') + '\u00A0\u20BD';
 }
 
 export function formatTimeline(days: number): string {

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   inputWithLeftIcon: {
-    paddingLeft: 0,
+    paddingLeft: spacing.sm,
   },
   inputWithRightContent: {
     paddingRight: spacing.xs,
