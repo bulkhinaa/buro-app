@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../../components';
@@ -10,124 +10,156 @@ import { UserRole } from '../../types';
 
 WebBrowser.maybeCompleteAuthSession();
 
+// ── Yandex OAuth config ──
+const YANDEX_CLIENT_ID = 'e07442624e8441dc87c5f1839b2fdb20';
+const SUPABASE_FUNCTIONS_URL =
+  'https://aaghopgrlxdjsrvmbuds.supabase.co/functions/v1';
+
+/** Production web redirect URI */
+const WEB_REDIRECT_URI = 'https://bulkhinaa.github.io/buro-app/';
+
+/**
+ * Returns the correct redirect URI for the current platform.
+ * - Web (production): hardcoded GitHub Pages URL
+ * - Web (dev): current page URL
+ * - Native: deep link scheme
+ */
+const getRedirectUri = (): string => {
+  if (Platform.OS === 'web') {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      return window.location.origin + window.location.pathname;
+    }
+    return WEB_REDIRECT_URI;
+  }
+  return 'buroremontov://auth/callback';
+};
+
 export function LoginScreen() {
   const [loading, setLoading] = useState<'yandex' | 'tinkoff' | null>(null);
   const { setUser, syncProfile } = useAuthStore();
 
+  // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+
+    if (code) {
+      // Clean URL so code doesn't persist on refresh
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      window.history.replaceState({}, '', url.toString());
+
+      // Exchange the code
+      handleYandexCode(code);
+    }
+  }, []);
+
+  /**
+   * Exchange Yandex authorization code for a Supabase session
+   * via our Edge Function.
+   */
+  const handleYandexCode = async (code: string) => {
+    try {
+      setLoading('yandex');
+
+      const redirectUri = getRedirectUri();
+
+      // Call Edge Function to exchange code & create user
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/yandex-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, redirect_uri: redirectUri }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Auth failed (${res.status})`);
+      }
+
+      const { email, otp, user_metadata } = await res.json();
+
+      // Verify OTP to establish a real Supabase session
+      const { data: sessionData, error: verifyError } =
+        await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: 'magiclink',
+        });
+
+      if (verifyError) throw verifyError;
+
+      // Sync profile with Yandex user data
+      if (sessionData.user) {
+        await syncProfile({
+          id: sessionData.user.id,
+          name: user_metadata?.name || '',
+          phone: user_metadata?.phone || undefined,
+        });
+      }
+    } catch (e: any) {
+      console.error('Yandex auth error:', e);
+      Alert.alert('Ошибка', e.message || 'Не удалось войти через Яндекс ID');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  /**
+   * Start Yandex OAuth flow.
+   * - On web: full-page redirect (works in PWA and regular browser)
+   * - On native: in-app browser via expo-web-browser
+   */
   const handleYandexSignIn = async () => {
     try {
       setLoading('yandex');
-      // Yandex ID OAuth 2.0 via Supabase custom provider or expo-auth-session
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'yandex' as any,
-        options: {
-          redirectTo: 'buroremontov://auth/callback',
-          skipBrowserRedirect: true,
-        },
+
+      const redirectUri = getRedirectUri();
+
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: YANDEX_CLIENT_ID,
+        redirect_uri: redirectUri,
+        scope: 'login:email login:info',
+        force_confirm: 'yes',
       });
 
-      if (error) throw error;
+      const authUrl = `https://oauth.yandex.ru/authorize?${params}`;
 
-      if (data.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          'buroremontov://auth/callback',
-        );
+      if (Platform.OS === 'web') {
+        // Full-page redirect — works in PWA and regular browser.
+        // When Yandex redirects back, the useEffect above catches the code.
+        window.location.href = authUrl;
+        return; // Page will unload
+      }
 
-        if (result.type === 'success' && result.url) {
-          const params = new URL(result.url);
-          const accessToken = params.hash
-            ?.substring(1)
-            .split('&')
-            .find((p) => p.startsWith('access_token='))
-            ?.split('=')[1];
-          const refreshToken = params.hash
-            ?.substring(1)
-            .split('&')
-            .find((p) => p.startsWith('refresh_token='))
-            ?.split('=')[1];
+      // Native: open in-app browser
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri,
+      );
 
-          if (accessToken && refreshToken) {
-            const { data: sessionData, error: sessionError } =
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              });
-
-            if (sessionError) throw sessionError;
-
-            const user = sessionData.user;
-            await syncProfile({
-              id: user?.id || '',
-              name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
-              phone: user?.user_metadata?.phone || user?.phone || undefined,
-            });
-          }
+      if (result.type === 'success' && result.url) {
+        const resultUrl = new URL(result.url);
+        const code = resultUrl.searchParams.get('code');
+        if (code) {
+          await handleYandexCode(code);
         }
       }
     } catch (e: any) {
-      Alert.alert('Ошибка', 'Не удалось войти через Яндекс ID');
+      console.error('Yandex sign in error:', e);
+      Alert.alert('Ошибка', e.message || 'Не удалось войти через Яндекс ID');
     } finally {
       setLoading(null);
     }
   };
 
   const handleTinkoffSignIn = async () => {
-    try {
-      setLoading('tinkoff');
-      // Tinkoff ID OAuth 2.0 via Supabase custom provider
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'tinkoff' as any,
-        options: {
-          redirectTo: 'buroremontov://auth/callback',
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          'buroremontov://auth/callback',
-        );
-
-        if (result.type === 'success' && result.url) {
-          const params = new URL(result.url);
-          const accessToken = params.hash
-            ?.substring(1)
-            .split('&')
-            .find((p) => p.startsWith('access_token='))
-            ?.split('=')[1];
-          const refreshToken = params.hash
-            ?.substring(1)
-            .split('&')
-            .find((p) => p.startsWith('refresh_token='))
-            ?.split('=')[1];
-
-          if (accessToken && refreshToken) {
-            const { data: sessionData, error: sessionError } =
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              });
-
-            if (sessionError) throw sessionError;
-
-            const user = sessionData.user;
-            await syncProfile({
-              id: user?.id || '',
-              name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
-              phone: user?.user_metadata?.phone || user?.phone || undefined,
-            });
-          }
-        }
-      }
-    } catch (e: any) {
-      Alert.alert('Ошибка', 'Не удалось войти через Тинькофф ID');
-    } finally {
-      setLoading(null);
-    }
+    Alert.alert(
+      'Скоро',
+      'Вход через Тинькофф ID будет доступен в следующем обновлении',
+    );
   };
 
   const handleDevLogin = (role: UserRole) => {
@@ -162,15 +194,14 @@ export function LoginScreen() {
             loading={loading === 'yandex'}
             fullWidth
             icon={
-              <Ionicons name="logo-yahoo" size={20} color={colors.white} />
+              <Ionicons name="log-in-outline" size={20} color={colors.white} />
             }
           />
 
           <Button
-            title={loading === 'tinkoff' ? 'Входим...' : 'Войти через Тинькофф ID'}
+            title="Войти через Тинькофф ID"
             onPress={handleTinkoffSignIn}
             disabled={loading !== null}
-            loading={loading === 'tinkoff'}
             variant="outline"
             fullWidth
             icon={
@@ -228,14 +259,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
-    // Glass shadow
     shadowColor: 'rgba(123, 45, 62, 0.1)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 16,
     elevation: 4,
   },
-  // logoEmoji style removed — now using Ionicons
   title: {
     ...typography.h1,
     color: colors.heading,
