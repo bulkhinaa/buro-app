@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen';
@@ -49,12 +49,13 @@ export function SupervisorNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        ...TransitionPresets.SlideFromRightIOS,
         headerStyle: { backgroundColor: colors.bgGradientStart, elevation: 0, shadowOpacity: 0 },
         headerTintColor: colors.primary,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         cardStyle: { backgroundColor: colors.bgGradientEnd },
-        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true,
+        animation: 'slide_from_right' as any,
       }}
     >
       <Stack.Screen name="SupervisorTabs" component={SupervisorTabs} options={{ headerShown: false }} />

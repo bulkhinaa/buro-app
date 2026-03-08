@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { ClientHomeScreen } from '../screens/client/ClientHomeScreen';
@@ -98,12 +98,13 @@ export function ClientNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        ...TransitionPresets.SlideFromRightIOS,
         headerStyle: { backgroundColor: colors.bgGradientStart, elevation: 0, shadowOpacity: 0 },
         headerTintColor: colors.primary,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         cardStyle: { backgroundColor: colors.bgGradientEnd },
-        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true,
+        animation: 'slide_from_right' as any,
       }}
     >
       <Stack.Screen
@@ -140,22 +141,22 @@ export function ClientNavigator() {
       <Stack.Screen
         name="CaseDetail"
         component={CaseDetailScreen}
-        options={{ headerShown: false, cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS }}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="StageApproval"
         component={StageApprovalScreen}
-        options={{ headerShown: false, cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS }}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="Review"
         component={ReviewScreen}
-        options={{ headerShown: false, cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS }}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="ProjectComplete"
         component={ProjectCompleteScreen}
-        options={{ headerShown: false, cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS }}
+        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       {/* Profile sub-screens */}
       <Stack.Screen

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileSetupScreen } from '../screens/auth/ProfileSetupScreen';
 import { colors } from '../theme';
@@ -10,10 +10,11 @@ export function AuthNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
+        ...TransitionPresets.SlideFromRightIOS,
         headerShown: false,
         cardStyle: { backgroundColor: colors.bg },
-        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true,
+        animation: 'slide_from_right' as any,
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
