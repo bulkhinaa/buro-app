@@ -12,13 +12,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing } from '../../theme';
 
 const { width, height } = Dimensions.get('window');
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
+
+/** Warm cream background matching the 3D illustration style */
+const BG_CREAM = '#F5EFE9';
 
 interface Slide {
   id: string;
@@ -35,7 +37,7 @@ const SLIDES: Slide[] = [
     title: 'Ремонт без стресса',
     subtitle:
       'Мы берём на себя контроль за каждым этапом —\nот демонтажа до финальной уборки',
-    image: require('../../../assets/images/onboarding/slide1.jpg'),
+    image: require('../../../assets/images/onboarding/slide1.png'),
   },
   {
     id: '2',
@@ -43,7 +45,7 @@ const SLIDES: Slide[] = [
     title: 'Независимый контроль',
     subtitle:
       'На каждом объекте работает супервайзер —\nон проверяет качество и принимает работы за вас',
-    image: require('../../../assets/images/onboarding/slide2.jpg'),
+    image: require('../../../assets/images/onboarding/slide2.png'),
   },
   {
     id: '3',
@@ -51,7 +53,7 @@ const SLIDES: Slide[] = [
     title: 'Прозрачность\nна каждом шагу',
     subtitle:
       'Вы видите прогресс ремонта в реальном времени:\nфотоотчёты, этапы, сроки и расходы',
-    image: require('../../../assets/images/onboarding/slide3.jpg'),
+    image: require('../../../assets/images/onboarding/slide3.png'),
   },
 ];
 
@@ -95,22 +97,16 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={styles.slide}>
-      {/* Background image */}
-      <Image source={item.image} style={styles.bgImage} resizeMode="cover" />
+      {/* 3D illustration — centered in upper portion */}
+      <View style={styles.illustrationWrap}>
+        <Image
+          source={item.image}
+          style={styles.illustration}
+          resizeMode="contain"
+        />
+      </View>
 
-      {/* Dark gradient overlay — bottom heavy for text readability */}
-      <LinearGradient
-        colors={[
-          'rgba(10, 5, 16, 0.1)',
-          'rgba(10, 5, 16, 0.3)',
-          'rgba(10, 5, 16, 0.75)',
-          'rgba(10, 5, 16, 0.92)',
-        ]}
-        locations={[0, 0.35, 0.6, 0.85]}
-        style={styles.overlay}
-      />
-
-      {/* Content positioned at bottom */}
+      {/* Text content — positioned at bottom */}
       <View style={styles.slideContent}>
         <View style={styles.iconPill}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
@@ -167,19 +163,23 @@ export { ONBOARDING_KEY };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0510',
+    backgroundColor: BG_CREAM,
   },
   slide: {
     width,
     height,
+    backgroundColor: BG_CREAM,
   },
-  bgImage: {
-    ...StyleSheet.absoluteFillObject,
-    width,
-    height,
+  illustrationWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 0,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  illustration: {
+    width: width * 0.92,
+    height: height * 0.48,
   },
   slideContent: {
     position: 'absolute',
@@ -189,27 +189,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   iconPill: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(123, 45, 62, 0.7)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: spacing.md,
+    color: colors.heading,
+    marginBottom: spacing.sm,
     lineHeight: 38,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: colors.textLight,
     lineHeight: 24,
   },
   footerSafe: {
@@ -231,10 +229,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(123, 45, 62, 0.2)',
   },
   dotActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.primary,
     width: 24,
   },
 });
