@@ -204,3 +204,75 @@ export const STAGE_STATUS_LABELS: Record<StageStatus, string> = {
   approved: 'Принят',
   rejected: 'Отклонён',
 };
+
+// --- Master Profile ---
+
+import type { SpecializationId } from '../data/specializations';
+export type { SpecializationId };
+
+export type SkillLevel = 'beginner' | 'experienced' | 'expert';
+export type ExperienceRange = 'less_1' | '1_3' | '3_5' | '5_10' | 'more_10';
+export type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected';
+export type PriceType = 'per_sqm' | 'fixed' | 'hourly';
+
+export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
+  beginner: 'Начинающий',
+  experienced: 'Опытный',
+  expert: 'Эксперт',
+};
+
+export const EXPERIENCE_RANGE_LABELS: Record<ExperienceRange, string> = {
+  less_1: '< 1 года',
+  '1_3': '1–3 года',
+  '3_5': '3–5 лет',
+  '5_10': '5–10 лет',
+  more_10: '10+ лет',
+};
+
+export const PRICE_TYPE_LABELS: Record<PriceType, string> = {
+  per_sqm: '₽/м²',
+  fixed: 'Фикс',
+  hourly: '₽/час',
+};
+
+export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
+  none: 'Не верифицирован',
+  pending: 'На проверке',
+  approved: 'Верифицирован',
+  rejected: 'Отклонён',
+};
+
+export interface PortfolioProject {
+  id: string;
+  title: string;
+  description: string;
+  photos: string[]; // URLs
+  created_at: string;
+}
+
+export interface MasterPricing {
+  specialization: SpecializationId;
+  price: number;
+  price_type: PriceType;
+}
+
+export interface MasterSetupData {
+  // Step 1: Basic info
+  name: string;
+  city: string;
+  phone: string;
+  avatar_url: string | null;
+  // Step 2: Specializations
+  specializations: SpecializationId[];
+  // Step 3: Experience
+  experience: ExperienceRange;
+  about: string;
+  skill_level: SkillLevel;
+  // Step 4: Portfolio
+  portfolio: PortfolioProject[];
+  // Step 5: Pricing
+  pricing: MasterPricing[];
+  // Step 6: Agreement
+  certificates: string[]; // URLs
+  agreed_to_terms: boolean;
+}

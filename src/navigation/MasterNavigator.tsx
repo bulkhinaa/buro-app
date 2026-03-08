@@ -3,6 +3,7 @@ import { createStackNavigator, TransitionPresets } from '@react-navigation/stack
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MasterHomeScreen } from '../screens/master/MasterHomeScreen';
+import { MasterTaskDetailScreen } from '../screens/master/MasterTaskDetailScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -17,6 +18,11 @@ import { colors } from '../theme';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
+// Placeholder for Portfolio tab (Phase 2)
+function MasterPortfolioPlaceholder() {
+  return <MasterHomeScreen navigation={undefined as any} />;
+}
+
 function MasterTabs() {
   return (
     <Tab.Navigator
@@ -30,7 +36,19 @@ function MasterTabs() {
         component={MasterHomeScreen}
         options={{
           tabBarLabel: 'Задачи',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Portfolio"
+        component={MasterPortfolioPlaceholder}
+        options={{
+          tabBarLabel: 'Портфолио',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'images' : 'images-outline'} size={22} color={color} />
+          ),
         }}
       />
       <Tab.Screen
@@ -38,7 +56,9 @@ function MasterTabs() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Профиль',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -59,8 +79,16 @@ export function MasterNavigator() {
       }}
     >
       <Stack.Screen name="MasterTabs" component={MasterTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="MasterTaskDetail" component={MasterHomeScreen} options={{ headerTitle: 'Задача' }} />
-      <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат проекта' }} />
+      <Stack.Screen
+        name="MasterTaskDetail"
+        component={MasterTaskDetailScreen}
+        options={{
+          headerShown: false,
+          ...TransitionPresets.ModalSlideFromBottomIOS,
+          animation: 'slide_from_bottom' as any,
+        }}
+      />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат с супервайзером' }} />
       {/* Profile sub-screens */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
       <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: 'Уведомления' }} />

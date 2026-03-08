@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
+import { useMasterStore } from '../store/masterStore';
 import { AuthNavigator } from './AuthNavigator';
 import { ClientNavigator } from './ClientNavigator';
 import { MasterNavigator } from './MasterNavigator';
@@ -10,6 +11,8 @@ import { SupervisorNavigator } from './SupervisorNavigator';
 import { AdminNavigator } from './AdminNavigator';
 import { SplashAnimation } from '../components/SplashAnimation';
 import { OnboardingScreen, ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
+import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
+import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { colors } from '../theme';
 
 const navTheme = {
@@ -32,15 +35,36 @@ const navTheme = {
 
 export function RootNavigator() {
   const { isAuthenticated, user, isLoading, initAuth } = useAuthStore();
+  const { welcomeSeen, setupComplete, init: initMaster } = useMasterStore();
   const [showSplash, setShowSplash] = useState(true);
   const [animationDone, setAnimationDone] = useState(false);
   const [authDone, setAuthDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const [masterInitDone, setMasterInitDone] = useState(false);
+  const [masterWelcomeDone, setMasterWelcomeDone] = useState(false);
+  const [masterSetupDone, setMasterSetupDone] = useState(false);
 
   useEffect(() => {
     initAuth();
     checkOnboarding();
   }, []);
+
+  // Initialize master store when authenticated as master
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'master') {
+      initMaster(user.id).then(() => setMasterInitDone(true));
+    } else {
+      setMasterInitDone(true);
+    }
+  }, [isAuthenticated, user]);
+
+  // Sync store values into local state
+  useEffect(() => {
+    if (masterInitDone) {
+      setMasterWelcomeDone(welcomeSeen);
+      setMasterSetupDone(setupComplete);
+    }
+  }, [masterInitDone, welcomeSeen, setupComplete]);
 
   const checkOnboarding = async () => {
     try {
@@ -79,13 +103,25 @@ export function RootNavigator() {
       return <AuthNavigator />;
     }
 
+    // Master-specific flow: welcome → setup → navigator
+    if (user.role === 'master') {
+      if (!masterInitDone) {
+        return <View style={styles.placeholder} />;
+      }
+      if (!masterWelcomeDone) {
+        return <MasterWelcomeScreen onComplete={() => setMasterWelcomeDone(true)} />;
+      }
+      if (!masterSetupDone) {
+        return <MasterSetupScreen onComplete={() => setMasterSetupDone(true)} />;
+      }
+      return <MasterNavigator />;
+    }
+
     switch (user.role) {
       case 'admin':
         return <AdminNavigator />;
       case 'supervisor':
         return <SupervisorNavigator />;
-      case 'master':
-        return <MasterNavigator />;
       case 'client':
       default:
         return <ClientNavigator />;
