@@ -36,6 +36,9 @@
       "themeColor": "#7B2D3E",
       "backgroundColor": "#FFFFFF"
     },
+    "experiments": {
+      "baseUrl": "/buro-app"
+    },
     "plugins": [
       "expo-web-browser",
       "expo-apple-authentication"
