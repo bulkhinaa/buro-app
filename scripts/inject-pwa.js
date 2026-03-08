@@ -28,7 +28,10 @@ const pwaTags = `
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BURO.">
-    <link rel="apple-touch-icon" href="${baseUrl}/pwa-icon-192.png">`;
+    <link rel="apple-touch-icon" href="${baseUrl}/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="${baseUrl}/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="${baseUrl}/pwa-icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="${baseUrl}/pwa-icon-512.png">`;
 
 // Inject before </head>
 if (!html.includes('rel="manifest"')) {
