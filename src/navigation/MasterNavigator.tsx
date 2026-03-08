@@ -1,5 +1,5 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { MasterHomeScreen } from '../screens/master/MasterHomeScreen';
@@ -15,7 +15,7 @@ import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 
 function MasterTabs() {
   return (
@@ -49,12 +49,11 @@ export function MasterNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bgGradientStart },
+        headerStyle: { backgroundColor: colors.bgGradientStart, elevation: 0, shadowOpacity: 0 },
         headerTintColor: colors.primary,
-        headerShadowVisible: false,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
-        contentStyle: { backgroundColor: colors.bgGradientEnd },
-        animation: 'slide_from_right',
+        cardStyle: { backgroundColor: colors.bgGradientEnd },
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true,
       }}
     >

@@ -1,18 +1,18 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileSetupScreen } from '../screens/auth/ProfileSetupScreen';
 import { colors } from '../theme';
 
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 
 export function AuthNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.bg },
-        animation: 'slide_from_right',
+        cardStyle: { backgroundColor: colors.bg },
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true,
       }}
     >
