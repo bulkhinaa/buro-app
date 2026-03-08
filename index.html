@@ -26,27 +26,10 @@
   <meta name="theme-color" content="#7B2D3E">
 <link rel="icon" href="/buro-app/favicon.ico" />
     <style id="pwa-safe-area">
-      html, body {
+      html, body, #root {
         margin: 0;
         padding: 0;
         height: 100%;
-        overflow: hidden;
-      }
-      /* Fixed position forces coverage of full viewport including safe areas */
-      #root {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        overflow: hidden !important;
-      }
-      /* Force React Native root view to fill #root, not use JS-calculated height */
-      #root > div:first-child {
-        height: 100% !important;
-        min-height: 100% !important;
-        max-height: 100% !important;
-        overflow: hidden !important;
       }
     </style>
   
@@ -69,6 +52,6 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/buro-app/_expo/static/js/web/index-17cad4e446d49707d5e790e114c7e45c.js" defer></script>
+  <script src="/buro-app/_expo/static/js/web/index-d58aecafd08e9d37bd34b4fe7e35021f.js" defer></script>
 </body>
 </html>
