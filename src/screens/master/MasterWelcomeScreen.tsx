@@ -3,9 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
-  FlatList,
-  ViewToken,
+  Animated,
   Pressable,
   Platform,
 } from 'react-native';
@@ -15,8 +13,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { hapticLight } from '../../utils/haptics';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Slide {
   id: string;
@@ -63,64 +59,43 @@ type Props = {
 
 export function MasterWelcomeScreen({ onComplete }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
   const markWelcomeSeen = useMasterStore((s) => s.markWelcomeSeen);
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
+  const slide = SLIDES[currentIndex];
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
-        setCurrentIndex(viewableItems[0].index);
-      }
-    },
-  ).current;
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const goToSlide = useCallback((nextIndex: number) => {
+    // Fade out → change slide → fade in
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentIndex(nextIndex);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [fadeAnim]);
 
   const handleNext = useCallback(() => {
     if (isLastSlide) {
       markWelcomeSeen();
       onComplete();
     } else {
-      const nextIndex = currentIndex + 1;
-      // Use scrollToOffset — scrollToIndex doesn't work reliably on web
-      flatListRef.current?.scrollToOffset({
-        offset: nextIndex * SCREEN_WIDTH,
-        animated: true,
-      });
-      // Manually update index in case onViewableItemsChanged doesn't fire (web)
-      setCurrentIndex(nextIndex);
+      goToSlide(currentIndex + 1);
       hapticLight();
     }
-  }, [isLastSlide, currentIndex, markWelcomeSeen, onComplete]);
+  }, [isLastSlide, currentIndex, markWelcomeSeen, onComplete, goToSlide]);
 
   const handleSkip = useCallback(() => {
     markWelcomeSeen();
     onComplete();
   }, [markWelcomeSeen, onComplete]);
-
-  const renderSlide = ({ item }: { item: Slide }) => (
-    <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
-      {/* Icon circle */}
-      <View style={styles.iconCircle}>
-        <Ionicons name={item.icon} size={48} color={colors.primary} />
-      </View>
-
-      {/* Title */}
-      <Text style={styles.slideTitle}>{item.title}</Text>
-
-      {/* Pain point card */}
-      <View style={styles.painCard}>
-        <Ionicons name="alert-circle-outline" size={20} color={colors.warning} style={{ marginRight: spacing.sm }} />
-        <Text style={styles.painText}>{item.pain}</Text>
-      </View>
-
-      {/* Solution */}
-      <Text style={styles.solutionText}>{item.solution}</Text>
-    </View>
-  );
 
   return (
     <LinearGradient
@@ -139,20 +114,20 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
         )}
       </View>
 
-      {/* Slides */}
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        renderItem={renderSlide}
-        keyExtractor={(item) => item.id}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        style={styles.flatList}
-      />
+      {/* Single slide with fade transition */}
+      <Animated.View style={[styles.slideContainer, { opacity: fadeAnim }]}>
+        <View style={styles.slide}>
+          <View style={styles.iconCircle}>
+            <Ionicons name={slide.icon} size={48} color={colors.primary} />
+          </View>
+          <Text style={styles.slideTitle}>{slide.title}</Text>
+          <View style={styles.painCard}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.warning} style={{ marginRight: spacing.sm }} />
+            <Text style={styles.painText}>{slide.pain}</Text>
+          </View>
+          <Text style={styles.solutionText}>{slide.solution}</Text>
+        </View>
+      </Animated.View>
 
       {/* Bottom area */}
       <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}>
@@ -209,11 +184,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textLight,
   },
-  flatList: {
+  slideContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   slide: {
-    flex: 1,
     paddingHorizontal: spacing.xxxl,
     justifyContent: 'center',
     alignItems: 'center',
