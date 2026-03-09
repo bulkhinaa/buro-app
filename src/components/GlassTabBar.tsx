@@ -147,9 +147,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
   },
   androidGlass: {
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
+    borderColor: 'rgba(255, 255, 255, 0.98)',
   },
   inner: {
     flexDirection: 'row',

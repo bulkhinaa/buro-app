@@ -6,8 +6,10 @@ import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
+import { useTranslation } from 'react-i18next';
 
 export function MasterHomeScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const { tasks, loadTasks } = useTaskStore();
@@ -58,8 +60,8 @@ export function MasterHomeScreen({ navigation }: any) {
   return (
     <ScreenWrapper>
       <View style={styles.greeting}>
-        <Text style={styles.greetingText}>Ваши задачи,</Text>
-        <Text style={styles.greetingName}>{user?.name || 'Мастер'}</Text>
+        <Text style={styles.greetingText}>{t('master.home.yourTasks')}</Text>
+        <Text style={styles.greetingName}>{user?.name || t('master.home.masterFallback')}</Text>
       </View>
 
       {/* Verification banner */}
@@ -69,9 +71,9 @@ export function MasterHomeScreen({ navigation }: any) {
             <Ionicons name="shield-outline" size={24} color={colors.warning} />
           </View>
           <View style={styles.verificationContent}>
-            <Text style={styles.verificationTitle}>Профиль не верифицирован</Text>
+            <Text style={styles.verificationTitle}>{t('master.home.notVerified')}</Text>
             <Text style={styles.verificationText}>
-              Пройдите верификацию как самозанятый, чтобы получать задачи
+              {t('master.home.verificationHint')}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
@@ -82,17 +84,17 @@ export function MasterHomeScreen({ navigation }: any) {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{activeTasks.length}</Text>
-          <Text style={styles.statLabel}>Активных</Text>
+          <Text style={styles.statLabel}>{t('master.home.active')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{completedCount}</Text>
-          <Text style={styles.statLabel}>Завершённых</Text>
+          <Text style={styles.statLabel}>{t('master.home.completed')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statNumber, { color: colors.primary }]}>
             <Ionicons name="star" size={16} color={colors.primary} /> {rating}
           </Text>
-          <Text style={styles.statLabel}>Рейтинг</Text>
+          <Text style={styles.statLabel}>{t('master.home.rating')}</Text>
         </View>
       </View>
 
@@ -100,7 +102,7 @@ export function MasterHomeScreen({ navigation }: any) {
       {rejectedTasks.length > 0 && (
         <>
           <Text style={[styles.sectionTitle, { color: colors.danger }]}>
-            Требуют доработки ({rejectedTasks.length})
+            {t('master.home.needsRevision')} ({rejectedTasks.length})
           </Text>
           <FlatList
             data={rejectedTasks}
@@ -114,7 +116,7 @@ export function MasterHomeScreen({ navigation }: any) {
       {/* Active tasks */}
       {activeTasks.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>В работе ({activeTasks.length})</Text>
+          <Text style={styles.sectionTitle}>{t('master.home.inProgress')} ({activeTasks.length})</Text>
           <FlatList
             data={activeTasks}
             renderItem={renderTask}
@@ -127,7 +129,7 @@ export function MasterHomeScreen({ navigation }: any) {
       {/* Pending tasks */}
       {pendingTasks.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Ожидают ({pendingTasks.length})</Text>
+          <Text style={styles.sectionTitle}>{t('master.home.pending')} ({pendingTasks.length})</Text>
           <FlatList
             data={pendingTasks}
             renderItem={renderTask}
@@ -141,9 +143,9 @@ export function MasterHomeScreen({ navigation }: any) {
       {tasks.length === 0 && (
         <Card style={styles.emptyCard}>
           <Ionicons name="checkmark-done-outline" size={48} color={colors.primary} style={{ marginBottom: spacing.md }} />
-          <Text style={styles.emptyText}>Все задачи выполнены</Text>
+          <Text style={styles.emptyText}>{t('master.home.allDone')}</Text>
           <Text style={styles.emptySubtext}>
-            Ожидайте новые назначения от супервайзера
+            {t('master.home.awaitAssignments')}
           </Text>
         </Card>
       )}

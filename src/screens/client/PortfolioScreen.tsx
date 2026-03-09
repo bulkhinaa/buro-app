@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -217,7 +217,7 @@ export function PortfolioScreen({ navigation }: Props) {
         ? MOCK_CASES.filter((c) => bookmarks.has(c.id))
         : MOCK_CASES.filter((c) => c.repairType === selectedFilter);
 
-  const renderCase = ({ item }: { item: PortfolioCase }) => {
+  const renderCase = useCallback(({ item }: { item: PortfolioCase }) => {
     const isSaved = bookmarks.has(item.id);
     const liked = isLiked(item.id);
     const likeCount = item.likes + (liked ? 1 : 0);
@@ -315,7 +315,7 @@ export function PortfolioScreen({ navigation }: Props) {
         </View>
       </Pressable>
     );
-  };
+  }, [bookmarks, toggleBookmark, toggleLike, isLiked, navigation]);
 
   return (
     <ScreenWrapper scroll={false}>
@@ -348,6 +348,10 @@ export function PortfolioScreen({ navigation }: Props) {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           style={styles.listContainer}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          initialNumToRender={3}
         />
       ) : (
         <View style={styles.emptyState}>

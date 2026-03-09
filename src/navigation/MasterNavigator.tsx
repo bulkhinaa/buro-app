@@ -43,6 +43,7 @@ function MasterTabs() {
       tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        sceneContainerStyle: { backgroundColor: colors.bgGradientEnd },
       }}
     >
       <Tab.Screen

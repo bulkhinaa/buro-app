@@ -42,12 +42,12 @@ export function Toast() {
       Animated.timing(translateY, {
         toValue: -120,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(opacity, {
         toValue: 0,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start(() => hide());
   }, [translateY, opacity, hide]);
@@ -67,12 +67,12 @@ export function Toast() {
         toValue: 0,
         damping: 18,
         stiffness: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(opacity, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
 

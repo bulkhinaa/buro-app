@@ -38,6 +38,7 @@ import { formatRubles } from '../../utils/calculator';
 import { LayoutCardMini } from '../../components/LayoutCard';
 import { SvgXml } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PORTFOLIO_CARD_WIDTH = SCREEN_WIDTH * 0.78;
@@ -47,23 +48,11 @@ type Props = {
   navigation: NativeStackNavigationProp<any>;
 };
 
-// How-it-works step data
-const HOW_IT_WORKS = [
-  {
-    icon: 'document-text-outline' as keyof typeof Ionicons.glyphMap,
-    title: 'Оставьте заявку',
-    text: 'Расскажите о квартире и типе ремонта — это займёт 2 минуты',
-  },
-  {
-    icon: 'people-outline' as keyof typeof Ionicons.glyphMap,
-    title: 'Мы подберём команду',
-    text: 'Супервайзер составит план, подберёт мастеров и согласует смету',
-  },
-  {
-    icon: 'checkmark-circle-outline' as keyof typeof Ionicons.glyphMap,
-    title: 'Контроль и результат',
-    text: 'Независимый контроль на каждом этапе. Вы видите прогресс в приложении',
-  },
+// How-it-works step icons (titles/texts come from i18n)
+const HOW_IT_WORKS_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
+  'document-text-outline',
+  'people-outline',
+  'checkmark-circle-outline',
 ];
 
 // Mock portfolio data — IDs match PortfolioScreen cases
@@ -110,6 +99,7 @@ const MOCK_PORTFOLIO = [
 ];
 
 export function ClientHomeScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { projects, isLoading, loadProjects } = useProjectStore();
   const { objects, loadObjects } = useObjectStore();
@@ -216,14 +206,13 @@ export function ClientHomeScreen({ navigation }: Props) {
         <View style={styles.padded}>
           <Card style={styles.heroBanner}>
             <Text style={styles.heroTitle}>
-              Рассчитайте стоимость ремонта за 2 минуты
+              {t('home.heroTitle')}
             </Text>
             <Text style={styles.heroSubtitle}>
-              Укажите площадь и тип ремонта — мы покажем примерные сроки и
-              бюджет
+              {t('home.heroSubtitle')}
             </Text>
             <Button
-              title="Рассчитать →"
+              title={t('home.heroButton')}
               onPress={() => navigation.navigate('AddObject')}
               style={{ marginTop: spacing.lg }}
             />
@@ -232,31 +221,31 @@ export function ClientHomeScreen({ navigation }: Props) {
 
         {/* How it works */}
         <Text style={[styles.sectionTitle, styles.padded]}>
-          Как это работает
+          {t('home.howItWorks')}
         </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.howItWorksScroll}
         >
-          {HOW_IT_WORKS.map((step, i) => (
+          {HOW_IT_WORKS_ICONS.map((icon, i) => (
             <Card key={i} style={styles.howItWorksCard}>
               <View style={styles.howItWorksIconCircle}>
-                <Ionicons name={step.icon} size={24} color={colors.primary} />
+                <Ionicons name={icon} size={24} color={colors.primary} />
               </View>
-              <Text style={styles.howItWorksTitle}>{step.title}</Text>
-              <Text style={styles.howItWorksText}>{step.text}</Text>
+              <Text style={styles.howItWorksTitle}>{t(`home.step${i + 1}Title`)}</Text>
+              <Text style={styles.howItWorksText}>{t(`home.step${i + 1}Text`)}</Text>
             </Card>
           ))}
         </ScrollView>
 
         {/* Platform stats — glass blocks */}
-        <Text style={[styles.sectionTitle, styles.padded]}>Нам доверяют</Text>
+        <Text style={[styles.sectionTitle, styles.padded]}>{t('home.trustUs')}</Text>
         <View style={[styles.statsRow, styles.padded]}>
           {[
-            { num: '150+', label: 'проектов\nзавершено', icon: 'construct-outline' as keyof typeof Ionicons.glyphMap },
-            { num: '4.8', label: 'средний\nрейтинг', icon: 'star-outline' as keyof typeof Ionicons.glyphMap },
-            { num: '98%', label: 'клиентов\nдовольны', icon: 'heart-outline' as keyof typeof Ionicons.glyphMap },
+            { num: '150+', label: t('home.statsProjects'), icon: 'construct-outline' as keyof typeof Ionicons.glyphMap },
+            { num: '4.8', label: t('home.statsRating'), icon: 'star-outline' as keyof typeof Ionicons.glyphMap },
+            { num: '98%', label: t('home.statsClients'), icon: 'heart-outline' as keyof typeof Ionicons.glyphMap },
           ].map((stat) => (
             <View key={stat.num} style={styles.statBlock}>
               <Ionicons name={stat.icon} size={20} color={colors.primary} style={{ marginBottom: 4 }} />
@@ -268,9 +257,9 @@ export function ClientHomeScreen({ navigation }: Props) {
 
         {/* Portfolio carousel — reference card design */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
-          <Text style={styles.sectionTitle}>Реализованные проекты</Text>
+          <Text style={styles.sectionTitle}>{t('home.realizedProjects')}</Text>
           <Pressable onPress={() => navigation.navigate('Portfolio')}>
-            <Text style={styles.sectionLink}>Все →</Text>
+            <Text style={styles.sectionLink}>{t('home.viewAll')}</Text>
           </Pressable>
         </View>
         <ScrollView
@@ -338,15 +327,15 @@ export function ClientHomeScreen({ navigation }: Props) {
                   </View>
                 </View>
 
-                {/* Location */}
+                {/* Area + duration */}
                 <View style={styles.portfolioLocationRow}>
                   <Ionicons
-                    name="location-outline"
+                    name="resize-outline"
                     size={13}
                     color={colors.primary}
                   />
                   <Text style={styles.portfolioLocationText}>
-                    {item.address} · {item.area}
+                    {item.area} · {item.duration}
                   </Text>
                 </View>
 
@@ -364,7 +353,7 @@ export function ClientHomeScreen({ navigation }: Props) {
 
         {/* My Objects */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
-          <Text style={styles.sectionTitle}>Мои объекты</Text>
+          <Text style={styles.sectionTitle}>{t('home.myObjects')}</Text>
           {objects.length > 0 && (
             <Pressable onPress={() => navigation.navigate('AddObject')}>
               <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
@@ -447,12 +436,12 @@ export function ClientHomeScreen({ navigation }: Props) {
                 color={colors.primary}
                 style={{ marginBottom: spacing.lg }}
               />
-              <Text style={styles.emptyTitle}>Добавьте свой первый объект</Text>
+              <Text style={styles.emptyTitle}>{t('home.addFirstObject')}</Text>
               <Text style={styles.emptyText}>
-                Укажите квартиру или дом —{'\n'}потом создадите проект ремонта
+                {t('home.addFirstObjectHint')}
               </Text>
               <Button
-                title="Добавить объект"
+                title={t('home.addObject')}
                 onPress={() => navigation.navigate('AddObject')}
                 style={{ marginTop: spacing.xl }}
               />
@@ -463,7 +452,7 @@ export function ClientHomeScreen({ navigation }: Props) {
         {/* Active Projects (if any exist without objects — backward compat) */}
         {projects.filter((p) => !p.object_id).length > 0 && (
           <>
-            <Text style={[styles.sectionTitle, styles.padded]}>Мои проекты</Text>
+            <Text style={[styles.sectionTitle, styles.padded]}>{t('home.myProjects')}</Text>
             <View style={styles.padded}>
               {projects
                 .filter((p) => !p.object_id)
@@ -484,12 +473,12 @@ export function ClientHomeScreen({ navigation }: Props) {
             end={{ x: 1, y: 1 }}
             style={styles.ctaBanner}
           >
-            <Text style={styles.ctaTitle}>Есть вопросы?</Text>
+            <Text style={styles.ctaTitle}>{t('home.ctaTitle')}</Text>
             <Text style={styles.ctaText}>
-              Напишите нам — ответим в течение 15 минут
+              {t('home.ctaText')}
             </Text>
             <Pressable style={styles.ctaButton}>
-              <Text style={styles.ctaButtonText}>Написать в поддержку</Text>
+              <Text style={styles.ctaButtonText}>{t('home.ctaButton')}</Text>
             </Pressable>
           </LinearGradient>
         </View>
@@ -594,12 +583,13 @@ const styles = StyleSheet.create({
   },
   // How it works
   howItWorksScroll: {
-    paddingHorizontal: spacing.xl,
+    paddingLeft: spacing.xl,
+    paddingRight: spacing.xl + 8,
     gap: spacing.md,
     marginBottom: spacing.xxl,
   },
   howItWorksCard: {
-    width: 220,
+    width: 240,
     padding: spacing.lg,
   },
   howItWorksIconCircle: {

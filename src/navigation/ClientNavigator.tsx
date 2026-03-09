@@ -58,6 +58,7 @@ function ClientTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <GlassTabBar {...props} />}
+      sceneContainerStyle={{ backgroundColor: colors.bgGradientEnd }}
       screenOptions={{
         headerShown: false,
       }}

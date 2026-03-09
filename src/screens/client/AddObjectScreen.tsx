@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { hapticSuccess } from '../../utils/haptics';
+import { useIsFocused } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -129,10 +130,18 @@ export function AddObjectScreen({ navigation }: Props) {
   const { user } = useAuthStore();
   const { addObject } = useObjectStore();
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Close dialog when screen loses focus (e.g. tab switch)
+  useEffect(() => {
+    if (!isFocused && showSuccess) {
+      setShowSuccess(false);
+    }
+  }, [isFocused]);
   const [createdObjectId, setCreatedObjectId] = useState<string | null>(null);
 
   // Step 1 — Address & type

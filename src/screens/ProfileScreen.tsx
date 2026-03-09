@@ -231,7 +231,7 @@ export function ProfileScreen() {
       />
 
       <Text style={styles.version}>{t('profile.version')}</Text>
-      <View style={{ height: 100 }} />
+      <View style={{ height: 140 }} />
 
       <AppDialog
         visible={showLogoutDialog}
@@ -250,8 +250,8 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xxxl,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
   },
   avatar: {
     width: 80,

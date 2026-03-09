@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 160,
     left: 0,
-    right: 0,
+    width,
     paddingHorizontal: spacing.xl,
   },
   iconPill: {
