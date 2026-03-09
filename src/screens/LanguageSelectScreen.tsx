@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ScreenWrapper } from '../components';
+import { ScreenWrapper, Button } from '../components';
 import { colors, spacing, radius, typography } from '../theme';
 import { useLanguageStore, LANGUAGES, type LanguageInfo } from '../store/languageStore';
 import { hapticSuccess } from '../utils/haptics';
@@ -11,27 +11,54 @@ type Props = {
   onComplete?: () => void;
 };
 
+/** Bilingual confirm labels so every user understands the button */
+const CONFIRM_LABELS: Record<SupportedLanguage, string> = {
+  ru: 'Продолжить',
+  uz: 'Davom etish',
+  tg: 'Идома додан',
+  ky: 'Улантуу',
+  kk: 'Жалғастыру',
+  hy: 'Շարունակել',
+  ro: 'Continuă',
+};
+
 export function LanguageSelectScreen({ onComplete }: Props) {
   const { language: currentLang, setLanguage } = useLanguageStore();
   const navigation = useNavigation();
 
-  const handleSelect = async (lang: SupportedLanguage) => {
-    await setLanguage(lang);
-    hapticSuccess();
-    if (onComplete) {
-      onComplete();
+  // First-time flow: track selection locally before confirming
+  const isFirstTime = !!onComplete;
+  const [selectedLang, setSelectedLang] = useState<SupportedLanguage>(currentLang);
+  const [loading, setLoading] = useState(false);
+
+  const handleCardPress = async (lang: SupportedLanguage) => {
+    if (isFirstTime) {
+      // Just select visually — don't save yet
+      setSelectedLang(lang);
     } else {
-      // Navigated from Profile — go back
+      // Profile flow — save immediately and go back
+      await setLanguage(lang);
+      hapticSuccess();
       navigation.goBack();
     }
   };
 
+  const handleConfirm = async () => {
+    setLoading(true);
+    await setLanguage(selectedLang);
+    hapticSuccess();
+    setLoading(false);
+    onComplete!();
+  };
+
+  const displayLang = isFirstTime ? selectedLang : currentLang;
+
   const renderItem = ({ item }: { item: LanguageInfo }) => {
-    const isSelected = item.code === currentLang;
+    const isSelected = item.code === displayLang;
     return (
       <Pressable
         style={[styles.card, isSelected && styles.cardSelected]}
-        onPress={() => handleSelect(item.code)}
+        onPress={() => handleCardPress(item.code)}
       >
         <Text style={styles.flag}>{item.flag}</Text>
         <Text style={[styles.langName, isSelected && styles.langNameSelected]}>
@@ -65,6 +92,19 @@ export function LanguageSelectScreen({ onComplete }: Props) {
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
         />
+
+        {/* Confirm button — only for first-time language selection */}
+        {isFirstTime && (
+          <View style={styles.bottomButton}>
+            <Button
+              title={CONFIRM_LABELS[selectedLang]}
+              onPress={handleConfirm}
+              loading={loading}
+              fullWidth
+              size="lg"
+            />
+          </View>
+        )}
       </View>
     </ScreenWrapper>
   );
@@ -96,7 +136,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   grid: {
-    paddingBottom: spacing.huge,
+    paddingBottom: spacing.lg,
   },
   row: {
     gap: spacing.md,
@@ -151,5 +191,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  bottomButton: {
+    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.md,
   },
 });

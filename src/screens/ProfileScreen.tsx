@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, Alert, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Button, CellIndicator } from '../components';
+import { ScreenWrapper, Button, CellIndicator, AppDialog } from '../components';
 import { colors, spacing, radius, typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
@@ -17,6 +17,7 @@ export function ProfileScreen() {
   const { setupComplete, activeView, setActiveView, profile } = useMasterStore();
   const { t } = useTranslation();
   const { language } = useLanguageStore();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const roleKeys: Record<string, string> = {
     client: 'profile.roleClient',
@@ -37,14 +38,7 @@ export function ProfileScreen() {
   const currentLangName = LANGUAGES.find((l) => l.code === language)?.name || 'Русский';
 
   const handleLogout = () => {
-    Alert.alert(
-      t('profile.logoutTitle'),
-      t('profile.logoutMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('profile.logoutConfirm'), style: 'destructive', onPress: logout },
-      ],
-    );
+    setShowLogoutDialog(true);
   };
 
   const isClient = user?.role === 'client';
@@ -238,6 +232,17 @@ export function ProfileScreen() {
 
       <Text style={styles.version}>{t('profile.version')}</Text>
       <View style={{ height: 100 }} />
+
+      <AppDialog
+        visible={showLogoutDialog}
+        title={t('profile.logoutTitle')}
+        message={t('profile.logoutMessage')}
+        buttons={[
+          { text: t('common.cancel'), style: 'cancel', onPress: () => {} },
+          { text: t('profile.logoutConfirm'), style: 'destructive', onPress: logout },
+        ]}
+        onClose={() => setShowLogoutDialog(false)}
+      />
     </ScreenWrapper>
   );
 }
