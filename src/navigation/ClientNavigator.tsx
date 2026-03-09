@@ -162,7 +162,7 @@ export function ClientNavigator() {
       <Stack.Screen
         name="ProjectDetail"
         component={ProjectDetailScreen}
-        options={{ headerTitle: t('nav.project') }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Chat"
