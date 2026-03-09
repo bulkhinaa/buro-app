@@ -7,9 +7,11 @@ import {
   ScrollView,
   Platform,
   Pressable,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import {
   ScreenWrapper,
   Button,
@@ -22,8 +24,10 @@ import {
 import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useToastStore } from '../../store/toastStore';
-import { updateStageStatus } from '../../services/projectService';
+import { useTaskStore } from '../../store/taskStore';
 import { STAGE_STATUS_LABELS } from '../../types';
+
+const MAX_PHOTOS = 5;
 
 const webAbsoluteFill = Platform.OS === 'web'
   ? ({ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as any)
@@ -38,10 +42,17 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
   const task = route.params?.task;
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
+  const { updateStatus, addPhoto, removePhoto, getPhotos, clearPhotos, tasks } = useTaskStore();
 
-  const [status, setStatus] = useState(task?.status || 'pending');
+  // Get live status from store (falls back to route param)
+  const liveTask = tasks.find((t) => t.id === task?.id);
+  const status = liveTask?.status || task?.status || 'pending';
+
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Photos from store
+  const photos = task ? getPhotos(task.id) : [];
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -56,6 +67,33 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
     setDialogVisible(true);
   };
 
+  const handlePickPhoto = useCallback(async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      showToast(`Максимум ${MAX_PHOTOS} фото`, 'warning');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: MAX_PHOTOS - photos.length,
+    });
+
+    if (!result.canceled && result.assets) {
+      for (const asset of result.assets) {
+        if (photos.length + result.assets.indexOf(asset) < MAX_PHOTOS) {
+          addPhoto(task.id, asset.uri);
+        }
+      }
+      hapticSuccess();
+    }
+  }, [photos, task, addPhoto, showToast]);
+
+  const handleRemovePhoto = useCallback((uri: string) => {
+    removePhoto(task.id, uri);
+  }, [task, removePhoto]);
+
   const handleStart = useCallback(() => {
     showDialog(
       'Начать работу?',
@@ -64,12 +102,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
         {
           text: 'Начать',
           onPress: async () => {
-            try {
-              await updateStageStatus(task.id, 'in_progress');
-            } catch {
-              // Dev mode fallback
-            }
-            setStatus('in_progress');
+            await updateStatus(task.id, 'in_progress');
             hapticSuccess();
             showToast('Работа начата', 'success');
           },
@@ -77,7 +110,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
         { text: 'Нет', style: 'cancel', onPress: () => {} },
       ],
     );
-  }, [task, showToast]);
+  }, [task, showToast, updateStatus]);
 
   const handleComplete = useCallback(() => {
     showDialog(
@@ -88,12 +121,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
           text: 'Выполнено',
           onPress: async () => {
             setSaving(true);
-            try {
-              await updateStageStatus(task.id, 'done_by_master');
-            } catch {
-              // Dev mode fallback
-            }
-            setStatus('done_by_master');
+            await updateStatus(task.id, 'done_by_master');
             hapticSuccess();
             showToast('Задача отправлена на проверку', 'success');
             setSaving(false);
@@ -102,12 +130,13 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
         { text: 'Нет', style: 'cancel', onPress: () => {} },
       ],
     );
-  }, [task, showToast]);
+  }, [task, showToast, updateStatus]);
 
   const handleRework = useCallback(() => {
-    setStatus('in_progress');
+    updateStatus(task.id, 'in_progress');
+    clearPhotos(task.id);
     showToast('Продолжайте работу', 'info');
-  }, [showToast]);
+  }, [task, showToast, updateStatus, clearPhotos]);
 
   const handleChat = useCallback(() => {
     navigation.navigate('Chat', {
@@ -208,7 +237,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
           </Card>
         )}
 
-        {/* Comment for completion */}
+        {/* Comment + Photo report for in-progress tasks */}
         {status === 'in_progress' && (
           <Card style={styles.infoCard}>
             <Text style={styles.sectionTitle}>Комментарий к работе</Text>
@@ -218,10 +247,37 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
               placeholder="Опишите, что было сделано (необязательно)"
               maxLength={500}
             />
-            <Text style={styles.photoHint}>
-              <Ionicons name="camera-outline" size={14} color={colors.textLight} />{' '}
-              Фотоотчёт можно будет загрузить в следующей версии
-            </Text>
+
+            {/* Photo report section */}
+            <View style={styles.photoSection}>
+              <View style={styles.photoHeader}>
+                <Text style={styles.photoTitle}>
+                  <Ionicons name="camera-outline" size={16} color={colors.heading} />{' '}
+                  Фотоотчёт ({photos.length}/{MAX_PHOTOS})
+                </Text>
+              </View>
+
+              <View style={styles.photoGrid}>
+                {photos.map((photo) => (
+                  <View key={photo.uri} style={styles.photoItem}>
+                    <Image source={{ uri: photo.uri }} style={styles.photoImage} />
+                    <Pressable
+                      style={styles.photoRemove}
+                      onPress={() => handleRemovePhoto(photo.uri)}
+                    >
+                      <Ionicons name="close-circle" size={22} color={colors.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+
+                {photos.length < MAX_PHOTOS && (
+                  <Pressable style={styles.photoAdd} onPress={handlePickPhoto}>
+                    <Ionicons name="add" size={28} color={colors.primary} />
+                    <Text style={styles.photoAddText}>Добавить</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
           </Card>
         )}
 
@@ -358,10 +414,58 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 22,
   },
-  photoHint: {
+  // Photo report styles
+  photoSection: {
+    marginTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: spacing.lg,
+  },
+  photoHeader: {
+    marginBottom: spacing.md,
+  },
+  photoTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  photoItem: {
+    width: 90,
+    height: 90,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.md,
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 11,
+  },
+  photoAdd: {
+    width: 90,
+    height: 90,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(123, 45, 62, 0.2)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(123, 45, 62, 0.03)',
+  },
+  photoAddText: {
     ...typography.caption,
-    color: colors.textLight,
-    marginTop: spacing.md,
+    color: colors.primary,
+    marginTop: 2,
   },
   chatButton: {
     flexDirection: 'row',

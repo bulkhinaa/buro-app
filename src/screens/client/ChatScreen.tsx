@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,37 +13,41 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../../theme';
 import { ChatMessage } from '../../types';
 import { useAuthStore } from '../../store/authStore';
+import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
 
-const MOCK_MESSAGES: ChatMessage[] = [
-  { id: '1', project_id: '1', sender_id: '2', text: 'Добрый день! Я ваш супервайзер, Михаил. Сегодня провёл проверку — штукатурка стен идёт по графику.', created_at: '2025-02-05T10:00:00Z' },
-  { id: '2', project_id: '1', sender_id: '1', text: 'Отлично, спасибо! А когда примерно перейдём к плитке?', created_at: '2025-02-05T10:05:00Z' },
-  { id: '3', project_id: '1', sender_id: '2', text: 'По плану через 10 дней, если всё будет без задержек. Мастер по плитке уже подобран — Алексей К., рейтинг 4.9.', created_at: '2025-02-05T10:07:00Z' },
-  { id: '4', project_id: '1', sender_id: '3', text: 'Добрый день! Завтра заканчиваю штукатурку в коридоре, загружу фото.', created_at: '2025-02-05T14:00:00Z' },
-];
+type Props = {
+  route?: any;
+};
 
-export function ChatScreen() {
+export function ChatScreen({ route }: Props) {
   const { user } = useAuthStore();
+  const { loadMessages, sendMessage: storeSendMessage, getMessages, isLoading } = useChatStore();
+
+  const projectId = route?.params?.projectId || 'proj-1';
+  const channelId = route?.params?.channelId || 'stage_mt-1';
+
+  const messages = useChatStore((s) => s.getMessages(channelId));
+
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
   const flatListRef = useRef<FlatList>(null);
 
-  const sendMessage = () => {
-    if (!message.trim()) return;
-    const newMsg: ChatMessage = {
-      id: String(Date.now()),
-      project_id: '1',
-      sender_id: user?.id || '1',
-      text: message.trim(),
-      created_at: new Date().toISOString(),
-    };
-    setMessages([...messages, newMsg]);
+  useEffect(() => {
+    loadMessages(channelId, projectId);
+  }, [channelId, projectId]);
+
+  const handleSend = () => {
+    if (!message.trim() || !user) return;
+    storeSendMessage(channelId, projectId, user.id, message);
     setMessage('');
     setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isOwn = item.sender_id === user?.id;
-    const senderName = item.sender_id === '2' ? 'Михаил (супервайзер)' : item.sender_id === '3' ? 'Алексей К. (мастер)' : '';
+    // Look up sender name — dev mode uses static map, prod would join with profiles
+    const senderName = !isOwn
+      ? DEV_SENDER_NAMES[item.sender_id] || item.sender_id
+      : '';
 
     return (
       <View style={[styles.msgContainer, isOwn && styles.msgContainerOwn]}>
@@ -88,7 +92,7 @@ export function ChatScreen() {
           />
           <Pressable
             style={[styles.sendBtn, !message.trim() && styles.sendBtnDisabled]}
-            onPress={sendMessage}
+            onPress={handleSend}
             disabled={!message.trim()}
           >
             <Text style={styles.sendBtnText}>↑</Text>

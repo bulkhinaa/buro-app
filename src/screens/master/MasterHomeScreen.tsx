@@ -1,82 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
-import { Stage } from '../../types';
-import { fetchMasterStages } from '../../services/projectService';
-
-type TaskItem = Stage & { projectTitle: string; address: string; rejection_reason?: string };
-
-const MOCK_TASKS: TaskItem[] = [
-  {
-    id: 'mt-1',
-    project_id: '1',
-    master_id: '3',
-    title: 'Штукатурка стен',
-    order_index: 4,
-    status: 'in_progress',
-    started_at: '2025-02-05',
-    deadline: '2025-02-15',
-    projectTitle: 'Ремонт квартиры на Ленина 15',
-    address: 'ул. Ленина, 15, кв. 42',
-  },
-  {
-    id: 'mt-2',
-    project_id: '2',
-    master_id: '3',
-    title: 'Укладка плитки в ванной',
-    order_index: 6,
-    status: 'pending',
-    deadline: '2025-02-25',
-    projectTitle: 'Ремонт студии на Пушкина 8',
-    address: 'ул. Пушкина, 8, кв. 12',
-  },
-  {
-    id: 'mt-3',
-    project_id: '1',
-    master_id: '3',
-    title: 'Электрика (чистовая)',
-    order_index: 7,
-    status: 'pending',
-    deadline: '2025-03-01',
-    projectTitle: 'Ремонт квартиры на Ленина 15',
-    address: 'ул. Ленина, 15, кв. 42',
-  },
-];
+import { useTaskStore, type TaskItem } from '../../store/taskStore';
 
 export function MasterHomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
-  const [tasks, setTasks] = useState<TaskItem[]>(MOCK_TASKS);
+  const { tasks, loadTasks } = useTaskStore();
 
   const isVerified = profile?.verification_status === 'approved';
   const completedCount = profile?.completed_tasks || 12;
   const rating = profile?.rating || 4.9;
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    try {
-      const stages = await fetchMasterStages(user.id);
-      if (stages.length > 0) {
-        setTasks(
-          stages.map((s) => ({
-            ...s,
-            projectTitle: '',
-            address: '',
-          })),
-        );
-      }
-    } catch {
-      // Dev mode fallback — use mock data
-    }
-  }, [user]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (user) loadTasks(user.id);
+  }, [user]);
 
   const handleTaskPress = (task: TaskItem) => {
     navigation?.navigate('MasterTaskDetail', { task });

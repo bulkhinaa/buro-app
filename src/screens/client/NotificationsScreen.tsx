@@ -1,85 +1,99 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card } from '../../components';
+import { ScreenWrapper } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
+import { useAuthStore } from '../../store/authStore';
+import {
+  useNotificationStore,
+  type AppNotification,
+  type NotificationType,
+} from '../../store/notificationStore';
 
-interface Notification {
-  id: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
-  text: string;
-  time: string;
-  isRead: boolean;
-  projectId?: string;
+// Icon config per notification type
+const NOTIFICATION_ICONS: Record<
+  NotificationType,
+  { icon: keyof typeof Ionicons.glyphMap; bg: string }
+> = {
+  new_task: { icon: 'clipboard-outline', bg: colors.primaryLight },
+  task_approved: { icon: 'checkmark-circle-outline', bg: colors.successLight },
+  task_rejected: { icon: 'alert-circle-outline', bg: colors.dangerLight },
+  new_message: { icon: 'chatbubble-outline', bg: colors.accentLight },
+  stage_started: { icon: 'play-outline', bg: colors.primaryLight },
+  stage_completed: { icon: 'flag-outline', bg: colors.successLight },
+};
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return 'Только что';
+  if (minutes < 60) return `${minutes} мин. назад`;
+  if (hours < 24) return `${hours} ч. назад`;
+  if (days === 1) return 'Вчера';
+  return `${days} дн. назад`;
 }
 
-// Mock notifications — will be replaced with real data
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    icon: 'person-outline',
-    iconBg: colors.primaryLight,
-    text: 'Вам назначен супервайзер Алексей Петров',
-    time: '2 часа назад',
-    isRead: false,
-    projectId: 'sp-1',
-  },
-  {
-    id: '2',
-    icon: 'checkmark-circle-outline',
-    iconBg: colors.successLight,
-    text: 'Мастер завершил этап «Штукатурка стен»',
-    time: '5 часов назад',
-    isRead: false,
-    projectId: 'sp-1',
-  },
-  {
-    id: '3',
-    icon: 'chatbubble-outline',
-    iconBg: colors.accentLight,
-    text: 'Новое сообщение от супервайзера',
-    time: 'Вчера',
-    isRead: true,
-    projectId: 'sp-1',
-  },
-  {
-    id: '4',
-    icon: 'notifications-outline',
-    iconBg: colors.primaryLight,
-    text: 'Начался этап «Электрика (черновая)»',
-    time: '2 дня назад',
-    isRead: true,
-    projectId: 'sp-1',
-  },
-];
-
 export function NotificationsScreen() {
-  const [notifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const { user } = useAuthStore();
+  const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
+    useNotificationStore();
 
-  const renderNotification = ({ item }: { item: Notification }) => (
-    <Pressable>
-      <View
-        style={[
-          styles.notificationCard,
-          !item.isRead && styles.notificationUnread,
-        ]}
-      >
-        <View style={[styles.iconCircle, { backgroundColor: item.iconBg }]}>
-          <Ionicons name={item.icon} size={18} color={colors.primary} />
+  useEffect(() => {
+    if (user) loadNotifications(user.id);
+  }, [user]);
+
+  const handleNotificationPress = (notification: AppNotification) => {
+    if (!notification.is_read) {
+      markAsRead(notification.id);
+    }
+  };
+
+  const handleMarkAllRead = () => {
+    if (user && unreadCount() > 0) {
+      markAllAsRead(user.id);
+    }
+  };
+
+  const renderNotification = ({ item }: { item: AppNotification }) => {
+    const iconConfig = NOTIFICATION_ICONS[item.type] || NOTIFICATION_ICONS.new_message;
+
+    return (
+      <Pressable onPress={() => handleNotificationPress(item)}>
+        <View
+          style={[
+            styles.notificationCard,
+            !item.is_read && styles.notificationUnread,
+          ]}
+        >
+          <View style={[styles.iconCircle, { backgroundColor: iconConfig.bg }]}>
+            <Ionicons name={iconConfig.icon} size={18} color={colors.primary} />
+          </View>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationTitle}>{item.title}</Text>
+            <Text style={styles.notificationText}>{item.body}</Text>
+            <Text style={styles.notificationTime}>
+              {formatTimeAgo(item.created_at)}
+            </Text>
+          </View>
+          {!item.is_read && <View style={styles.unreadDot} />}
         </View>
-        <View style={styles.notificationContent}>
-          <Text style={styles.notificationText}>{item.text}</Text>
-          <Text style={styles.notificationTime}>{item.time}</Text>
-        </View>
-        {!item.isRead && <View style={styles.unreadDot} />}
-      </View>
-    </Pressable>
-  );
+      </Pressable>
+    );
+  };
 
   return (
     <ScreenWrapper scroll={false}>
-      <Text style={styles.title}>Уведомления</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Уведомления</Text>
+        {unreadCount() > 0 && (
+          <Pressable onPress={handleMarkAllRead} style={styles.markAllBtn}>
+            <Text style={styles.markAllText}>Прочитать все</Text>
+          </Pressable>
+        )}
+      </View>
 
       {notifications.length > 0 ? (
         <FlatList
@@ -91,10 +105,15 @@ export function NotificationsScreen() {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="notifications-outline" size={56} color={colors.primary} style={{ marginBottom: spacing.lg }} />
+          <Ionicons
+            name="notifications-outline"
+            size={56}
+            color={colors.primary}
+            style={{ marginBottom: spacing.lg }}
+          />
           <Text style={styles.emptyTitle}>Пока нет уведомлений</Text>
           <Text style={styles.emptyText}>
-            Здесь будут появляться обновления{'\n'}по вашим проектам
+            Здесь будут появляться обновления{'\n'}по вашим задачам
           </Text>
         </View>
       )}
@@ -103,11 +122,24 @@ export function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
+  },
   title: {
     ...typography.h1,
     color: colors.heading,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
+  },
+  markAllBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  markAllText: {
+    ...typography.small,
+    color: colors.primary,
   },
   list: {
     paddingBottom: 100,
@@ -143,10 +175,15 @@ const styles = StyleSheet.create({
   notificationContent: {
     flex: 1,
   },
-  notificationText: {
-    ...typography.body,
+  notificationTitle: {
+    ...typography.bodyBold,
     color: colors.heading,
     marginBottom: 2,
+  },
+  notificationText: {
+    ...typography.body,
+    color: colors.text,
+    marginBottom: 4,
   },
   notificationTime: {
     ...typography.caption,

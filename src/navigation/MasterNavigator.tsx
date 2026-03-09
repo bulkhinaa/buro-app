@@ -19,6 +19,8 @@ import { AboutScreen } from '../screens/profile/AboutScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
+import { useNotificationStore } from '../store/notificationStore';
+import { useAuthStore } from '../store/authStore';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -26,6 +28,16 @@ const Stack = createStackNavigator();
 
 function MasterTabs() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+
+  // Load notifications on mount
+  React.useEffect(() => {
+    if (user) {
+      useNotificationStore.getState().loadNotifications(user.id);
+    }
+  }, [user]);
+
   return (
     <Tab.Navigator
       tabBar={(props) => <GlassTabBar {...props} />}
@@ -41,6 +53,17 @@ function MasterTabs() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          tabBarLabel: t('tabs.notifications'),
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={22} color={color} />
+          ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tab.Screen

@@ -53,6 +53,7 @@ export function GlassTabBar({
         };
 
         const color = isFocused ? colors.primary : colors.textLight;
+        const badge = options.tabBarBadge;
 
         const icon = options.tabBarIcon
           ? options.tabBarIcon({ focused: isFocused, color, size: 22 })
@@ -70,7 +71,16 @@ export function GlassTabBar({
           >
             {/* Active pill background */}
             {isFocused && <View style={styles.activePill} />}
-            {icon}
+            <View>
+              {icon}
+              {badge != null && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {typeof badge === 'number' && badge > 9 ? '9+' : badge}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text
               style={[
                 styles.label,
@@ -165,5 +175,23 @@ const styles = StyleSheet.create({
   },
   labelActive: {
     fontWeight: '700',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
