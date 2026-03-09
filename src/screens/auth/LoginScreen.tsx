@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../../components';
@@ -37,11 +38,50 @@ const getRedirectUri = (): string => {
   return 'buroremontov://auth/callback';
 };
 
+const DEV_TAP_TARGET = 5;
+
 export function LoginScreen() {
   const [loading, setLoading] = useState<'yandex' | 'tinkoff' | null>(null);
+  const [showDevMenu, setShowDevMenu] = useState(false);
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setUser, syncProfile } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const { t } = useTranslation();
+
+  const handleLogoTap = () => {
+    if (showDevMenu) return;
+
+    // Reset inactivity timer
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+    }, 1500);
+
+    tapCountRef.current += 1;
+
+    if (tapCountRef.current >= DEV_TAP_TARGET) {
+      tapCountRef.current = 0;
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      setShowDevMenu(true);
+      showToast('🔧 Dev menu unlocked', 'info');
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } else if (tapCountRef.current >= 3) {
+      // Subtle feedback on last 2 taps so user knows it's working
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }
+  };
+
+  // Cleanup tap timer on unmount
+  useEffect(() => {
+    return () => {
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    };
+  }, []);
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
   useEffect(() => {
@@ -229,9 +269,9 @@ export function LoginScreen() {
     <ScreenWrapper scroll={false}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.logoCircle}>
+          <Pressable onPress={handleLogoTap} style={styles.logoCircle}>
             <Ionicons name="home" size={40} color={colors.primary} />
-          </View>
+          </Pressable>
           <Text style={styles.title}>{t('auth.title')}</Text>
           <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
         </View>
@@ -280,7 +320,7 @@ export function LoginScreen() {
           <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
         </Text>
 
-        {__DEV__ && (
+        {(__DEV__ || showDevMenu) && (
           <View style={styles.devSection}>
             <Text style={styles.devTitle}>{t('auth.devTitle')}</Text>
             <View style={styles.devButtons}>
