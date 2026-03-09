@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,8 @@ import {
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useProjectStore } from '../../store/projectStore';
+import { useAuthStore } from '../../store/authStore';
+import { fetchProfile } from '../../services/projectService';
 import {
   Project,
   REPAIR_TYPE_LABELS,
@@ -54,11 +56,31 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
     projectId: string;
     project?: Project;
   };
+  const { user } = useAuthStore();
   const { stages, loadStages } = useProjectStore();
+  const [supervisorName, setSupervisorName] = useState('Загрузка...');
 
   useEffect(() => {
     if (projectId) loadStages(projectId);
   }, [projectId]);
+
+  // Fetch supervisor profile
+  useEffect(() => {
+    if (!project?.supervisor_id) return;
+
+    const isDev = project.supervisor_id.startsWith('dev-') || user?.id.startsWith('dev-');
+    if (isDev) {
+      setSupervisorName('Михаил К.');
+      return;
+    }
+
+    fetchProfile(project.supervisor_id)
+      .then((profile) => {
+        if (profile?.name) setSupervisorName(profile.name);
+        else setSupervisorName('Назначен');
+      })
+      .catch(() => setSupervisorName('Назначен'));
+  }, [project?.supervisor_id]);
 
   const completedCount = stages.filter((s) => s.status === 'approved').length;
   const totalStages = stages.length;
@@ -66,6 +88,15 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
     totalStages > 0
       ? Math.round((completedCount / totalStages) * 100)
       : 0;
+  const allStagesApproved = totalStages > 0 && completedCount === totalStages;
+
+  // Collect unique master IDs from stages for ReviewScreen
+  const mastersFromStages = useMemo(() => {
+    const seen = new Set<string>();
+    return stages
+      .filter((s) => s.master_id && !seen.has(s.master_id!) && seen.add(s.master_id!))
+      .map((s) => ({ id: s.master_id!, name: s.master_id!, specialization: s.title }));
+  }, [stages]);
 
   // Generate breakdown for cost/time data per stage
   const stageBreakdown = useMemo(() => {
@@ -215,7 +246,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
               </View>
               <View style={styles.supervisorInfo}>
                 <Text style={styles.supervisorLabel}>Ваш супервайзер</Text>
-                <Text style={styles.supervisorName}>Алексей Петров</Text>
+                <Text style={styles.supervisorName}>{supervisorName}</Text>
                 <LabelMaster level="expert" rating={4.9} reviewCount={87} />
               </View>
               <Button
@@ -266,6 +297,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                             stageId: stage.id,
                             stageTitle: stage.title,
                             stageIndex: stage.order_index,
+                            projectId,
                             projectTitle: project?.title,
                           })
                       : undefined
@@ -305,7 +337,21 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
 
         {/* ─── F. CTA ─── */}
         <View style={styles.ctaSection}>
-          {project?.status === 'in_progress' ? (
+          {allStagesApproved || project?.status === 'completed' ? (
+            <Button
+              title="Оставить отзыв"
+              onPress={() =>
+                navigation.navigate('Review', {
+                  projectId,
+                  supervisorId: project?.supervisor_id,
+                  supervisorName,
+                  masters: mastersFromStages,
+                })
+              }
+              fullWidth
+              icon={<Ionicons name="star-outline" size={18} color={colors.white} />}
+            />
+          ) : project?.status === 'in_progress' ? (
             <Button
               title="Открыть чат"
               onPress={() => navigation.navigate('Chat', { projectId })}

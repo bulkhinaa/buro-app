@@ -25,6 +25,8 @@ import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
+import { useNotificationStore } from '../store/notificationStore';
+import { useAuthStore } from '../store/authStore';
 import { colors } from '../theme';
 
 // Wrappers adapt onComplete prop for stack navigation
@@ -43,6 +45,16 @@ const Stack = createStackNavigator();
 
 function ClientTabs() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+
+  // Load notifications on mount
+  React.useEffect(() => {
+    if (user) {
+      useNotificationStore.getState().loadNotifications(user.id);
+    }
+  }, [user]);
+
   return (
     <Tab.Navigator
       tabBar={(props) => <GlassTabBar {...props} />}
@@ -90,6 +102,7 @@ function ClientTabs() {
               color={color}
             />
           ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tab.Screen

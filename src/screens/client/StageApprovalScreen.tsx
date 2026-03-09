@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { hapticSuccess } from '../../utils/haptics';
+import React, { useState, useEffect } from 'react';
+import { hapticSuccess, hapticError } from '../../utils/haptics';
 import {
   View,
   Text,
   StyleSheet,
   Image,
-  FlatList,
   Dimensions,
 } from 'react-native';
 import {
@@ -21,6 +20,11 @@ import {
 import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTaskStore } from '../../store/taskStore';
+import { useProjectStore } from '../../store/projectStore';
+import { updateStageStatus } from '../../services/projectService';
+import { useToastStore } from '../../store/toastStore';
+import { useAuthStore } from '../../store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PHOTO_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
@@ -30,74 +34,103 @@ type Props = {
   route: any;
 };
 
-// Mock data
-const MOCK_PHOTOS = [
-  'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=400',
-  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400',
-  'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400',
-  'https://images.unsplash.com/photo-1600566753376-12c8ab7c5a85?w=400',
-];
-
-const CHECKLIST = [
-  'Поверхность ровная (допуск ≤2мм)',
-  'Углы 90°',
-  'Без трещин и пустот',
-];
-
 export function StageApprovalScreen({ navigation, route }: Props) {
   const {
+    stageId,
     stageTitle = 'Штукатурка стен',
     stageIndex = 5,
+    projectId,
     projectTitle = 'Ремонт квартиры на Ленина 15',
   } = route.params || {};
 
+  const { user } = useAuthStore();
+  const { loadStages } = useProjectStore();
+  const photoReports = useTaskStore((s) => s.photoReports[stageId] || []);
+  const showToast = useToastStore((s) => s.show);
+
   const [showRejection, setShowRejection] = useState(false);
   const [rejectionText, setRejectionText] = useState('');
+  const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogMessage, setDialogMessage] = useState('');
   const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
 
-  const handleApprove = () => {
-    setDialogTitle('Этап принят');
-    setDialogMessage(
-      'Мастер и супервайзер получат уведомление. Переходим к следующему этапу.',
-    );
-    setDialogButtons([
-      {
-        text: 'OK',
-        onPress: () => {
-          setDialogVisible(false);
-          navigation.goBack();
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      const isDev = user?.id.startsWith('dev-');
+      if (!isDev && stageId) {
+        await updateStageStatus(stageId, 'approved');
+      }
+      if (projectId) loadStages(projectId);
+
+      setDialogTitle('Этап принят');
+      setDialogMessage(
+        'Мастер и супервайзер получат уведомление. Переходим к следующему этапу.',
+      );
+      setDialogButtons([
+        {
+          text: 'OK',
+          onPress: () => {
+            setDialogVisible(false);
+            navigation.goBack();
+          },
         },
-      },
-    ]);
-    setDialogVisible(true);
-    hapticSuccess();
+      ]);
+      setDialogVisible(true);
+      hapticSuccess();
+    } catch {
+      showToast('Не удалось принять этап', 'error');
+      hapticError();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!showRejection) {
       setShowRejection(true);
       return;
     }
-    if (rejectionText.trim().length === 0) return;
+    if (rejectionText.trim().length === 0) {
+      showToast('Опишите замечания', 'error');
+      hapticError();
+      return;
+    }
 
-    setDialogTitle('Замечания отправлены');
-    setDialogMessage(
-      'Мастер получит ваши замечания и доработает этот этап.',
-    );
-    setDialogButtons([
-      {
-        text: 'OK',
-        onPress: () => {
-          setDialogVisible(false);
-          navigation.goBack();
+    setLoading(true);
+    try {
+      const isDev = user?.id.startsWith('dev-');
+      if (!isDev && stageId) {
+        await updateStageStatus(stageId, 'rejected');
+      }
+      if (projectId) loadStages(projectId);
+
+      setDialogTitle('Замечания отправлены');
+      setDialogMessage(
+        'Мастер получит ваши замечания и доработает этот этап.',
+      );
+      setDialogButtons([
+        {
+          text: 'OK',
+          onPress: () => {
+            setDialogVisible(false);
+            navigation.goBack();
+          },
         },
-      },
-    ]);
-    setDialogVisible(true);
+      ]);
+      setDialogVisible(true);
+    } catch {
+      showToast('Не удалось отправить замечания', 'error');
+      hapticError();
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Photos from taskStore (master uploads) or empty
+  const photos = photoReports.map((p) => p.uri);
 
   return (
     <ScreenWrapper>
@@ -116,33 +149,29 @@ export function StageApprovalScreen({ navigation, route }: Props) {
 
       {/* Photos */}
       <Text style={styles.sectionTitle}>Фотоотчёт</Text>
-      <View style={styles.photoGrid}>
-        {MOCK_PHOTOS.map((url, i) => (
-          <Image key={i} source={{ uri: url }} style={styles.photo} />
-        ))}
-      </View>
+      {photos.length > 0 ? (
+        <View style={styles.photoGrid}>
+          {photos.map((url, i) => (
+            <Image key={i} source={{ uri: url }} style={styles.photo} />
+          ))}
+        </View>
+      ) : (
+        <Card style={styles.commentCard}>
+          <Text style={styles.commentText}>
+            Мастер ещё не загрузил фотоотчёт
+          </Text>
+        </Card>
+      )}
 
-      {/* Master comment */}
-      <Card style={styles.commentCard}>
-        <Text style={styles.commentLabel}>Комментарий мастера:</Text>
-        <Text style={styles.commentText}>
-          Стены выровнены по маякам, допуск до 2мм. Использован Knauf Rotband.
-        </Text>
-      </Card>
-
-      {/* Supervisor checklist */}
-      <Text style={styles.sectionTitle}>Проверено супервайзером</Text>
-      <View style={styles.checklist}>
-        {CHECKLIST.map((item, i) => (
-          <Checkbox
-            key={i}
-            checked={true}
-            disabled={true}
-            label={item}
-            onPress={() => {}}
-          />
-        ))}
-      </View>
+      {/* Master comment — show first photo comment if available */}
+      {photoReports.length > 0 && photoReports.some((p) => (p as any).comment) && (
+        <Card style={styles.commentCard}>
+          <Text style={styles.commentLabel}>Комментарий мастера:</Text>
+          <Text style={styles.commentText}>
+            {photoReports.find((p) => (p as any).comment)?.uri ? 'Фото загружены' : ''}
+          </Text>
+        </Card>
+      )}
 
       {/* Rejection text area */}
       {showRejection && (
@@ -163,6 +192,7 @@ export function StageApprovalScreen({ navigation, route }: Props) {
               title="Принять этап ✓"
               onPress={handleApprove}
               fullWidth
+              loading={loading}
             />
             <Button
               title="Есть замечания"
@@ -177,7 +207,7 @@ export function StageApprovalScreen({ navigation, route }: Props) {
             title="Отправить замечания"
             onPress={handleReject}
             fullWidth
-            disabled={rejectionText.trim().length === 0}
+            loading={loading}
           />
         )}
       </View>

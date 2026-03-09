@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, TextArea, Card, SystemButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useReviewStore } from '../../store/reviewStore';
+import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -43,11 +46,14 @@ interface MasterItem {
 
 export function ReviewScreen({ navigation, route }: Props) {
   const params = route.params || {};
-  const supervisorName: string = params.supervisorName || 'Алексей К.';
-  const masters: MasterItem[] = params.masters || [
-    { id: 'm1', name: 'Иван П.', specialization: 'Штукатур' },
-    { id: 'm2', name: 'Сергей М.', specialization: 'Электрик' },
-  ];
+  const projectId: string = params.projectId || '';
+  const supervisorId: string = params.supervisorId || '';
+  const supervisorName: string = params.supervisorName || 'Супервайзер';
+  const masters: MasterItem[] = params.masters || [];
+
+  const { user } = useAuthStore();
+  const submitReview = useReviewStore((s) => s.submitReview);
+  const showToast = useToastStore((s) => s.show);
 
   const [supervisorRating, setSupervisorRating] = useState(0);
   const [masterRatings, setMasterRatings] = useState<Record<string, number>>(
@@ -63,18 +69,44 @@ export function ReviewScreen({ navigation, route }: Props) {
   const handleSubmit = async () => {
     if (supervisorRating === 0) {
       hapticError();
-      Alert.alert('Оцените супервайзера', 'Пожалуйста, поставьте оценку');
+      showToast('Пожалуйста, оцените супервайзера', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: Submit review to API
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const clientId = user?.id || '';
+
+      // Submit supervisor review
+      if (supervisorId) {
+        await submitReview({
+          project_id: projectId,
+          master_id: supervisorId,
+          client_id: clientId,
+          rating: supervisorRating,
+          text: reviewText || undefined,
+        });
+      }
+
+      // Submit reviews for each master
+      for (const master of masters) {
+        const rating = masterRatings[master.id];
+        if (rating && rating > 0) {
+          await submitReview({
+            project_id: projectId,
+            master_id: master.id,
+            client_id: clientId,
+            rating,
+          });
+        }
+      }
+
       hapticSuccess();
+      showToast('Спасибо за отзыв!', 'success');
       navigation.replace('ProjectComplete', route.params);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось отправить отзыв');
+      showToast('Не удалось отправить отзыв', 'error');
+      hapticError();
     } finally {
       setLoading(false);
     }

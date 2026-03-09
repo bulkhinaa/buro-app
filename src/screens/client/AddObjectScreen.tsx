@@ -7,7 +7,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Pressable,
   Image,
 } from 'react-native';
@@ -242,11 +241,8 @@ export function AddObjectScreen({ navigation }: Props) {
     setIsCustomLayout(true);
     setSelectedLayoutId(null);
     // TODO: Open image picker in production
-    Alert.alert(
-      'Своя планировка',
-      'В следующей версии здесь можно будет загрузить фото вашей планировки',
-    );
-  }, []);
+    showToast('В следующей версии можно загрузить фото планировки', 'info');
+  }, [showToast]);
 
   const handleSave = useCallback(async () => {
     if (!user) {

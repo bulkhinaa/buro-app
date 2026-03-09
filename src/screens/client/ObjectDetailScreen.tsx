@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Alert,
   Pressable,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
@@ -18,7 +17,9 @@ import {
   SystemButton,
   ProgressBar,
   Chip,
+  AppDialog,
 } from '../../components';
+import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useObjectStore } from '../../store/objectStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -48,6 +49,12 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
   const { removeObject } = useObjectStore();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState<string | undefined>('');
+  const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
 
   const layout = object?.layout_id ? getLayoutById(object.layout_id) : null;
 
@@ -80,22 +87,22 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
   }, [object]);
 
   const handleDelete = useCallback(() => {
-    Alert.alert(
-      'Удалить объект',
-      'Вы уверены? Все проекты этого объекта останутся в системе.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            if (!object) return;
-            await removeObject(object.id);
-            navigation.goBack();
-          },
+    setDialogTitle('Удалить объект');
+    setDialogMessage('Вы уверены? Все проекты этого объекта останутся в системе.');
+    setDialogButtons([
+      { text: 'Отмена', style: 'cancel', onPress: () => setDialogVisible(false) },
+      {
+        text: 'Удалить',
+        style: 'destructive',
+        onPress: async () => {
+          setDialogVisible(false);
+          if (!object) return;
+          await removeObject(object.id);
+          navigation.goBack();
         },
-      ],
-    );
+      },
+    ]);
+    setDialogVisible(true);
   }, [object, removeObject, navigation]);
 
   const handleCreateProject = useCallback(() => {
@@ -129,10 +136,13 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
         <SystemButton
           type="more"
           onPress={() => {
-            Alert.alert('Действия', undefined, [
-              { text: 'Удалить объект', style: 'destructive', onPress: handleDelete },
-              { text: 'Отмена', style: 'cancel' },
+            setDialogTitle('Действия');
+            setDialogMessage(undefined);
+            setDialogButtons([
+              { text: 'Удалить объект', style: 'destructive', onPress: () => { setDialogVisible(false); handleDelete(); } },
+              { text: 'Отмена', style: 'cancel', onPress: () => setDialogVisible(false) },
             ]);
+            setDialogVisible(true);
           }}
         />
       </View>
@@ -266,6 +276,14 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
       />
 
       <View style={{ height: 40 }} />
+
+      <AppDialog
+        visible={dialogVisible}
+        title={dialogTitle}
+        message={dialogMessage}
+        buttons={dialogButtons}
+        onClose={() => setDialogVisible(false)}
+      />
     </ScreenWrapper>
   );
 }

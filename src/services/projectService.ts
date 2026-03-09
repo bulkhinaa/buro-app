@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Project, Stage, StageTemplate, RepairType, PropertyObject } from '../types';
+import { Project, Stage, StageTemplate, RepairType, PropertyObject, PhotoReport } from '../types';
 import { estimateTimelineDays } from '../utils/calculator';
 
 // ---------- PROFILE ----------
@@ -329,4 +329,33 @@ export async function generateStagesForProject(
 
   if (error) throw error;
   return (data as Stage[]) || [];
+}
+
+// ---------- PHOTO REPORTS (CLIENT VIEW) ----------
+
+export async function fetchStagePhotos(stageId: string): Promise<PhotoReport[]> {
+  const { data, error } = await supabase
+    .from('photo_reports')
+    .select('*')
+    .eq('stage_id', stageId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data as PhotoReport[]) || [];
+}
+
+// ---------- REVIEWS ----------
+
+export async function submitReviewApi(review: {
+  project_id: string;
+  master_id: string;
+  client_id: string;
+  rating: number;
+  text?: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('reviews')
+    .insert(review);
+
+  if (error) throw error;
 }
