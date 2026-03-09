@@ -52,6 +52,19 @@ type Props = {
 
 const TOTAL_STEPS = 6;
 
+/**
+ * Normalize phone from auth (e.g. "+79991234567", "89991234567")
+ * to 10-digit format without country code, as PhoneInput expects.
+ */
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  // Strip leading 7 or 8 (Russian country code prefix)
+  if (digits.length === 11 && (digits[0] === '7' || digits[0] === '8')) {
+    return digits.slice(1);
+  }
+  return digits.slice(0, 10);
+}
+
 const EXPERIENCE_OPTIONS: { value: ExperienceRange; label: string }[] = [
   { value: 'less_1', label: '< 1 года' },
   { value: '1_3', label: '1–3 года' },
@@ -78,16 +91,23 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
 
-  const [step, setStep] = useState(1);
+  // Pre-fill step 1 from auth data
+  const initialName = setupDraft?.name || user?.name || '';
+  const initialCity = setupDraft?.city || user?.city || '';
+  const initialPhone = normalizePhone(setupDraft?.phone || user?.phone || '');
+
+  // Auto-skip step 1 if auth data is already complete
+  const step1Complete = initialName.trim().length > 0 && initialPhone.length >= 10;
+  const [step, setStep] = useState(step1Complete ? 2 : 1);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Step 1: Basic info
-  const [name, setName] = useState(setupDraft?.name || user?.name || '');
+  const [name, setName] = useState(initialName);
   const [nameTouched, setNameTouched] = useState(false);
-  const [city, setCity] = useState(setupDraft?.city || user?.city || '');
+  const [city, setCity] = useState(initialCity);
   const [cityTouched, setCityTouched] = useState(false);
-  const [phone, setPhone] = useState(setupDraft?.phone || user?.phone || '');
+  const [phone, setPhone] = useState(initialPhone);
   const [phoneTouched, setPhoneTouched] = useState(false);
 
   // Step 2: Specializations
@@ -128,14 +148,15 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const phoneError = useMemo(() => {
     if (!phoneTouched) return undefined;
     if (!phone.trim()) return 'Введите телефон';
-    if (phone.replace(/\D/g, '').length < 11) return 'Неверный формат телефона';
+    // PhoneInput stores 10 digits (without +7 prefix)
+    if (phone.replace(/\D/g, '').length < 10) return 'Неверный формат телефона';
     return undefined;
   }, [phone, phoneTouched]);
 
   const canProceed = useMemo(() => {
     switch (step) {
       case 1:
-        return name.trim().length > 0 && city.trim().length > 0 && phone.replace(/\D/g, '').length >= 11;
+        return name.trim().length > 0 && city.trim().length > 0 && phone.replace(/\D/g, '').length >= 10;
       case 2:
         return specializations.length > 0;
       case 3:
@@ -160,7 +181,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
           setPhoneTouched(true);
           if (!name.trim()) showToast('Введите ваше имя');
           else if (!city.trim()) showToast('Выберите город');
-          else if (phone.replace(/\D/g, '').length < 11) showToast('Введите номер телефона');
+          else if (phone.replace(/\D/g, '').length < 10) showToast('Введите номер телефона');
         } else if (step === 2) {
           showToast('Выберите хотя бы одну специализацию');
         }

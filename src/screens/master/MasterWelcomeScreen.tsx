@@ -84,7 +84,14 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
       markWelcomeSeen();
       onComplete();
     } else {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+      const nextIndex = currentIndex + 1;
+      // Use scrollToOffset — scrollToIndex doesn't work reliably on web
+      flatListRef.current?.scrollToOffset({
+        offset: nextIndex * SCREEN_WIDTH,
+        animated: true,
+      });
+      // Manually update index in case onViewableItemsChanged doesn't fire (web)
+      setCurrentIndex(nextIndex);
       hapticLight();
     }
   }, [isLastSlide, currentIndex, markWelcomeSeen, onComplete]);

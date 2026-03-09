@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Animated, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
@@ -89,6 +89,36 @@ export function RootNavigator() {
     }
   }, [animationDone, authDone]);
 
+  // ── Fade transition when navigator swaps ──
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const prevNavKey = useRef('');
+
+  const navKey = (() => {
+    if (!authDone || showOnboarding === null) return 'loading';
+    if (showOnboarding && !isAuthenticated) return 'onboarding';
+    if (!isAuthenticated || !user) return 'auth';
+    if (!masterInitDone) return 'master-loading';
+    if (user.role === 'master') {
+      if (!masterWelcomeDone) return 'master-welcome';
+      if (!masterSetupDone) return 'master-setup';
+      return 'master';
+    }
+    if (user.role === 'client' && setupComplete && activeView === 'master') return 'master-view';
+    return user.role;
+  })();
+
+  useEffect(() => {
+    if (prevNavKey.current && prevNavKey.current !== navKey) {
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevNavKey.current = navKey;
+  }, [navKey]);
+
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
   };
@@ -138,11 +168,13 @@ export function RootNavigator() {
   return (
     <View style={styles.root}>
       <NavigationContainer theme={navTheme}>
-        {authDone && showOnboarding !== null ? (
-          getNavigator()
-        ) : (
-          <View style={styles.placeholder} />
-        )}
+        <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
+          {authDone && showOnboarding !== null ? (
+            getNavigator()
+          ) : (
+            <View style={styles.placeholder} />
+          )}
+        </Animated.View>
       </NavigationContainer>
 
       {showSplash && (
@@ -154,6 +186,9 @@ export function RootNavigator() {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  animatedContainer: {
     flex: 1,
   },
   placeholder: {

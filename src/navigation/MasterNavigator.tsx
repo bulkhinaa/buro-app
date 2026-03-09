@@ -88,10 +88,11 @@ export function MasterNavigator() {
         }}
       />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат с супервайзером' }} />
-      {/* Portfolio */}
-      <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerTitle: 'Портфолио' }} />
-      {/* Pricing & Verification */}
-      <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerTitle: 'Мои расценки' }} />
+      {/* Portfolio — has its own header */}
+      <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerShown: false }} />
+      {/* Pricing — has its own header */}
+      <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false }} />
+      {/* Verification — uses ScreenWrapper, needs stack header */}
       <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: 'Верификация' }} />
       {/* Profile sub-screens */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
