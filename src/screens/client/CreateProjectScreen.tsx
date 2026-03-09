@@ -23,6 +23,7 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
+import type { DaDataSuggestion } from '../../components/AddressInput';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -89,6 +90,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     objectArea ? String(objectArea) : '',
   );
   const [areaTouched, setAreaTouched] = useState(false);
+  const [areaAutoFilled, setAreaAutoFilled] = useState(false);
 
   // Step: Scope
   const [selectedScopes, setSelectedScopes] = useState<RenovationScope[]>([]);
@@ -166,6 +168,17 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     if (areaSqm <= 0) return 'Площадь должна быть больше 0';
     return undefined;
   }, [areaText, areaSqm, areaTouched]);
+
+  // Auto-fill area from DaData suggestion (Maximum plan provides square data)
+  const handleAddressSelected = useCallback((suggestion: DaDataSuggestion) => {
+    if (suggestion.data.square && suggestion.data.square > 0) {
+      setAreaText(String(Math.round(suggestion.data.square)));
+      setAreaTouched(true);
+      setAreaAutoFilled(true);
+    } else {
+      setAreaAutoFilled(false);
+    }
+  }, []);
 
   // --- Navigation ---
   const handleNext = useCallback(() => {
@@ -294,6 +307,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
             if (text.length > 0) setAddressTouched(true);
           }}
           onValidated={setAddressValidated}
+          onSuggestionSelected={handleAddressSelected}
           error={addressError}
         />
 
@@ -302,11 +316,20 @@ export function CreateProjectScreen({ navigation, route }: Props) {
           value={areaText}
           onChangeText={(text) => {
             setAreaText(text);
+            setAreaAutoFilled(false); // User override clears badge
             if (text.length > 0) setAreaTouched(true);
           }}
           keyboardType="numeric"
           leftIcon={
             <Ionicons name="resize-outline" size={18} color={colors.textLight} />
+          }
+          rightIcon={
+            areaAutoFilled ? (
+              <View style={styles.autofilledBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                <Text style={styles.autofilledText}>из реестра</Text>
+              </View>
+            ) : undefined
           }
           error={areaError}
         />
@@ -762,5 +785,15 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     flex: 2,
+  },
+  // Auto-filled area badge
+  autofilledBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  autofilledText: {
+    ...typography.caption,
+    color: colors.success,
   },
 });

@@ -23,6 +23,7 @@ import {
   LayoutCard,
   AppDialog,
 } from '../../components';
+import type { DaDataSuggestion } from '../../components/AddressInput';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useObjectStore } from '../../store/objectStore';
@@ -150,6 +151,7 @@ export function AddObjectScreen({ navigation }: Props) {
   const [addressTouched, setAddressTouched] = useState(false);
   const [area, setArea] = useState('');
   const [areaTouched, setAreaTouched] = useState(false);
+  const [areaAutoFilled, setAreaAutoFilled] = useState(false);
   const [propertyType, setPropertyType] = useState<PropertyType>('apartment');
 
   // Step 2 — Parameters
@@ -203,6 +205,17 @@ export function AddObjectScreen({ navigation }: Props) {
   }, [area, areaTouched]);
 
   const showToast = useToastStore((s) => s.show);
+
+  // Auto-fill area from DaData suggestion (Maximum plan provides square data)
+  const handleAddressSelected = useCallback((suggestion: DaDataSuggestion) => {
+    if (suggestion.data.square && suggestion.data.square > 0) {
+      setArea(String(Math.round(suggestion.data.square)));
+      setAreaTouched(true);
+      setAreaAutoFilled(true);
+    } else {
+      setAreaAutoFilled(false);
+    }
+  }, []);
 
   const handleNext = useCallback(() => {
     if (step < TOTAL_STEPS) {
@@ -311,6 +324,7 @@ export function AddObjectScreen({ navigation }: Props) {
             if (text.length > 0) setAddressTouched(true);
           }}
           onValidated={setAddressValidated}
+          onSuggestionSelected={handleAddressSelected}
           placeholder="Город, улица, дом, квартира"
           error={addressError}
         />
@@ -320,11 +334,20 @@ export function AddObjectScreen({ navigation }: Props) {
           value={area}
           onChangeText={(text) => {
             setArea(text);
+            setAreaAutoFilled(false); // User override clears badge
             if (text.length > 0) setAreaTouched(true);
           }}
           keyboardType="numeric"
           leftIcon={
             <Ionicons name="resize-outline" size={18} color={colors.textLight} />
+          }
+          rightIcon={
+            areaAutoFilled ? (
+              <View style={styles.autofilledBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                <Text style={styles.autofilledText}>из реестра</Text>
+              </View>
+            ) : undefined
           }
           error={areaError}
         />
@@ -834,5 +857,15 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
+  },
+  // Auto-filled area badge
+  autofilledBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  autofilledText: {
+    ...typography.caption,
+    color: colors.success,
   },
 });

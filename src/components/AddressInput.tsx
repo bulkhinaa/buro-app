@@ -23,8 +23,8 @@ const webInputReset = Platform.OS === 'web'
 const DADATA_TOKEN = '4f5dfae6e7088a2e5f51f6be3f94337b22504878';
 const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address';
 
-interface DaDataSuggestion {
-  value: string; // "г Москва, ул Тверская, д 1"
+export interface DaDataSuggestion {
+  value: string; // "г Москва, ул Тверская, д 1, кв 5"
   unrestricted_value: string;
   data: {
     city?: string;
@@ -32,6 +32,10 @@ interface DaDataSuggestion {
     street_with_type?: string;
     house?: string;
     flat?: string;
+    fias_id?: string;        // Unique FIAS identifier
+    square?: number;         // Apartment area in m² (DaData Maximum plan)
+    floor?: number;          // Floor number (DaData Maximum plan)
+    floors_count?: number;   // Total floors in building (DaData Maximum plan)
     geo_lat?: string;
     geo_lon?: string;
     [key: string]: any;
@@ -45,6 +49,8 @@ interface AddressInputProps {
   value: string;
   onChangeText: (text: string) => void;
   onValidated?: (validated: boolean) => void;
+  onSuggestionSelected?: (suggestion: DaDataSuggestion) => void;
+  level?: 'house' | 'flat'; // default: 'flat' — apartment-level suggestions
   error?: string;
 }
 
@@ -58,6 +64,8 @@ export function AddressInput({
   value,
   onChangeText,
   onValidated,
+  onSuggestionSelected,
+  level = 'flat',
   error,
 }: AddressInputProps) {
   const [focused, setFocused] = useState(false);
@@ -92,9 +100,9 @@ export function AddressInput({
         body: JSON.stringify({
           query,
           count: 7,
-          // Prioritize addresses with houses (not just streets)
+          // Suggest down to apartment level (flat) or house level
           from_bound: { value: 'city' },
-          to_bound: { value: 'house' },
+          to_bound: { value: level },
         }),
       });
       const json = await res.json();
@@ -163,6 +171,7 @@ export function AddressInput({
     skipNextSearch.current = true;
     onChangeText(item.value);
     onValidated?.(true);
+    onSuggestionSelected?.(item);
     setSuggestions([]);
     setShowDropdown(false);
   };
