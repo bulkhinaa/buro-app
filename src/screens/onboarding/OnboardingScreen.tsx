@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ViewToken,
   Image,
   ImageSourcePropType,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -70,6 +71,26 @@ export function OnboardingScreen({ onComplete }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const { t } = useTranslation();
+
+  // Fix: RN Web Image sets internal opacity:0 for its loading fade-in.
+  // When nested inside an Animated.View that also manipulates opacity
+  // (RootNavigator fade transition), the Image's internal animation
+  // never resolves, leaving <img> elements stuck at opacity:0.
+  // Inject a targeted CSS rule to force images visible on web.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const style = document.createElement('style');
+    style.textContent = `
+      [data-testid="onboarding-slides"] img {
+        opacity: 1 !important;
+        transition: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -136,6 +157,7 @@ export function OnboardingScreen({ onComplete }: Props) {
         getItemLayout={getItemLayout}
         bounces={false}
         style={{ flex: 1 }}
+        testID="onboarding-slides"
       />
 
       {/* Footer with dots + button */}
