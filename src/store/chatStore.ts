@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabase';
 
 const CHAT_KEY_PREFIX = 'chat_messages_';
 
+// Stable empty array reference to avoid infinite re-renders in Zustand selectors
+const EMPTY_MESSAGES: ChatMessage[] = [];
+
 // Default mock messages for dev users
 const DEV_MOCK_MESSAGES: Record<string, ChatMessage[]> = {
   stage_mt_1: [
@@ -148,6 +151,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   getMessages: (channelId: string) => {
-    return get().messages[channelId] || [];
+    return get().messages[channelId] ?? EMPTY_MESSAGES;
   },
 }));

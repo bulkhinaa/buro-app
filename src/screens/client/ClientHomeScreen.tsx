@@ -22,7 +22,6 @@ import {
   GlassView,
 } from '../../components';
 import { colors, spacing, radius, typography, glass } from '../../theme';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useObjectStore } from '../../store/objectStore';
@@ -465,24 +464,6 @@ export function ClientHomeScreen({ navigation }: Props) {
           </>
         )}
 
-        {/* CTA Banner — gradient glass */}
-        <View style={styles.padded}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.ctaBanner}
-          >
-            <Text style={styles.ctaTitle}>{t('home.ctaTitle')}</Text>
-            <Text style={styles.ctaText}>
-              {t('home.ctaText')}
-            </Text>
-            <Pressable style={styles.ctaButton}>
-              <Text style={styles.ctaButtonText}>{t('home.ctaButton')}</Text>
-            </Pressable>
-          </LinearGradient>
-        </View>
-
         {/* Extra padding for glass tab bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -863,34 +844,5 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     textAlign: 'center',
     lineHeight: 22,
-  },
-  // CTA Banner
-  ctaBanner: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    marginTop: spacing.md,
-    overflow: 'hidden',
-  },
-  ctaTitle: {
-    ...typography.h3,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  ctaText: {
-    ...typography.body,
-    color: colors.white,
-    opacity: 0.8,
-    marginBottom: spacing.lg,
-  },
-  ctaButton: {
-    borderWidth: 1.5,
-    borderColor: colors.white,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  ctaButtonText: {
-    ...typography.button,
-    color: colors.white,
   },
 });

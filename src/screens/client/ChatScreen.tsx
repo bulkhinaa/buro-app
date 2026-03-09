@@ -15,6 +15,9 @@ import { ChatMessage } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
 
+// Stable reference to avoid infinite re-renders in Zustand selector (BUG-14)
+const EMPTY_MESSAGES: ChatMessage[] = [];
+
 type Props = {
   route?: any;
 };
@@ -26,7 +29,7 @@ export function ChatScreen({ route }: Props) {
   const projectId = route?.params?.projectId || 'proj-1';
   const channelId = route?.params?.channelId || 'stage_mt-1';
 
-  const messages = useChatStore((s) => s.getMessages(channelId));
+  const messages = useChatStore((s) => s.messages[channelId] ?? EMPTY_MESSAGES);
 
   const [message, setMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);

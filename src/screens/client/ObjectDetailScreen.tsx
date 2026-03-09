@@ -23,6 +23,7 @@ import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useObjectStore } from '../../store/objectStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useToastStore } from '../../store/toastStore';
 import { fetchObjectProjects } from '../../services/projectService';
 import { getLayoutById } from '../../data/layouts';
 import {
@@ -47,8 +48,10 @@ type Props = {
 export function ObjectDetailScreen({ navigation, route }: Props) {
   const object = route.params?.object as PropertyObject | undefined;
   const { removeObject } = useObjectStore();
+  const showToast = useToastStore((s) => s.show);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -86,6 +89,20 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
     }
   }, [object]);
 
+  const performDelete = useCallback(async () => {
+    if (!object || deleting) return;
+    setDialogVisible(false);
+    setDeleting(true);
+    try {
+      await removeObject(object.id);
+      showToast('Объект удалён', 'success');
+      navigation.goBack();
+    } catch {
+      showToast('Не удалось удалить объект', 'error');
+      setDeleting(false);
+    }
+  }, [object, deleting, removeObject, showToast, navigation]);
+
   const handleDelete = useCallback(() => {
     setDialogTitle('Удалить объект');
     setDialogMessage('Вы уверены? Все проекты этого объекта останутся в системе.');
@@ -94,16 +111,11 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
       {
         text: 'Удалить',
         style: 'destructive',
-        onPress: async () => {
-          setDialogVisible(false);
-          if (!object) return;
-          await removeObject(object.id);
-          navigation.goBack();
-        },
+        onPress: performDelete,
       },
     ]);
     setDialogVisible(true);
-  }, [object, removeObject, navigation]);
+  }, [performDelete]);
 
   const handleCreateProject = useCallback(() => {
     if (!object) return;
@@ -135,15 +147,7 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
         <View style={{ flex: 1 }} />
         <SystemButton
           type="more"
-          onPress={() => {
-            setDialogTitle('Действия');
-            setDialogMessage(undefined);
-            setDialogButtons([
-              { text: 'Удалить объект', style: 'destructive', onPress: () => { setDialogVisible(false); handleDelete(); } },
-              { text: 'Отмена', style: 'cancel', onPress: () => setDialogVisible(false) },
-            ]);
-            setDialogVisible(true);
-          }}
+          onPress={handleDelete}
         />
       </View>
 

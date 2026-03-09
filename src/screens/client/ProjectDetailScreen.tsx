@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ScreenWrapper,
@@ -10,6 +9,7 @@ import {
   ProgressBar,
   LabelMaster,
   StageAccordion,
+  SystemButton,
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useProjectStore } from '../../store/projectStore';
@@ -35,20 +35,12 @@ type Props = {
   route: any;
 };
 
-const HERO_DOT_COLORS: Record<string, string> = {
-  new: '#FFD700',
-  planning: '#FFA500',
+const STATUS_COLORS: Record<string, string> = {
+  new: '#C5A55A',
+  planning: '#FF9500',
   in_progress: '#34C759',
-  completed: '#FFFFFF',
-  cancelled: '#FF6B6B',
-};
-
-const STATUS_DESCRIPTIONS: Record<string, string> = {
-  new: 'Ваша заявка принята. Ожидайте назначения супервайзера',
-  planning: 'Супервайзер составляет план работ',
-  in_progress: 'Ремонт в процессе',
-  completed: 'Ремонт завершён!',
-  cancelled: 'Проект отменён',
+  completed: '#34C759',
+  cancelled: '#FF3B30',
 };
 
 export function ProjectDetailScreen({ navigation, route }: Props) {
@@ -125,50 +117,46 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.scrollContent}
       >
         {/* ─── A. Hero section ─── */}
-        <View style={styles.heroContainer}>
-          <LinearGradient
-            colors={[colors.primaryDark, colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroBg}
-          >
-            {/* Decorative circles */}
-            <View style={styles.heroDecor1} />
-            <View style={styles.heroDecor2} />
-
-            <View style={styles.heroContent}>
-              <View style={styles.heroBadge}>
-                <View style={[
-                  styles.heroBadgeDot,
-                  { backgroundColor: HERO_DOT_COLORS[project?.status || 'new'] || '#FFD700' },
-                ]} />
-                <Text style={styles.heroBadgeText}>
-                  {PROJECT_STATUS_LABELS[project?.status || 'new']}
-                </Text>
-              </View>
-
-              <Text style={styles.heroTitle} numberOfLines={2}>
-                {project?.title || 'Загрузка...'}
-              </Text>
-
-              {project?.address ? (
-                <View style={styles.heroAddressRow}>
-                  <Ionicons
-                    name="location-outline"
-                    size={14}
-                    color="rgba(255,255,255,0.6)"
-                  />
-                  <Text style={styles.heroAddress} numberOfLines={1}>
-                    {project.address}
-                  </Text>
-                </View>
-              ) : null}
-
-              <Text style={styles.heroStatus}>
-                {STATUS_DESCRIPTIONS[project?.status || 'new']}
+        <View style={styles.heroHeader}>
+          <SystemButton type="back" onPress={() => navigation.goBack()} />
+        </View>
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroBadge}>
+              <View style={[
+                styles.heroBadgeDot,
+                { backgroundColor: STATUS_COLORS[project?.status || 'new'] || colors.accent },
+              ]} />
+              <Text style={styles.heroBadgeText}>
+                {PROJECT_STATUS_LABELS[project?.status || 'new']}
               </Text>
             </View>
-          </LinearGradient>
+            {progress > 0 && (
+              <Text style={styles.heroPercent}>{progress}%</Text>
+            )}
+          </View>
+
+          <Text style={styles.heroTitle} numberOfLines={2}>
+            {project?.title || 'Загрузка...'}
+          </Text>
+
+          {project?.address ? (
+            <View style={styles.heroAddressRow}>
+              <Ionicons name="location-outline" size={14} color={colors.textLight} />
+              <Text style={styles.heroAddress} numberOfLines={1}>
+                {project.address}
+              </Text>
+            </View>
+          ) : null}
+
+          {hasDbStages && (
+            <View style={styles.heroProgress}>
+              <ProgressBar progress={progress / 100} height={6} />
+              <Text style={styles.heroProgressText}>
+                {completedCount} из {totalStages} этапов
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* ─── B. Info card ─── */}
@@ -223,21 +211,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           )}
         </Card>
 
-        {/* ─── C. Progress ─── */}
-        {hasDbStages && (
-          <Card style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>Прогресс ремонта</Text>
-              <Text style={styles.progressPercent}>{progress}%</Text>
-            </View>
-            <ProgressBar progress={progress / 100} height={6} />
-            <Text style={styles.progressDetail}>
-              {completedCount} из {totalStages} этапов завершено
-            </Text>
-          </Card>
-        )}
-
-        {/* ─── D. Supervisor ─── */}
+        {/* ─── C. Supervisor ─── */}
         {project?.supervisor_id && (
           <Card style={styles.supervisorCard}>
             <View style={styles.supervisorRow}>
@@ -378,49 +352,36 @@ const styles = StyleSheet.create({
   },
 
   // ─── Hero ───
-  heroContainer: {
-    marginHorizontal: -spacing.xl,
+  heroHeader: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  heroCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    padding: spacing.xl,
     marginBottom: spacing.lg,
+    shadowColor: 'rgba(123, 45, 62, 0.08)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  heroBg: {
-    height: 200,
-    justifyContent: 'flex-end',
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroDecor1: {
-    position: 'absolute',
-    top: -30,
-    right: -30,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  heroDecor2: {
-    position: 'absolute',
-    top: 20,
-    right: 30,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  heroContent: {
-    gap: spacing.sm,
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 1,
-    alignSelf: 'flex-start',
     gap: spacing.xs,
   },
   heroBadgeDot: {
@@ -430,26 +391,35 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     ...typography.caption,
-    color: colors.white,
+    color: colors.heading,
     fontWeight: '600',
   },
+  heroPercent: {
+    ...typography.h3,
+    color: colors.primary,
+  },
   heroTitle: {
-    ...typography.h2,
-    color: colors.white,
+    ...typography.h1,
+    color: colors.heading,
+    marginBottom: spacing.xs,
   },
   heroAddressRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   heroAddress: {
     ...typography.small,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textLight,
     flex: 1,
   },
-  heroStatus: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.75)',
+  heroProgress: {
+    gap: spacing.xs,
+  },
+  heroProgressText: {
+    ...typography.small,
+    color: colors.textLight,
   },
 
   // ─── Info card ───
@@ -498,32 +468,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-  },
-
-  // ─── Progress ───
-  progressCard: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    marginBottom: spacing.md,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  progressTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  progressPercent: {
-    ...typography.h3,
-    color: colors.primary,
-  },
-  progressDetail: {
-    ...typography.small,
-    color: colors.textLight,
-    marginTop: spacing.xs,
   },
 
   // ─── Supervisor ───

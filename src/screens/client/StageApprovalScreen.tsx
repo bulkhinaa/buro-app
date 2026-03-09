@@ -25,9 +25,13 @@ import { useProjectStore } from '../../store/projectStore';
 import { updateStageStatus } from '../../services/projectService';
 import { useToastStore } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
+import type { LocalPhoto } from '../../store/taskStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PHOTO_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - spacing.md) / 2;
+
+// Stable reference to avoid infinite re-renders in Zustand selector (BUG-16)
+const EMPTY_PHOTOS: LocalPhoto[] = [];
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -45,7 +49,7 @@ export function StageApprovalScreen({ navigation, route }: Props) {
 
   const { user } = useAuthStore();
   const { loadStages } = useProjectStore();
-  const photoReports = useTaskStore((s) => s.photoReports[stageId] || []);
+  const photoReports = useTaskStore((s) => s.photoReports[stageId] ?? EMPTY_PHOTOS);
   const showToast = useToastStore((s) => s.show);
 
   const [showRejection, setShowRejection] = useState(false);

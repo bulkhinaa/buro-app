@@ -103,8 +103,12 @@ export const useObjectStore = create<ObjectState>((set) => ({
         customLayoutUrl: params.customLayoutUrl,
       });
 
-      const objects = await fetchUserObjects(params.userId);
-      set({ objects, isLoading: false });
+      // Add returned object to local state (skip redundant fetchUserObjects)
+      const state = useObjectStore.getState();
+      set({
+        objects: [object, ...state.objects],
+        isLoading: false,
+      });
       return object;
     } catch (e: any) {
       set({ isLoading: false, error: e.message });
@@ -126,9 +130,10 @@ export const useObjectStore = create<ObjectState>((set) => ({
 
     try {
       await deleteObjectService(objectId);
-    } catch {
+    } catch (e) {
       // Revert on failure
       set({ objects: state.objects });
+      throw e;
     }
   },
 }));
