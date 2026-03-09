@@ -192,7 +192,7 @@ export function AddObjectScreen({ navigation }: Props) {
   const addressError = useMemo(() => {
     if (!addressTouched) return undefined;
     if (address.trim().length === 0) return 'Введите адрес';
-    if (!addressValidated) return 'Выберите адрес из подсказок';
+    if (!addressValidated) return 'Выберите адрес с домом и квартирой';
     return undefined;
   }, [address, addressValidated, addressTouched]);
 
@@ -227,7 +227,7 @@ export function AddObjectScreen({ navigation }: Props) {
           if (!address.trim()) {
             showToast('Введите адрес объекта');
           } else if (!addressValidated) {
-            showToast('Выберите адрес из подсказок');
+            showToast('Укажите полный адрес с домом и квартирой');
           } else if (!area.trim() || parseFloat(area) <= 0) {
             showToast('Укажите площадь объекта');
           }

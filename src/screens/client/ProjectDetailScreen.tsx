@@ -26,6 +26,7 @@ import {
   formatRubles,
   formatTimeline,
   estimateTimelineDays,
+  estimateScopedCost,
 } from '../../utils/calculator';
 import { getStageBreakdown } from '../../data/stageBreakdown';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -109,6 +110,13 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
   const scopeItems: RenovationScope[] = (project?.scope || []).filter(
     (s): s is RenovationScope => s !== 'full',
   );
+
+  // Calculate scope renovation area
+  const scopeArea = useMemo(() => {
+    if (!project?.repair_type || !project?.area_sqm || scopeItems.length === 0) return 0;
+    const result = estimateScopedCost(project.repair_type, project.area_sqm, project.scope || []);
+    return result.scopeArea;
+  }, [project?.repair_type, project?.area_sqm, scopeItems.length]);
 
   return (
     <ScreenWrapper scroll={false} edges={[]}>
@@ -219,11 +227,16 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
             )}
           </View>
 
-          {/* Scope chips */}
+          {/* Scope chips with area */}
           {scopeItems.length > 0 && (
             <>
               <View style={styles.divider} />
-              <Text style={styles.scopeTitle}>Помещения</Text>
+              <View style={styles.scopeHeader}>
+                <Text style={styles.scopeTitle}>Помещения</Text>
+                {scopeArea > 0 && scopeArea < (project?.area_sqm ?? 0) && (
+                  <Text style={styles.scopeArea}>~{scopeArea} м²</Text>
+                )}
+              </View>
               <View style={styles.scopeRow}>
                 {scopeItems.map((s) => (
                   <Chip key={s} label={RENOVATION_SCOPE_LABELS[s]} selected={false} />
@@ -495,10 +508,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: spacing.md,
   },
+  scopeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   scopeTitle: {
     ...typography.smallBold,
     color: colors.textLight,
-    marginBottom: spacing.sm,
+  },
+  scopeArea: {
+    ...typography.smallBold,
+    color: colors.accent,
   },
   scopeRow: {
     flexDirection: 'row',

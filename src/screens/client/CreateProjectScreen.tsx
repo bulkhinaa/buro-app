@@ -30,12 +30,13 @@ import { useProjectStore } from '../../store/projectStore';
 import { useToastStore } from '../../store/toastStore';
 import { RepairType, RenovationScope } from '../../types';
 import {
-  estimateCost,
-  estimateTimelineDays,
+  estimateScopedCost,
+  estimateScopedTimeline,
   formatRubles,
   formatTimeline,
   REPAIR_RATES,
 } from '../../utils/calculator';
+import { getStageCount } from '../../data/stageBreakdown';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 
@@ -111,10 +112,10 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
   const estimate = useMemo(() => {
     if (areaSqm <= 0) return null;
-    const cost = estimateCost(repairType, areaSqm);
-    const days = estimateTimelineDays(repairType, areaSqm);
+    const cost = estimateScopedCost(repairType, areaSqm, selectedScopes);
+    const days = estimateScopedTimeline(repairType, areaSqm, selectedScopes);
     return { cost, days };
-  }, [repairType, areaSqm]);
+  }, [repairType, areaSqm, selectedScopes]);
 
   // --- Scope selection logic ---
   const handleToggleScope = useCallback(
@@ -157,7 +158,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
   const addressError = useMemo(() => {
     if (!addressTouched) return undefined;
     if (!address.trim()) return 'Введите адрес';
-    if (!addressValidated) return 'Выберите адрес из подсказок';
+    if (!addressValidated) return 'Выберите адрес с домом и квартирой';
     return undefined;
   }, [address, addressValidated, addressTouched]);
 
@@ -189,7 +190,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         if (!address.trim()) {
           showToast('Введите адрес объекта');
         } else if (!addressValidated) {
-          showToast('Выберите адрес из подсказок');
+          showToast('Укажите полный адрес с домом и квартирой');
         } else {
           showToast('Укажите площадь объекта');
         }
@@ -458,6 +459,18 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
       {estimate && (
         <Card style={styles.estimateCard}>
+          {/* Show scope area if not full apartment */}
+          {estimate.cost.scopeArea < areaSqm && (
+            <>
+              <View style={styles.estimateRow}>
+                <Text style={styles.estimateLabel}>Площадь ремонта</Text>
+                <Text style={styles.estimateValue}>
+                  ~{estimate.cost.scopeArea} м² из {areaSqm} м²
+                </Text>
+              </View>
+              <View style={styles.estimateDivider} />
+            </>
+          )}
           <View style={styles.estimateRow}>
             <Text style={styles.estimateLabel}>Стоимость</Text>
             <Text style={styles.estimateValue} numberOfLines={1} adjustsFontSizeToFit>
@@ -474,7 +487,9 @@ export function CreateProjectScreen({ navigation, route }: Props) {
           <View style={styles.estimateDivider} />
           <View style={styles.estimateRow}>
             <Text style={styles.estimateLabel}>Этапы</Text>
-            <Text style={styles.estimateValue}>14 этапов</Text>
+            <Text style={styles.estimateValue}>
+              {getStageCount(repairType)} этапов
+            </Text>
           </View>
         </Card>
       )}

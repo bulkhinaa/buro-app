@@ -4,6 +4,7 @@ import { estimateCost, estimateTimelineDays } from '../utils/calculator';
 /**
  * Stage breakdown template — each stage gets a % of total cost and total time.
  * Percentages are realistic estimates for typical apartment renovation.
+ * `applicableRepairTypes` controls which repair types include this stage.
  */
 interface StageTemplate {
   title: string;
@@ -11,7 +12,11 @@ interface StageTemplate {
   checklist: string[];
   costPercent: number;   // % of total project cost
   timePercent: number;   // % of total project duration
+  applicableRepairTypes: RepairType[]; // which repair types include this stage
 }
+
+const ALL_TYPES: RepairType[] = ['cosmetic', 'standard', 'premium', 'design'];
+const NON_COSMETIC: RepairType[] = ['standard', 'premium', 'design'];
 
 const STAGE_TEMPLATES: StageTemplate[] = [
   {
@@ -25,6 +30,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 3,
     timePercent: 5,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Электрика (черновая)',
@@ -37,6 +43,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 8,
     timePercent: 8,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Сантехника (черновая)',
@@ -49,6 +56,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 7,
     timePercent: 7,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Стяжка пола',
@@ -61,6 +69,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 8,
     timePercent: 8,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Штукатурка стен',
@@ -73,6 +82,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 10,
     timePercent: 10,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Укладка плитки',
@@ -85,6 +95,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 12,
     timePercent: 10,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Электрика (чистовая)',
@@ -97,6 +108,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 5,
     timePercent: 5,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Сантехника (чистовая)',
@@ -109,6 +121,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 5,
     timePercent: 5,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Шпаклёвка и покраска',
@@ -121,6 +134,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 12,
     timePercent: 12,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Напольное покрытие',
@@ -133,6 +147,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 10,
     timePercent: 8,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Установка дверей',
@@ -145,6 +160,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 5,
     timePercent: 5,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Монтаж потолков',
@@ -157,6 +173,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 7,
     timePercent: 7,
+    applicableRepairTypes: NON_COSMETIC, // Skip for cosmetic
   },
   {
     title: 'Чистовая отделка',
@@ -169,6 +186,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 6,
     timePercent: 8,
+    applicableRepairTypes: ALL_TYPES,
   },
   {
     title: 'Финальная уборка',
@@ -181,6 +199,7 @@ const STAGE_TEMPLATES: StageTemplate[] = [
     ],
     costPercent: 2,
     timePercent: 2,
+    applicableRepairTypes: ALL_TYPES,
   },
 ];
 
@@ -195,8 +214,8 @@ export interface StageBreakdownItem {
 }
 
 /**
- * Calculate a detailed breakdown of all 14 renovation stages
- * with estimated cost range and duration for each.
+ * Calculate a detailed breakdown of renovation stages
+ * filtered by repair type, with recalculated percentages.
  */
 export function getStageBreakdown(
   repairType: RepairType,
@@ -205,16 +224,34 @@ export function getStageBreakdown(
   const totalCost = estimateCost(repairType, areaSqm);
   const totalDays = estimateTimelineDays(repairType, areaSqm);
 
-  return STAGE_TEMPLATES.map((stage, i) => ({
+  // Filter stages applicable to this repair type
+  const applicable = STAGE_TEMPLATES.filter(
+    (s) => s.applicableRepairTypes.includes(repairType),
+  );
+
+  // Recalculate percentages so they sum to 100%
+  const totalCostPct = applicable.reduce((sum, s) => sum + s.costPercent, 0);
+  const totalTimePct = applicable.reduce((sum, s) => sum + s.timePercent, 0);
+
+  return applicable.map((stage, i) => ({
     orderIndex: i + 1,
     title: stage.title,
     description: stage.description,
     checklist: stage.checklist,
-    costMin: Math.round((totalCost.min * stage.costPercent) / 100),
-    costMax: Math.round((totalCost.max * stage.costPercent) / 100),
-    days: Math.max(1, Math.round((totalDays * stage.timePercent) / 100)),
+    costMin: Math.round((totalCost.min * stage.costPercent) / totalCostPct),
+    costMax: Math.round((totalCost.max * stage.costPercent) / totalCostPct),
+    days: Math.max(1, Math.round((totalDays * stage.timePercent) / totalTimePct)),
   }));
 }
 
-/** Total number of standard renovation stages */
+/**
+ * Get count of applicable stages for a given repair type.
+ */
+export function getStageCount(repairType: RepairType): number {
+  return STAGE_TEMPLATES.filter(
+    (s) => s.applicableRepairTypes.includes(repairType),
+  ).length;
+}
+
+/** Total number of standard renovation stages (all types) */
 export const TOTAL_STAGES = STAGE_TEMPLATES.length;

@@ -170,7 +170,13 @@ export function AddressInput({
   const handleSelect = (item: DaDataSuggestion) => {
     skipNextSearch.current = true;
     onChangeText(item.value);
-    onValidated?.(true);
+
+    // Validate that address has required detail level
+    const hasHouse = !!item.data.house;
+    const hasFlat = !!item.data.flat;
+    const isValid = level === 'flat' ? (hasHouse && hasFlat) : hasHouse;
+    onValidated?.(isValid);
+
     onSuggestionSelected?.(item);
     setSuggestions([]);
     setShowDropdown(false);
