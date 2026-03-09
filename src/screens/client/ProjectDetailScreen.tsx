@@ -149,6 +149,28 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
             </View>
           ) : null}
 
+          {/* Key dates */}
+          {(project?.created_at || timelineDays > 0) && (
+            <View style={styles.heroDates}>
+              {project?.created_at && (
+                <View style={styles.heroDateItem}>
+                  <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
+                  <Text style={styles.heroDateText}>
+                    {new Date(project.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+              )}
+              {project?.created_at && timelineDays > 0 && (
+                <View style={styles.heroDateItem}>
+                  <Ionicons name="flag-outline" size={14} color={colors.accent} />
+                  <Text style={[styles.heroDateText, { color: colors.accent }]}>
+                    ~{new Date(new Date(project.created_at).getTime() + timelineDays * 86400000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           {hasDbStages && (
             <View style={styles.heroProgress}>
               <ProgressBar progress={progress / 100} height={6} />
@@ -413,6 +435,20 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textLight,
     flex: 1,
+  },
+  heroDates: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  heroDateItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  heroDateText: {
+    ...typography.small,
+    color: colors.textLight,
   },
   heroProgress: {
     gap: spacing.xs,

@@ -7,6 +7,7 @@ import {
   generateStagesForProject,
 } from '../services/projectService';
 import { estimateCost } from '../utils/calculator';
+import { useAuthStore } from './authStore';
 
 interface ProjectState {
   projects: Project[];
@@ -63,6 +64,12 @@ export const useProjectStore = create<ProjectState>((set) => ({
   loadStages: async (projectId) => {
     set({ isLoading: true, error: null });
     try {
+      // Dev users — skip Supabase, keep local stages
+      const userId = useAuthStore.getState().user?.id;
+      if (userId?.startsWith('dev-')) {
+        set({ isLoading: false });
+        return;
+      }
       const stages = await fetchProjectStages(projectId);
       set({ stages, isLoading: false });
     } catch (e: any) {

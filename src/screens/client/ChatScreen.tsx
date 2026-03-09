@@ -14,6 +14,7 @@ import { colors, spacing, radius, typography } from '../../theme';
 import { ChatMessage } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
+import { useToastStore } from '../../store/toastStore';
 
 // Stable reference to avoid infinite re-renders in Zustand selector (BUG-14)
 const EMPTY_MESSAGES: ChatMessage[] = [];
@@ -31,6 +32,7 @@ export function ChatScreen({ route }: Props) {
 
   const messages = useChatStore((s) => s.messages[channelId] ?? EMPTY_MESSAGES);
 
+  const showToast = useToastStore((s) => s.show);
   const [message, setMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -39,7 +41,11 @@ export function ChatScreen({ route }: Props) {
   }, [channelId, projectId]);
 
   const handleSend = () => {
-    if (!message.trim() || !user) return;
+    if (!message.trim()) {
+      showToast('Введите сообщение', 'error');
+      return;
+    }
+    if (!user) return;
     storeSendMessage(channelId, projectId, user.id, message);
     setMessage('');
     setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
@@ -96,7 +102,6 @@ export function ChatScreen({ route }: Props) {
           <Pressable
             style={[styles.sendBtn, !message.trim() && styles.sendBtnDisabled]}
             onPress={handleSend}
-            disabled={!message.trim()}
           >
             <Text style={styles.sendBtnText}>↑</Text>
           </Pressable>
