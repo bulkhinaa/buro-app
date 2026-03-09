@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export type NotificationType =
   | 'new_task'
@@ -35,7 +36,7 @@ const DEV_MOCK_NOTIFICATIONS: AppNotification[] = [
     is_read: false,
     project_id: 'proj-2',
     stage_id: 'mt-2',
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'notif-2',
@@ -45,7 +46,7 @@ const DEV_MOCK_NOTIFICATIONS: AppNotification[] = [
     body: 'Супервайзер принял этап «Демонтаж» — отличная работа!',
     is_read: false,
     project_id: 'proj-1',
-    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'notif-3',
@@ -55,7 +56,7 @@ const DEV_MOCK_NOTIFICATIONS: AppNotification[] = [
     body: 'Супервайзер Михаил написал вам в чате',
     is_read: true,
     project_id: 'proj-1',
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'notif-4',
@@ -65,13 +66,14 @@ const DEV_MOCK_NOTIFICATIONS: AppNotification[] = [
     body: 'Этап «Электрика (черновая)» отклонён — проверьте комментарий',
     is_read: true,
     project_id: 'proj-1',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
 
 interface NotificationState {
   notifications: AppNotification[];
   isLoading: boolean;
+  realtimeChannel: RealtimeChannel | null;
 
   // Computed
   unreadCount: () => number;
@@ -80,11 +82,14 @@ interface NotificationState {
   loadNotifications: (userId: string) => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: (userId: string) => Promise<void>;
+  subscribeRealtime: (userId: string) => void;
+  unsubscribeRealtime: () => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   isLoading: false,
+  realtimeChannel: null,
 
   unreadCount: () => {
     return get().notifications.filter((n) => !n.is_read).length;
@@ -93,9 +98,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loadNotifications: async (userId: string) => {
     set({ isLoading: true });
 
-    const isDev = userId.startsWith('dev-');
+    const isDevUser = userId.startsWith('dev-');
 
-    if (isDev) {
+    if (isDevUser) {
       // Dev user — load from AsyncStorage or use defaults
       try {
         const stored = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
@@ -123,11 +128,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
         if (!error && data) {
           set({ notifications: data as AppNotification[], isLoading: false });
+          // Cache locally for offline access
+          await AsyncStorage.setItem(
+            NOTIFICATIONS_KEY,
+            JSON.stringify(data),
+          ).catch(() => {});
         } else {
           set({ notifications: [], isLoading: false });
         }
       } catch {
-        // Fallback to stored
+        // Fallback to stored cache
         try {
           const stored = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
           set({
@@ -187,6 +197,51 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .eq('is_read', false);
     } catch {
       // Dev fallback
+    }
+  },
+
+  subscribeRealtime: (userId: string) => {
+    // Skip for dev users
+    if (userId.startsWith('dev-')) return;
+
+    const { realtimeChannel } = get();
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+    }
+
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newNotif = payload.new as AppNotification;
+          const { notifications } = get();
+          // Prepend new notification (newest first)
+          const updated = [newNotif, ...notifications];
+          set({ notifications: updated });
+          // Update cache
+          AsyncStorage.setItem(
+            NOTIFICATIONS_KEY,
+            JSON.stringify(updated),
+          ).catch(() => {});
+        },
+      )
+      .subscribe();
+
+    set({ realtimeChannel: channel });
+  },
+
+  unsubscribeRealtime: () => {
+    const { realtimeChannel } = get();
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+      set({ realtimeChannel: null });
     }
   },
 }));

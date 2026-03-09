@@ -83,6 +83,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
           client_id: review.client_id,
           rating: review.rating,
           text: review.text || null,
+          photo_urls: review.photo_urls || [],
         });
       } catch {
         // Dev fallback — already saved locally

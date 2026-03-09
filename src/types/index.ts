@@ -86,6 +86,7 @@ export interface ChatMessage {
   sender_id: string;
   text?: string;
   image_url?: string;
+  reply_to?: string;
   created_at: string;
 }
 
@@ -96,6 +97,7 @@ export interface Review {
   client_id: string;
   rating: number;
   text?: string;
+  photo_urls?: string[];
   created_at: string;
 }
 

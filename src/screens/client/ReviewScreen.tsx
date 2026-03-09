@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { hapticSuccess, hapticError } from '../../utils/haptics';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { hapticSuccess, hapticError, hapticLight } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Button, TextArea, Card, SystemButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useReviewStore } from '../../store/reviewStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
+import { supabase } from '../../lib/supabase';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -15,6 +17,7 @@ type Props = {
 };
 
 const RATING_LABELS = ['', 'Ужасно', 'Плохо', 'Нормально', 'Хорошо', 'Отлично!'];
+const MAX_PHOTOS = 5;
 
 function StarRating({
   rating,
@@ -26,7 +29,7 @@ function StarRating({
   return (
     <View style={styles.starsRow}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Pressable key={n} onPress={() => onRate(n)} hitSlop={8}>
+        <Pressable key={n} onPress={() => { onRate(n); hapticLight(); }} hitSlop={8}>
           <Ionicons
             name={n <= rating ? 'star' : 'star-outline'}
             size={36}
@@ -60,11 +63,85 @@ export function ReviewScreen({ navigation, route }: Props) {
     {},
   );
   const [reviewText, setReviewText] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]); // URIs
   const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleMasterRating = (masterId: string, rating: number) => {
     setMasterRatings((prev) => ({ ...prev, [masterId]: rating }));
   };
+
+  // ─── Image picker ───
+
+  const handlePickPhotos = useCallback(async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      showToast(`Максимум ${MAX_PHOTOS} фото`, 'info');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_PHOTOS - photos.length,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const newUris = result.assets.map((a) => a.uri);
+      setPhotos((prev) => [...prev, ...newUris].slice(0, MAX_PHOTOS));
+      hapticLight();
+    } catch {
+      showToast('Не удалось открыть галерею', 'error');
+    }
+  }, [photos.length]);
+
+  const handleRemovePhoto = useCallback((index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    hapticLight();
+  }, []);
+
+  // ─── Upload photos to Supabase Storage ───
+
+  const uploadPhotos = useCallback(async (): Promise<string[]> => {
+    if (photos.length === 0) return [];
+
+    const clientId = user?.id || '';
+    const isDev = clientId.startsWith('dev-');
+
+    // Dev users — return local URIs (no upload)
+    if (isDev) return photos;
+
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
+
+    for (const uri of photos) {
+      try {
+        const fileName = `reviews/${projectId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        const { error } = await supabase.storage
+          .from('review-photos')
+          .upload(fileName, blob, { contentType: 'image/jpeg' });
+
+        if (!error) {
+          const { data } = supabase.storage
+            .from('review-photos')
+            .getPublicUrl(fileName);
+          uploadedUrls.push(data.publicUrl);
+        }
+      } catch {
+        // Skip failed uploads
+      }
+    }
+
+    setIsUploading(false);
+    return uploadedUrls;
+  }, [photos, user?.id, projectId]);
+
+  // ─── Submit ───
 
   const handleSubmit = async () => {
     if (supervisorRating === 0) {
@@ -77,6 +154,9 @@ export function ReviewScreen({ navigation, route }: Props) {
     try {
       const clientId = user?.id || '';
 
+      // Upload photos first
+      const photoUrls = await uploadPhotos();
+
       // Submit supervisor review
       if (supervisorId) {
         await submitReview({
@@ -85,6 +165,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           client_id: clientId,
           rating: supervisorRating,
           text: reviewText || undefined,
+          photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
         });
       }
 
@@ -164,11 +245,44 @@ export function ReviewScreen({ navigation, route }: Props) {
         />
       </View>
 
-      {/* Photo upload placeholder */}
+      {/* Photo upload */}
       <Text style={styles.photoLabel}>Добавьте фото готового ремонта</Text>
-      <Pressable style={styles.photoButton}>
-        <Ionicons name="camera-outline" size={24} color={colors.textLight} />
-      </Pressable>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.photosRow}
+      >
+        {photos.map((uri, index) => (
+          <View key={uri + index} style={styles.photoThumbContainer}>
+            <Image source={{ uri }} style={styles.photoThumb} />
+            <Pressable
+              style={styles.photoRemoveBtn}
+              onPress={() => handleRemovePhoto(index)}
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={22} color={colors.danger} />
+            </Pressable>
+          </View>
+        ))}
+        {photos.length < MAX_PHOTOS && (
+          <Pressable
+            style={styles.photoButton}
+            onPress={handlePickPhotos}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <Ionicons name="camera-outline" size={24} color={colors.textLight} />
+                <Text style={styles.photoCount}>
+                  {photos.length}/{MAX_PHOTOS}
+                </Text>
+              </>
+            )}
+          </Pressable>
+        )}
+      </ScrollView>
 
       {/* Actions */}
       <Button
@@ -239,15 +353,41 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
     marginBottom: spacing.md,
   },
+  photosRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  photoThumbContainer: {
+    position: 'relative',
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.md,
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.white,
+    borderRadius: 11,
+  },
   photoButton: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+  },
+  photoCount: {
+    ...typography.caption,
+    color: colors.textLight,
+    fontSize: 10,
   },
   skipButton: {
     alignItems: 'center',
