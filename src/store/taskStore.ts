@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stage, StageStatus, PhotoReport } from '../types';
 import { fetchMasterStages, updateStageStatus as updateStageStatusApi } from '../services/projectService';
+import { supabase } from '../lib/supabase';
 
 // Extended task item with project context
 export interface TaskItem extends Stage {
@@ -69,6 +70,7 @@ interface TaskState {
   removePhoto: (stageId: string, uri: string) => void;
   getPhotos: (stageId: string) => LocalPhoto[];
   clearPhotos: (stageId: string) => void;
+  uploadPhotos: (stageId: string, userId: string, comment?: string) => Promise<string[]>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -190,5 +192,52 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const { [stageId]: _, ...rest } = photoReports;
     set({ photoReports: rest });
     AsyncStorage.setItem(PHOTOS_KEY, JSON.stringify(rest)).catch(() => {});
+  },
+
+  uploadPhotos: async (stageId: string, userId: string, comment?: string): Promise<string[]> => {
+    const isDev = userId.startsWith('dev-');
+    const photos = get().getPhotos(stageId);
+    if (photos.length === 0) return [];
+
+    // Dev users — keep local URIs
+    if (isDev) return photos.map((p) => p.uri);
+
+    const uploadedUrls: string[] = [];
+
+    for (const photo of photos) {
+      try {
+        const fileName = `${stageId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const response = await fetch(photo.uri);
+        const blob = await response.blob();
+
+        const { error: uploadError } = await supabase.storage
+          .from('photo-reports')
+          .upload(fileName, blob, { contentType: 'image/jpeg' });
+
+        if (uploadError) {
+          console.warn('Photo upload error:', uploadError.message);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('photo-reports')
+          .getPublicUrl(fileName);
+
+        const publicUrl = urlData.publicUrl;
+        uploadedUrls.push(publicUrl);
+
+        // Insert into photo_reports table
+        await supabase.from('photo_reports').insert({
+          stage_id: stageId,
+          uploaded_by: userId,
+          url: publicUrl,
+          comment: comment || null,
+        });
+      } catch (err) {
+        console.warn('Photo upload failed:', err);
+      }
+    }
+
+    return uploadedUrls;
   },
 }));

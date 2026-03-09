@@ -53,7 +53,8 @@ const MOCK_PROJECTS: ProjectItem[] = [
 
 export function SupervisorHomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
-  const [projects, setProjects] = useState<ProjectItem[]>(MOCK_PROJECTS);
+  const isDev = user?.id.startsWith('dev-');
+  const [projects, setProjects] = useState<ProjectItem[]>(isDev ? MOCK_PROJECTS : []);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);

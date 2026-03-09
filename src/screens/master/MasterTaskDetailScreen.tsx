@@ -25,6 +25,7 @@ import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useToastStore } from '../../store/toastStore';
 import { useTaskStore } from '../../store/taskStore';
+import { useAuthStore } from '../../store/authStore';
 import { STAGE_STATUS_LABELS } from '../../types';
 
 const MAX_PHOTOS = 5;
@@ -42,7 +43,8 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
   const task = route.params?.task;
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
-  const { updateStatus, addPhoto, removePhoto, getPhotos, clearPhotos, tasks } = useTaskStore();
+  const { user } = useAuthStore();
+  const { updateStatus, addPhoto, removePhoto, getPhotos, clearPhotos, tasks, uploadPhotos } = useTaskStore();
 
   // Get live status from store (falls back to route param)
   const liveTask = tasks.find((t) => t.id === task?.id);
@@ -115,22 +117,30 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
   const handleComplete = useCallback(() => {
     showDialog(
       'Отметить выполнение?',
-      'Супервайзер проверит результат работы.',
+      'Фото будут загружены и отправлены супервайзеру.',
       [
         {
           text: 'Выполнено',
           onPress: async () => {
             setSaving(true);
-            await updateStatus(task.id, 'done_by_master');
-            hapticSuccess();
-            showToast('Задача отправлена на проверку', 'success');
+            try {
+              // Upload photos to Supabase Storage + photo_reports table
+              if (user?.id) {
+                await uploadPhotos(task.id, user.id, comment || undefined);
+              }
+              await updateStatus(task.id, 'done_by_master');
+              hapticSuccess();
+              showToast('Задача отправлена на проверку', 'success');
+            } catch {
+              showToast('Ошибка при отправке', 'error');
+            }
             setSaving(false);
           },
         },
         { text: 'Нет', style: 'cancel', onPress: () => {} },
       ],
     );
-  }, [task, showToast, updateStatus]);
+  }, [task, showToast, updateStatus, uploadPhotos, user, comment]);
 
   const handleRework = useCallback(() => {
     updateStatus(task.id, 'in_progress');

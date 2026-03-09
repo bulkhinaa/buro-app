@@ -9,6 +9,7 @@ import type {
   ExperienceRange,
 } from '../types';
 import type { SpecializationId } from '../data/specializations';
+import { supabase } from '../lib/supabase';
 
 // AsyncStorage keys
 const WELCOME_SEEN_KEY = 'master_welcome_seen';
@@ -73,6 +74,61 @@ const DEFAULT_PROFILE: MasterProfile = {
   completed_tasks: 0,
 };
 
+// Helper: sync master profile to Supabase (non-blocking)
+async function syncToSupabase(userId: string, profile: MasterProfile) {
+  if (userId.startsWith('dev-')) return;
+  try {
+    await supabase.from('master_profiles').upsert({
+      id: userId,
+      specializations: profile.specializations,
+      portfolio_urls: profile.portfolio.flatMap((p) => p.photos),
+      rating: profile.rating,
+      reviews_count: profile.reviews_count,
+      is_verified: profile.verification_status === 'approved',
+      experience: profile.experience,
+      about: profile.about,
+      skill_level: profile.skill_level,
+      pricing: profile.pricing,
+      certificates: profile.certificates,
+      completed_tasks: profile.completed_tasks,
+    });
+  } catch {
+    // Non-blocking — local data is primary for MVP
+  }
+}
+
+// Helper: load master profile from Supabase
+async function loadFromSupabase(userId: string): Promise<MasterProfile | null> {
+  if (userId.startsWith('dev-')) return null;
+  try {
+    const { data, error } = await supabase
+      .from('master_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (error || !data) return null;
+    return {
+      specializations: data.specializations || [],
+      experience: data.experience || '1_3',
+      about: data.about || '',
+      skill_level: data.skill_level || 'experienced',
+      portfolio: [], // Portfolio projects stored separately for now
+      pricing: data.pricing || [],
+      certificates: data.certificates || [],
+      verification_status: data.is_verified ? 'approved' : 'none',
+      jump_contractor_id: null,
+      rating: data.rating || 0,
+      reviews_count: data.reviews_count || 0,
+      completed_tasks: data.completed_tasks || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Store user ID for sync operations
+let _currentUserId = '';
+
 export const useMasterStore = create<MasterState>((set, get) => ({
   welcomeSeen: false,
   setupComplete: false,
@@ -82,6 +138,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   activeView: 'client',
 
   init: async (userId: string) => {
+    _currentUserId = userId;
     set({ isLoading: true });
     try {
       const [welcomeSeen, setupComplete, draftJson, profileJson, activeViewValue] = await Promise.all([
@@ -93,13 +150,24 @@ export const useMasterStore = create<MasterState>((set, get) => ({
       ]);
 
       const isSetupDone = setupComplete === 'true';
+      let profile = profileJson ? JSON.parse(profileJson) : (isSetupDone ? DEFAULT_PROFILE : null);
+
+      // Try to load from Supabase for real users (overrides local if available)
+      const remoteProfile = await loadFromSupabase(userId);
+      if (remoteProfile) {
+        profile = remoteProfile;
+        await AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(profile));
+        if (!isSetupDone) {
+          await AsyncStorage.setItem(SETUP_COMPLETE_KEY, 'true');
+        }
+      }
 
       set({
         welcomeSeen: welcomeSeen === 'true',
-        setupComplete: isSetupDone,
+        setupComplete: isSetupDone || !!remoteProfile,
         setupDraft: draftJson ? JSON.parse(draftJson) : null,
-        profile: profileJson ? JSON.parse(profileJson) : (isSetupDone ? DEFAULT_PROFILE : null),
-        activeView: (activeViewValue === 'master' && isSetupDone) ? 'master' : 'client',
+        profile,
+        activeView: (activeViewValue === 'master' && (isSetupDone || !!remoteProfile)) ? 'master' : 'client',
         isLoading: false,
       });
     } catch {
@@ -153,6 +221,9 @@ export const useMasterStore = create<MasterState>((set, get) => ({
       AsyncStorage.setItem(ACTIVE_VIEW_KEY, 'master'),
       AsyncStorage.removeItem(SETUP_DRAFT_KEY),
     ]);
+
+    // Sync to Supabase (non-blocking)
+    syncToSupabase(_currentUserId, profile);
   },
 
   updateProfile: async (updates: Partial<MasterProfile>) => {
@@ -160,6 +231,9 @@ export const useMasterStore = create<MasterState>((set, get) => ({
     const updated = { ...current, ...updates };
     set({ profile: updated });
     await AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(updated));
+
+    // Sync to Supabase (non-blocking)
+    syncToSupabase(_currentUserId, updated);
   },
 
   setVerificationStatus: async (status: VerificationStatus) => {

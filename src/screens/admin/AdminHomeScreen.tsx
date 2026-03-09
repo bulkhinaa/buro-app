@@ -11,6 +11,7 @@ import {
   updateProjectStatus,
   assignSupervisor,
 } from '../../services/projectService';
+import { supabase } from '../../lib/supabase';
 
 type RequestItem = Project & { clientName: string; clientPhone: string };
 
@@ -63,7 +64,8 @@ const MOCK_SUPERVISORS = [
 ];
 
 export function AdminHomeScreen({ navigation }: any) {
-  const [requests, setRequests] = useState<RequestItem[]>(MOCK_REQUESTS);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [supervisors, setSupervisors] = useState(MOCK_SUPERVISORS);
   const [assignedCount, setAssignedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
 
@@ -82,6 +84,7 @@ export function AdminHomeScreen({ navigation }: any) {
 
   const loadData = useCallback(async () => {
     try {
+      // Load projects
       const projects = await fetchAllProjects('new');
       if (projects.length > 0) {
         setRequests(
@@ -91,9 +94,24 @@ export function AdminHomeScreen({ navigation }: any) {
             clientPhone: '',
           })),
         );
+      } else {
+        // Dev fallback
+        setRequests(MOCK_REQUESTS);
+      }
+
+      // Load real supervisors from profiles
+      const { data: svData } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('role', 'supervisor')
+        .eq('is_active', true);
+
+      if (svData && svData.length > 0) {
+        setSupervisors(svData.map((sv) => ({ id: sv.id, name: sv.name || 'Без имени' })));
       }
     } catch {
       // DEV mode: Supabase may fail without auth, use mocks
+      setRequests(MOCK_REQUESTS);
     }
   }, []);
 
@@ -102,7 +120,7 @@ export function AdminHomeScreen({ navigation }: any) {
   }, [loadData]);
 
   const handleAssign = (item: RequestItem) => {
-    const svButtons: DialogButton[] = MOCK_SUPERVISORS.map((sv) => ({
+    const svButtons: DialogButton[] = supervisors.map((sv) => ({
       text: sv.name,
       onPress: async () => {
         try {
