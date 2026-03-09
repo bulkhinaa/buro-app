@@ -60,6 +60,9 @@ const ru: Record<string, string> = {
   'profileSetup.error': 'Не удалось сохранить профиль',
   'profileSetup.nameRequired': 'Введите ваше имя',
   'profileSetup.cityRequired': 'Укажите город',
+  'profileSetup.consent': 'Я даю согласие на обработку персональных данных в соответствии с ',
+  'profileSetup.privacyPolicy': 'Политикой конфиденциальности',
+  'profileSetup.consentRequired': 'Необходимо дать согласие на обработку данных',
 
   // ─── Master welcome slides ───
   'master.welcome.skip': 'Пропустить',
@@ -152,6 +155,12 @@ const ru: Record<string, string> = {
   'profile.logoutMessage': 'Вы уверены, что хотите выйти из аккаунта?',
   'profile.logoutConfirm': 'Выйти',
   'profile.version': 'Версия 1.0.0',
+  'profile.deleteAccount': 'Удалить аккаунт',
+  'profile.deleteAccountTitle': 'Удалить аккаунт?',
+  'profile.deleteAccountMessage': 'Все ваши данные будут обезличены. Это действие нельзя отменить.',
+  'profile.deleteAccountConfirm': 'Удалить навсегда',
+  'profile.deleteAccountSuccess': 'Аккаунт удалён',
+  'profile.deleteAccountError': 'Не удалось удалить аккаунт',
 
   // ─── Summary labels ───
   'summary.name': 'Имя',

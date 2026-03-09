@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Animated, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationState } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
 import { useLanguageStore } from '../store/languageStore';
+import { trackScreen } from '../services/analyticsService';
 import { AuthNavigator } from './AuthNavigator';
 import { ClientNavigator } from './ClientNavigator';
 import { MasterNavigator } from './MasterNavigator';
@@ -187,9 +188,24 @@ export function RootNavigator() {
     }
   };
 
+  // ── Track screen views via navigation state changes ──
+  const getActiveRouteName = (state: NavigationState | undefined): string | undefined => {
+    if (!state) return undefined;
+    const route = state.routes[state.index];
+    if (route.state) return getActiveRouteName(route.state as NavigationState);
+    return route.name;
+  };
+
+  const handleNavigationStateChange = useCallback((state: NavigationState | undefined) => {
+    const screenName = getActiveRouteName(state);
+    if (screenName) {
+      trackScreen(screenName);
+    }
+  }, []);
+
   return (
     <View style={styles.root}>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer theme={navTheme} onStateChange={handleNavigationStateChange}>
         <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
           {authDone && showOnboarding !== null && showLanguageSelect !== null ? (
             getNavigator()

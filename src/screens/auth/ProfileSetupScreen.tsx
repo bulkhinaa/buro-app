@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { hapticSuccess } from '../../utils/haptics';
+import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import { hapticSuccess, hapticLight } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, SystemButton } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [cityTouched, setCityTouched] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   const nameError = nameTouched && !name.trim() ? t('profileSetup.nameRequired') : undefined;
   const cityError = cityTouched && !city.trim() ? t('profileSetup.cityRequired') : undefined;
@@ -40,6 +41,10 @@ export function ProfileSetupScreen({ navigation }: Props) {
       showToast(t('profileSetup.cityRequired'), 'error');
       return;
     }
+    if (!consentGiven) {
+      showToast(t('profileSetup.consentRequired'), 'error');
+      return;
+    }
     if (!user) return;
 
     try {
@@ -48,6 +53,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
         id: user.id,
         name: name.trim(),
         city: city.trim(),
+        consent_version: '1.0',
       });
       hapticSuccess();
       // Navigation will be handled by RootNavigator detecting profile completion
@@ -100,12 +106,33 @@ export function ProfileSetupScreen({ navigation }: Props) {
         />
       </View>
 
+      {/* Consent checkbox */}
+      <Pressable
+        style={styles.consentRow}
+        onPress={() => { setConsentGiven(!consentGiven); hapticLight(); }}
+      >
+        <View style={[styles.checkbox, consentGiven && styles.checkboxChecked]}>
+          {consentGiven && (
+            <Ionicons name="checkmark" size={14} color={colors.white} />
+          )}
+        </View>
+        <Text style={styles.consentText}>
+          {t('profileSetup.consent')}
+          <Text
+            style={styles.consentLink}
+            onPress={() => Linking.openURL('https://bulkhinaa.github.io/buro-app/privacy')}
+          >
+            {t('profileSetup.privacyPolicy')}
+          </Text>
+        </Text>
+      </Pressable>
+
       <Button
         title={loading ? t('profileSetup.saving') : t('profileSetup.continue')}
         onPress={handleContinue}
         loading={loading}
         fullWidth
-        style={{ marginTop: spacing.xxl }}
+        style={{ marginTop: spacing.lg }}
       />
     </ScreenWrapper>
   );
@@ -147,5 +174,37 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.md,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.xxl,
+    paddingHorizontal: spacing.xs,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.bgInput,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  consentText: {
+    ...typography.small,
+    color: colors.textLight,
+    flex: 1,
+    lineHeight: 20,
+  },
+  consentLink: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
   },
 });

@@ -5,6 +5,7 @@ import { ScreenWrapper, Button, CellIndicator, AppDialog } from '../components';
 import { colors, spacing, radius, typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
+import { useToastStore } from '../store/toastStore';
 import { SPECIALIZATION_MAP } from '../data/specializations';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,11 +14,14 @@ import { useLanguageStore, LANGUAGES } from '../store/languageStore';
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { user, logout } = useAuthStore();
+  const { user, logout, deleteAccount } = useAuthStore();
   const { setupComplete, activeView, setActiveView, profile } = useMasterStore();
+  const showToast = useToastStore((s) => s.show);
   const { t } = useTranslation();
   const { language } = useLanguageStore();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const roleKeys: Record<string, string> = {
     client: 'profile.roleClient',
@@ -230,6 +234,13 @@ export function ProfileScreen() {
         style={{ marginTop: spacing.xxl }}
       />
 
+      <Pressable
+        style={styles.deleteAccountButton}
+        onPress={() => setShowDeleteDialog(true)}
+      >
+        <Text style={styles.deleteAccountText}>{t('profile.deleteAccount')}</Text>
+      </Pressable>
+
       <Text style={styles.version}>{t('profile.version')}</Text>
       <View style={{ height: 140 }} />
 
@@ -242,6 +253,32 @@ export function ProfileScreen() {
           { text: t('profile.logoutConfirm'), style: 'destructive', onPress: logout },
         ]}
         onClose={() => setShowLogoutDialog(false)}
+      />
+
+      <AppDialog
+        visible={showDeleteDialog}
+        title={t('profile.deleteAccountTitle')}
+        message={t('profile.deleteAccountMessage')}
+        buttons={[
+          { text: t('common.cancel'), style: 'cancel', onPress: () => {} },
+          {
+            text: deleting ? '...' : t('profile.deleteAccountConfirm'),
+            style: 'destructive',
+            onPress: async () => {
+              setDeleting(true);
+              try {
+                await deleteAccount();
+                showToast(t('profile.deleteAccountSuccess'), 'success');
+              } catch {
+                showToast(t('profile.deleteAccountError'), 'error');
+              } finally {
+                setDeleting(false);
+                setShowDeleteDialog(false);
+              }
+            },
+          },
+        ]}
+        onClose={() => setShowDeleteDialog(false)}
       />
     </ScreenWrapper>
   );
@@ -377,6 +414,14 @@ const styles = StyleSheet.create({
   specChipText: {
     ...typography.small,
     color: colors.text,
+  },
+  deleteAccountButton: {
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  deleteAccountText: {
+    ...typography.small,
+    color: colors.danger,
   },
   version: {
     ...typography.caption,

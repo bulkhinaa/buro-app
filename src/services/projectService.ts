@@ -11,9 +11,11 @@ export async function upsertProfile(params: {
   city?: string;
   preferred_language?: string;
   role?: string;
+  consent_given_at?: string;
+  consent_version?: string;
 }): Promise<void> {
   // Build payload — only include optional fields if provided to avoid overwriting existing values
-  const payload: Record<string, string> = {
+  const payload: Record<string, any> = {
     id: params.id,
     name: params.name,
     role: params.role || 'client',
@@ -21,6 +23,8 @@ export async function upsertProfile(params: {
   if (params.phone) payload.phone = params.phone;
   if (params.city) payload.city = params.city;
   if (params.preferred_language) payload.preferred_language = params.preferred_language;
+  if (params.consent_given_at) payload.consent_given_at = params.consent_given_at;
+  if (params.consent_version) payload.consent_version = params.consent_version;
 
   const { error } = await supabase
     .from('profiles')

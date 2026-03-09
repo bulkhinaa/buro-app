@@ -50,3 +50,6 @@ export { StageAccordion } from './StageAccordion';
 export { GlassView } from './GlassView';
 export { GlassChip } from './GlassChip';
 export { GlassTabBar } from './GlassTabBar';
+
+// Error handling
+export { ErrorBoundary } from './ErrorBoundary';
