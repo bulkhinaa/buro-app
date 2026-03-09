@@ -20,8 +20,6 @@ import {
   ProgressBar,
   AppDialog,
   Checkbox,
-  PhoneInput,
-  CityPicker,
   TextArea,
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
@@ -50,7 +48,7 @@ type Props = {
   onComplete: () => void;
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 /**
  * Normalize phone from auth (e.g. "+79991234567", "89991234567")
@@ -91,26 +89,16 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
 
-  // Pre-fill step 1 from auth data
-  const initialName = setupDraft?.name || user?.name || '';
-  const initialCity = setupDraft?.city || user?.city || '';
-  const initialPhone = normalizePhone(setupDraft?.phone || user?.phone || '');
+  // Use auth data for name/city/phone — no need to ask again
+  const name = setupDraft?.name || user?.name || '';
+  const city = setupDraft?.city || user?.city || '';
+  const phone = normalizePhone(setupDraft?.phone || user?.phone || '');
 
-  // Auto-skip step 1 if auth data is already complete
-  const step1Complete = initialName.trim().length > 0 && initialPhone.length >= 10;
-  const [step, setStep] = useState(step1Complete ? 2 : 1);
+  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Step 1: Basic info
-  const [name, setName] = useState(initialName);
-  const [nameTouched, setNameTouched] = useState(false);
-  const [city, setCity] = useState(initialCity);
-  const [cityTouched, setCityTouched] = useState(false);
-  const [phone, setPhone] = useState(initialPhone);
-  const [phoneTouched, setPhoneTouched] = useState(false);
-
-  // Step 2: Specializations
+  // Step 1: Specializations
   const [specializations, setSpecializations] = useState<SpecializationId[]>(setupDraft?.specializations || []);
 
   // Step 3: Experience
@@ -133,56 +121,27 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const specCategories = useMemo(() => getSpecializationsByCategory(), []);
 
   // Validation
-  const nameError = useMemo(() => {
-    if (!nameTouched) return undefined;
-    if (!name.trim()) return 'Введите имя';
-    return undefined;
-  }, [name, nameTouched]);
-
-  const cityError = useMemo(() => {
-    if (!cityTouched) return undefined;
-    if (!city.trim()) return 'Выберите город';
-    return undefined;
-  }, [city, cityTouched]);
-
-  const phoneError = useMemo(() => {
-    if (!phoneTouched) return undefined;
-    if (!phone.trim()) return 'Введите телефон';
-    // PhoneInput stores 10 digits (without +7 prefix)
-    if (phone.replace(/\D/g, '').length < 10) return 'Неверный формат телефона';
-    return undefined;
-  }, [phone, phoneTouched]);
-
   const canProceed = useMemo(() => {
     switch (step) {
       case 1:
-        return name.trim().length > 0 && city.trim().length > 0 && phone.replace(/\D/g, '').length >= 10;
-      case 2:
         return specializations.length > 0;
-      case 3:
+      case 2:
         return true; // All have defaults
+      case 3:
+        return true; // Portfolio is optional
       case 4:
-        return true; // Portfolio is optional (except designers)
-      case 5:
         return true; // Pricing can be skipped
-      case 6:
+      case 5:
         return agreedToTerms;
       default:
         return false;
     }
-  }, [step, name, city, phone, specializations, agreedToTerms]);
+  }, [step, specializations, agreedToTerms]);
 
   const handleNext = useCallback(() => {
     if (step < TOTAL_STEPS) {
       if (!canProceed) {
         if (step === 1) {
-          setNameTouched(true);
-          setCityTouched(true);
-          setPhoneTouched(true);
-          if (!name.trim()) showToast('Введите ваше имя');
-          else if (!city.trim()) showToast('Выберите город');
-          else if (phone.replace(/\D/g, '').length < 10) showToast('Введите номер телефона');
-        } else if (step === 2) {
           showToast('Выберите хотя бы одну специализацию');
         }
         return;
@@ -201,8 +160,8 @@ export function MasterSetupScreen({ onComplete }: Props) {
         pricing,
       });
 
-      // Initialize pricing for new specializations when moving to step 5
-      if (step === 4) {
+      // Initialize pricing for new specializations when moving to step 4
+      if (step === 3) {
         const existingSpecIds = pricing.map((p) => p.specialization);
         const newPricing = [...pricing];
         specializations.forEach((specId) => {
@@ -210,7 +169,6 @@ export function MasterSetupScreen({ onComplete }: Props) {
             newPricing.push({ specialization: specId, price: 0, price_type: 'per_sqm' });
           }
         });
-        // Remove pricing for deselected specializations
         const filtered = newPricing.filter((p) => specializations.includes(p.specialization));
         setPricing(filtered);
       }
@@ -303,44 +261,6 @@ export function MasterSetupScreen({ onComplete }: Props) {
   };
 
   // ─── Step renderers ───
-
-  const renderStep1 = () => (
-    <>
-      <Text style={styles.title}>Расскажите о себе</Text>
-      <Text style={styles.subtitle}>Базовая информация для вашего профиля</Text>
-
-      <View style={styles.formSection}>
-        <Input
-          placeholder="Ваше имя"
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            if (text.length > 0) setNameTouched(true);
-          }}
-          leftIcon={<Ionicons name="person-outline" size={18} color={colors.textLight} />}
-          error={nameError}
-        />
-
-        <CityPicker
-          value={city}
-          onSelect={(c) => {
-            setCity(c);
-            setCityTouched(true);
-          }}
-          error={cityError}
-        />
-
-        <PhoneInput
-          value={phone}
-          onChangeText={(text) => {
-            setPhone(text);
-            if (text.length > 0) setPhoneTouched(true);
-          }}
-          error={phoneError}
-        />
-      </View>
-    </>
-  );
 
   const renderStep2 = () => (
     <>
@@ -586,12 +506,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const renderStep = () => {
     switch (step) {
-      case 1: return renderStep1();
-      case 2: return renderStep2();
-      case 3: return renderStep3();
-      case 4: return renderStep4();
-      case 5: return renderStep5();
-      case 6: return renderStep6();
+      case 1: return renderStep2();
+      case 2: return renderStep3();
+      case 3: return renderStep4();
+      case 4: return renderStep5();
+      case 5: return renderStep6();
       default: return null;
     }
   };
