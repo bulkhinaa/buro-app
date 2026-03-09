@@ -2,6 +2,7 @@ import React from 'react';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { MasterHomeScreen } from '../screens/master/MasterHomeScreen';
 import { MasterTaskDetailScreen } from '../screens/master/MasterTaskDetailScreen';
 import { MasterPortfolioScreen } from '../screens/master/MasterPortfolioScreen';
@@ -16,6 +17,7 @@ import { SupportScreen } from '../screens/profile/SupportScreen';
 import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
+import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
 
@@ -23,6 +25,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 function MasterTabs() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       tabBar={(props) => <GlassTabBar {...props} />}
@@ -34,7 +37,7 @@ function MasterTabs() {
         name="Tasks"
         component={MasterHomeScreen}
         options={{
-          tabBarLabel: 'Задачи',
+          tabBarLabel: t('tabs.tasks'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />
           ),
@@ -44,7 +47,7 @@ function MasterTabs() {
         name="Portfolio"
         component={MasterPortfolioScreen}
         options={{
-          tabBarLabel: 'Портфолио',
+          tabBarLabel: t('tabs.portfolio'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'images' : 'images-outline'} size={22} color={color} />
           ),
@@ -54,7 +57,7 @@ function MasterTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Профиль',
+          tabBarLabel: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
           ),
@@ -65,6 +68,7 @@ function MasterTabs() {
 }
 
 export function MasterNavigator() {
+  const { t } = useTranslation();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -87,20 +91,21 @@ export function MasterNavigator() {
           animation: 'slide_from_bottom' as any,
         }}
       />
-      <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: 'Чат с супервайзером' }} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: t('nav.chatSupervisor') }} />
       {/* Portfolio — has its own header */}
       <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerShown: false }} />
       {/* Pricing — has its own header */}
       <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false }} />
       {/* Verification — uses ScreenWrapper, needs stack header */}
-      <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: 'Верификация' }} />
+      <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: t('nav.verification') }} />
       {/* Profile sub-screens */}
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
-      <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: 'Уведомления' }} />
-      <Stack.Screen name="MyReviews" component={MyReviewsScreen} options={{ headerTitle: 'Мои отзывы' }} />
-      <Stack.Screen name="Support" component={SupportScreen} options={{ headerTitle: 'Поддержка' }} />
-      <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: 'Документы' }} />
-      <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: 'О приложении' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: t('nav.editProfile') }} />
+      <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: t('nav.notifications') }} />
+      <Stack.Screen name="MyReviews" component={MyReviewsScreen} options={{ headerTitle: t('nav.myReviews') }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ headerTitle: t('nav.support') }} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: t('nav.documents') }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: t('nav.about') }} />
+      <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} options={{ headerTitle: t('nav.language') }} />
     </Stack.Navigator>
   );
 }

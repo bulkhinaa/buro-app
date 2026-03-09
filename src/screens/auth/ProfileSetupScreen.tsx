@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { hapticSuccess } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, SystemButton } from '../../components';
 import { colors, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = {
@@ -13,26 +15,44 @@ type Props = {
 
 export function ProfileSetupScreen({ navigation }: Props) {
   const { user, syncProfile } = useAuthStore();
+  const showToast = useToastStore((s) => s.show);
+  const { t } = useTranslation();
   const [name, setName] = useState(user?.name || '');
   const [city, setCity] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [cityTouched, setCityTouched] = useState(false);
 
-  const canContinue = name.trim().length > 0 && city.trim().length > 0;
+  const nameError = nameTouched && !name.trim() ? t('profileSetup.nameRequired') : undefined;
+  const cityError = cityTouched && !city.trim() ? t('profileSetup.cityRequired') : undefined;
 
   const handleContinue = async () => {
-    if (!canContinue || !user) return;
+    // Mark all fields as touched
+    setNameTouched(true);
+    setCityTouched(true);
+
+    if (!name.trim()) {
+      showToast(t('profileSetup.nameRequired'), 'error');
+      return;
+    }
+    if (!city.trim()) {
+      showToast(t('profileSetup.cityRequired'), 'error');
+      return;
+    }
+    if (!user) return;
 
     try {
       setLoading(true);
       await syncProfile({
         id: user.id,
         name: name.trim(),
+        city: city.trim(),
       });
       hapticSuccess();
       // Navigation will be handled by RootNavigator detecting profile completion
     } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось сохранить профиль');
+      showToast(e.message || t('profileSetup.error'), 'error');
     } finally {
       setLoading(false);
     }
@@ -44,35 +64,35 @@ export function ProfileSetupScreen({ navigation }: Props) {
         <SystemButton type="back" onPress={() => navigation.goBack()} />
       </View>
 
-      <Text style={styles.title}>Расскажите о себе</Text>
-      <Text style={styles.subtitle}>
-        Эта информация поможет нам подобрать лучших мастеров для вашего ремонта
-      </Text>
+      <Text style={styles.title}>{t('profileSetup.title')}</Text>
+      <Text style={styles.subtitle}>{t('profileSetup.subtitle')}</Text>
 
       <View style={styles.avatarSection}>
         <Pressable style={styles.avatarCircle}>
           <Ionicons name="camera" size={32} color={colors.primary} />
         </Pressable>
-        <Text style={styles.avatarLabel}>Добавить фото</Text>
+        <Text style={styles.avatarLabel}>{t('profileSetup.addPhoto')}</Text>
       </View>
 
       <View style={styles.form}>
         <Input
-          placeholder="Как вас зовут?"
+          placeholder={t('profileSetup.namePlaceholder')}
           value={name}
-          onChangeText={setName}
+          onChangeText={(v) => { setName(v); setNameTouched(true); }}
           autoCapitalize="words"
+          error={nameError}
         />
 
         <Input
-          placeholder="Ваш город"
+          placeholder={t('profileSetup.cityPlaceholder')}
           value={city}
-          onChangeText={setCity}
+          onChangeText={(v) => { setCity(v); setCityTouched(true); }}
           autoCapitalize="words"
+          error={cityError}
         />
 
         <Input
-          placeholder="Email (необязательно)"
+          placeholder={t('profileSetup.emailPlaceholder')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -81,9 +101,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
       </View>
 
       <Button
-        title={loading ? 'Сохраняем...' : 'Продолжить'}
+        title={loading ? t('profileSetup.saving') : t('profileSetup.continue')}
         onPress={handleContinue}
-        disabled={!canContinue}
         loading={loading}
         fullWidth
         style={{ marginTop: spacing.xxl }}

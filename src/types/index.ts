@@ -1,11 +1,14 @@
 export type UserRole = 'client' | 'master' | 'supervisor' | 'admin';
 
+export type SupportedLanguage = 'ru' | 'uz' | 'tg' | 'ky' | 'kk' | 'hy' | 'ro';
+
 export interface User {
   id: string;
   phone: string;
   name: string;
   role: UserRole;
   city?: string;
+  preferred_language?: SupportedLanguage;
   avatar_url?: string;
   created_at: string;
   is_active: boolean;

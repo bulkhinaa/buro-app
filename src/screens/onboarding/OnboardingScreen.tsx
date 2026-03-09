@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button } from '../../components';
 import { colors, spacing } from '../../theme';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,37 +30,34 @@ const BG_CREAM = '#F5EFE9';
  */
 const ILLUSTRATION_HEIGHT = height * 0.62;
 
-interface Slide {
+interface SlideConfig {
   id: string;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
   image: ImageSourcePropType;
 }
 
-const SLIDES: Slide[] = [
+const SLIDE_CONFIGS: SlideConfig[] = [
   {
     id: '1',
     icon: 'home',
-    title: 'Ремонт без стресса',
-    subtitle:
-      'Мы берём на себя контроль за каждым этапом —\nот демонтажа до финальной уборки',
+    titleKey: 'onboarding.slide1.title',
+    subtitleKey: 'onboarding.slide1.subtitle',
     image: require('../../../assets/images/onboarding/slide1.png'),
   },
   {
     id: '2',
     icon: 'shield-checkmark',
-    title: 'Независимый контроль',
-    subtitle:
-      'На каждом объекте работает супервайзер —\nон проверяет качество и принимает работы за вас',
+    titleKey: 'onboarding.slide2.title',
+    subtitleKey: 'onboarding.slide2.subtitle',
     image: require('../../../assets/images/onboarding/slide2.png'),
   },
   {
     id: '3',
     icon: 'eye',
-    title: 'Прозрачность\nна каждом шагу',
-    subtitle:
-      'Вы видите прогресс ремонта в реальном времени:\nфотоотчёты, этапы, сроки и расходы',
+    titleKey: 'onboarding.slide3.title',
+    subtitleKey: 'onboarding.slide3.subtitle',
     image: require('../../../assets/images/onboarding/slide3.png'),
   },
 ];
@@ -71,6 +69,7 @@ type Props = {
 export function OnboardingScreen({ onComplete }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const { t } = useTranslation();
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -82,7 +81,7 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const isLast = activeIndex === SLIDES.length - 1;
+  const isLast = activeIndex === SLIDE_CONFIGS.length - 1;
 
   const getItemLayout = (_: any, index: number) => ({
     length: width,
@@ -102,7 +101,7 @@ export function OnboardingScreen({ onComplete }: Props) {
     }
   };
 
-  const renderSlide = ({ item }: { item: Slide }) => (
+  const renderSlide = ({ item }: { item: SlideConfig }) => (
     <View style={styles.slide}>
       {/* 3D illustration — fills upper portion, edge to edge */}
       <Image
@@ -116,8 +115,8 @@ export function OnboardingScreen({ onComplete }: Props) {
         <View style={styles.iconPill}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
         </View>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
+        <Text style={styles.title}>{t(item.titleKey)}</Text>
+        <Text style={styles.subtitle}>{t(item.subtitleKey)}</Text>
       </View>
     </View>
   );
@@ -126,7 +125,7 @@ export function OnboardingScreen({ onComplete }: Props) {
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={SLIDES}
+        data={SLIDE_CONFIGS}
         renderItem={renderSlide}
         keyExtractor={(item) => item.id}
         horizontal
@@ -143,7 +142,7 @@ export function OnboardingScreen({ onComplete }: Props) {
       <SafeAreaView style={styles.footerSafe} edges={['bottom']} pointerEvents="box-none">
         <View style={styles.footer} pointerEvents="box-none">
           <View style={styles.dots}>
-            {SLIDES.map((_, i) => (
+            {SLIDE_CONFIGS.map((_, i) => (
               <View
                 key={i}
                 style={[styles.dot, i === activeIndex && styles.dotActive]}
@@ -152,7 +151,7 @@ export function OnboardingScreen({ onComplete }: Props) {
           </View>
 
           <Button
-            title={isLast ? 'Начать' : 'Далее →'}
+            title={isLast ? t('onboarding.start') : t('common.next')}
             onPress={handleNext}
             fullWidth
             style={{ marginTop: spacing.lg }}

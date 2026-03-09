@@ -8,34 +8,41 @@ import { useMasterStore } from '../store/masterStore';
 import { SPECIALIZATION_MAP } from '../data/specializations';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
+import { useLanguageStore, LANGUAGES } from '../store/languageStore';
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, logout } = useAuthStore();
   const { setupComplete, activeView, setActiveView, profile } = useMasterStore();
+  const { t } = useTranslation();
+  const { language } = useLanguageStore();
 
-  const roleLabel: Record<string, string> = {
-    client: 'Клиент',
-    master: 'Мастер',
-    supervisor: 'Супервайзер',
-    admin: 'Администратор',
+  const roleKeys: Record<string, string> = {
+    client: 'profile.roleClient',
+    master: 'profile.roleMaster',
+    supervisor: 'profile.roleSupervisor',
+    admin: 'profile.roleAdmin',
   };
 
   // For dual-role users, show active role
   const displayRole = (() => {
     if (user?.role === 'client' && setupComplete) {
-      return activeView === 'master' ? 'Мастер' : 'Клиент';
+      return activeView === 'master' ? t('profile.roleMaster') : t('profile.roleClient');
     }
-    return roleLabel[user?.role || 'client'];
+    return t(roleKeys[user?.role || 'client']);
   })();
+
+  // Current language display name
+  const currentLangName = LANGUAGES.find((l) => l.code === language)?.name || 'Русский';
 
   const handleLogout = () => {
     Alert.alert(
-      'Выход',
-      'Вы уверены, что хотите выйти из аккаунта?',
+      t('profile.logoutTitle'),
+      t('profile.logoutMessage'),
       [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Выйти', style: 'destructive', onPress: logout },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('profile.logoutConfirm'), style: 'destructive', onPress: logout },
       ],
     );
   };
@@ -55,7 +62,7 @@ export function ProfileScreen() {
             </Text>
           </View>
         )}
-        <Text style={styles.name}>{user?.name || 'Имя не указано'}</Text>
+        <Text style={styles.name}>{user?.name || t('profile.nameFallback')}</Text>
         <Text style={styles.role}>{displayRole}</Text>
         {user?.city ? <Text style={styles.city}>{user.city}</Text> : null}
         {user?.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
@@ -65,42 +72,50 @@ export function ProfileScreen() {
         <CellIndicator
           variant="card"
           icon={<Ionicons name="create-outline" size={20} color={colors.primary} />}
-          name="Редактировать профиль"
+          name={t('profile.menuEdit')}
           showChevron
           onPress={() => navigation.navigate('EditProfile')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="notifications-outline" size={20} color={colors.primary} />}
-          name="Уведомления"
+          name={t('profile.menuNotifications')}
           showChevron
           onPress={() => navigation.navigate('NotificationsStack')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="clipboard-outline" size={20} color={colors.primary} />}
-          name="Мои отзывы"
+          name={t('profile.menuReviews')}
           showChevron
           onPress={() => navigation.navigate('MyReviews')}
         />
         <CellIndicator
           variant="card"
+          icon={<Ionicons name="language-outline" size={20} color={colors.primary} />}
+          name={t('profile.menuLanguage')}
+          value={currentLangName}
+          showChevron
+          onPress={() => navigation.navigate('LanguageSelect')}
+        />
+        <CellIndicator
+          variant="card"
           icon={<Ionicons name="chatbubble-outline" size={20} color={colors.primary} />}
-          name="Поддержка"
+          name={t('profile.menuSupport')}
           showChevron
           onPress={() => navigation.navigate('Support')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="document-outline" size={20} color={colors.primary} />}
-          name="Документы"
+          name={t('profile.menuDocuments')}
           showChevron
           onPress={() => navigation.navigate('Documents')}
         />
         <CellIndicator
           variant="card"
           icon={<Ionicons name="information-circle-outline" size={20} color={colors.primary} />}
-          name="О приложении"
+          name={t('profile.menuAbout')}
           showChevron
           onPress={() => navigation.navigate('About')}
         />
@@ -126,10 +141,10 @@ export function ProfileScreen() {
             }
             name={
               profile.verification_status === 'approved'
-                ? 'Верифицирован'
+                ? t('profile.verified')
                 : profile.verification_status === 'pending'
-                  ? 'Верификация в процессе'
-                  : 'Пройти верификацию'
+                  ? t('profile.verificationPending')
+                  : t('profile.startVerification')
             }
             showChevron
             onPress={() => navigation.navigate('JumpFinance')}
@@ -137,7 +152,7 @@ export function ProfileScreen() {
           <CellIndicator
             variant="card"
             icon={<Ionicons name="pricetag-outline" size={20} color={colors.primary} />}
-            name="Мои расценки"
+            name={t('profile.myPricing')}
             showChevron
             onPress={() => navigation.navigate('MasterPricing')}
           />
@@ -147,7 +162,7 @@ export function ProfileScreen() {
       {/* Specializations chips */}
       {isMasterView && profile && profile.specializations.length > 0 && (
         <View style={styles.specsSection}>
-          <Text style={styles.specsTitle}>Специализации</Text>
+          <Text style={styles.specsTitle}>{t('profile.specializations')}</Text>
           <View style={styles.specsRow}>
             {profile.specializations.map((specId) => {
               const spec = SPECIALIZATION_MAP[specId];
@@ -174,9 +189,9 @@ export function ProfileScreen() {
               <Ionicons name="hammer-outline" size={24} color={colors.primary} />
             </View>
             <View style={styles.roleSwitchTextBlock}>
-              <Text style={styles.roleSwitchTitle}>Стать мастером</Text>
+              <Text style={styles.roleSwitchTitle}>{t('profile.becomeMaster')}</Text>
               <Text style={styles.roleSwitchSubtitle}>
-                Получайте заказы и зарабатывайте
+                {t('profile.becomeMasterSubtitle')}
               </Text>
             </View>
           </View>
@@ -200,12 +215,12 @@ export function ProfileScreen() {
             </View>
             <View style={styles.roleSwitchTextBlock}>
               <Text style={styles.roleSwitchTitle}>
-                {activeView === 'master' ? 'Кабинет клиента' : 'Кабинет мастера'}
+                {activeView === 'master' ? t('profile.clientCabinet') : t('profile.masterCabinet')}
               </Text>
               <Text style={styles.roleSwitchSubtitle}>
                 {activeView === 'master'
-                  ? 'Вернуться к управлению ремонтом'
-                  : 'Перейти к задачам мастера'}
+                  ? t('profile.switchToClient')
+                  : t('profile.switchToMaster')}
               </Text>
             </View>
           </View>
@@ -214,14 +229,14 @@ export function ProfileScreen() {
       )}
 
       <Button
-        title="Выйти из аккаунта"
+        title={t('profile.logoutButton')}
         onPress={handleLogout}
         variant="outline"
         fullWidth
         style={{ marginTop: spacing.xxl }}
       />
 
-      <Text style={styles.version}>Версия 1.0.0</Text>
+      <Text style={styles.version}>{t('profile.version')}</Text>
       <View style={{ height: 100 }} />
     </ScreenWrapper>
   );

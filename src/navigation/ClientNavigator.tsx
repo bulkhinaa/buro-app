@@ -1,7 +1,8 @@
 import React from 'react';
-import { createStackNavigator, CardStyleInterpolators, TransitionPresets } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { ClientHomeScreen } from '../screens/client/ClientHomeScreen';
 import { ProjectDetailScreen } from '../screens/client/ProjectDetailScreen';
 import { CreateProjectScreen } from '../screens/client/CreateProjectScreen';
@@ -22,6 +23,7 @@ import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
 import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
+import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
 
@@ -40,6 +42,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 function ClientTabs() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       tabBar={(props) => <GlassTabBar {...props} />}
@@ -51,7 +54,7 @@ function ClientTabs() {
         name="Home"
         component={ClientHomeScreen}
         options={{
-          tabBarLabel: 'Главная',
+          tabBarLabel: t('tabs.home'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -65,7 +68,7 @@ function ClientTabs() {
         name="Portfolio"
         component={PortfolioScreen}
         options={{
-          tabBarLabel: 'Портфолио',
+          tabBarLabel: t('tabs.portfolio'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'images' : 'images-outline'}
@@ -79,7 +82,7 @@ function ClientTabs() {
         name="Notifications"
         component={NotificationsScreen}
         options={{
-          tabBarLabel: 'Уведомления',
+          tabBarLabel: t('tabs.notifications'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'notifications' : 'notifications-outline'}
@@ -93,7 +96,7 @@ function ClientTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Профиль',
+          tabBarLabel: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}
@@ -108,6 +111,7 @@ function ClientTabs() {
 }
 
 export function ClientNavigator() {
+  const { t } = useTranslation();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -144,12 +148,12 @@ export function ClientNavigator() {
       <Stack.Screen
         name="ProjectDetail"
         component={ProjectDetailScreen}
-        options={{ headerTitle: 'Проект' }}
+        options={{ headerTitle: t('nav.project') }}
       />
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
-        options={{ headerTitle: 'Чат проекта' }}
+        options={{ headerTitle: t('nav.chat') }}
       />
       <Stack.Screen
         name="CaseDetail"
@@ -175,32 +179,37 @@ export function ClientNavigator() {
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{ headerTitle: 'Редактировать профиль' }}
+        options={{ headerTitle: t('nav.editProfile') }}
       />
       <Stack.Screen
         name="NotificationsStack"
         component={NotificationsScreen}
-        options={{ headerTitle: 'Уведомления' }}
+        options={{ headerTitle: t('nav.notifications') }}
       />
       <Stack.Screen
         name="MyReviews"
         component={MyReviewsScreen}
-        options={{ headerTitle: 'Мои отзывы' }}
+        options={{ headerTitle: t('nav.myReviews') }}
       />
       <Stack.Screen
         name="Support"
         component={SupportScreen}
-        options={{ headerTitle: 'Поддержка' }}
+        options={{ headerTitle: t('nav.support') }}
       />
       <Stack.Screen
         name="Documents"
         component={DocumentsScreen}
-        options={{ headerTitle: 'Документы' }}
+        options={{ headerTitle: t('nav.documents') }}
       />
       <Stack.Screen
         name="About"
         component={AboutScreen}
-        options={{ headerTitle: 'О приложении' }}
+        options={{ headerTitle: t('nav.about') }}
+      />
+      <Stack.Screen
+        name="LanguageSelect"
+        component={LanguageSelectScreen}
+        options={{ headerTitle: t('nav.language') }}
       />
       {/* Master onboarding (triggered from Profile "Стать мастером") */}
       <Stack.Screen

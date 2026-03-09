@@ -8,26 +8,30 @@ export async function upsertProfile(params: {
   id: string;
   name: string;
   phone?: string;
+  city?: string;
+  preferred_language?: string;
   role?: string;
 }): Promise<void> {
+  // Build payload — only include optional fields if provided to avoid overwriting existing values
+  const payload: Record<string, string> = {
+    id: params.id,
+    name: params.name,
+    role: params.role || 'client',
+  };
+  if (params.phone) payload.phone = params.phone;
+  if (params.city) payload.city = params.city;
+  if (params.preferred_language) payload.preferred_language = params.preferred_language;
+
   const { error } = await supabase
     .from('profiles')
-    .upsert(
-      {
-        id: params.id,
-        name: params.name,
-        phone: params.phone || '',
-        role: params.role || 'client',
-      },
-      { onConflict: 'id' },
-    );
+    .upsert(payload, { onConflict: 'id' });
 
   if (error) throw error;
 }
 
 export async function updateProfile(
   userId: string,
-  updates: { name?: string; phone?: string; city?: string },
+  updates: { name?: string; phone?: string; city?: string; preferred_language?: string },
 ): Promise<void> {
   const { error } = await supabase
     .from('profiles')

@@ -13,44 +13,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { hapticLight } from '../../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
-interface Slide {
+interface SlideConfig {
   id: string;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  pain: string;
-  solution: string;
+  titleKey: string;
+  painKey: string;
+  solutionKey: string;
 }
 
-const SLIDES: Slide[] = [
-  {
-    id: '1',
-    icon: 'briefcase-outline',
-    title: 'Находите заказы\nбез посредников',
-    pain: 'Устали искать клиентов через сарафанное радио?',
-    solution: 'Получайте задачи напрямую от супервайзеров. Мы сами находим клиентов.',
-  },
-  {
-    id: '2',
-    icon: 'shield-checkmark-outline',
-    title: 'Работайте легально —\nмы берём налоги на себя',
-    pain: 'Не хотите разбираться с налогами и отчётностью?',
-    solution: 'Зарегистрируйтесь как самозанятый прямо в приложении. Мы уплатим налоги за вас — вы получите чистые деньги на карту.',
-  },
-  {
-    id: '3',
-    icon: 'people-outline',
-    title: 'Полная прозрачность —\nвзаимные оценки',
-    pain: 'Боитесь столкнуться с недобросовестным заказчиком?',
-    solution: 'У нас оценивают все: вы — супервайзера, супервайзер — вас и клиента, клиент — супервайзера. Рейтинг есть даже у клиентов. Всё честно и прозрачно.',
-  },
-  {
-    id: '4',
-    icon: 'star-outline',
-    title: 'Стройте репутацию\nи зарабатывайте больше',
-    pain: 'Нет возможности показать свой профессионализм?',
-    solution: 'Портфолио, рейтинг, отзывы клиентов — всё работает на вашу репутацию. Лучшие мастера получают больше заказов.',
-  },
+const SLIDE_CONFIGS: SlideConfig[] = [
+  { id: '1', icon: 'briefcase-outline', titleKey: 'master.welcome.slide1.title', painKey: 'master.welcome.slide1.pain', solutionKey: 'master.welcome.slide1.solution' },
+  { id: '2', icon: 'shield-checkmark-outline', titleKey: 'master.welcome.slide2.title', painKey: 'master.welcome.slide2.pain', solutionKey: 'master.welcome.slide2.solution' },
+  { id: '3', icon: 'people-outline', titleKey: 'master.welcome.slide3.title', painKey: 'master.welcome.slide3.pain', solutionKey: 'master.welcome.slide3.solution' },
+  { id: '4', icon: 'star-outline', titleKey: 'master.welcome.slide4.title', painKey: 'master.welcome.slide4.pain', solutionKey: 'master.welcome.slide4.solution' },
 ];
 
 type Props = {
@@ -62,9 +39,10 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
   const markWelcomeSeen = useMasterStore((s) => s.markWelcomeSeen);
+  const { t } = useTranslation();
 
-  const isLastSlide = currentIndex === SLIDES.length - 1;
-  const slide = SLIDES[currentIndex];
+  const isLastSlide = currentIndex === SLIDE_CONFIGS.length - 1;
+  const slide = SLIDE_CONFIGS[currentIndex];
 
   const goToSlide = useCallback((nextIndex: number) => {
     // Fade out → change slide → fade in
@@ -107,7 +85,7 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
       <View style={[styles.topBar, { paddingTop: insets.top + spacing.md }]}>
         {!isLastSlide ? (
           <Pressable onPress={handleSkip} hitSlop={12}>
-            <Text style={styles.skipText}>Пропустить</Text>
+            <Text style={styles.skipText}>{t('master.welcome.skip')}</Text>
           </Pressable>
         ) : (
           <View />
@@ -120,12 +98,12 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
           <View style={styles.iconCircle}>
             <Ionicons name={slide.icon} size={48} color={colors.primary} />
           </View>
-          <Text style={styles.slideTitle}>{slide.title}</Text>
+          <Text style={styles.slideTitle}>{t(slide.titleKey)}</Text>
           <View style={styles.painCard}>
             <Ionicons name="alert-circle-outline" size={20} color={colors.warning} style={{ marginRight: spacing.sm }} />
-            <Text style={styles.painText}>{slide.pain}</Text>
+            <Text style={styles.painText}>{t(slide.painKey)}</Text>
           </View>
-          <Text style={styles.solutionText}>{slide.solution}</Text>
+          <Text style={styles.solutionText}>{t(slide.solutionKey)}</Text>
         </View>
       </Animated.View>
 
@@ -133,7 +111,7 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
       <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}>
         {/* Pagination dots */}
         <View style={styles.dotsRow}>
-          {SLIDES.map((_, i) => (
+          {SLIDE_CONFIGS.map((_, i) => (
             <View
               key={i}
               style={[
@@ -157,7 +135,7 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
             style={styles.actionButtonGradient}
           >
             <Text style={styles.actionButtonText}>
-              {isLastSlide ? 'Начать регистрацию' : 'Далее'}
+              {isLastSlide ? t('master.welcome.startRegistration') : t('master.welcome.next')}
             </Text>
             <Ionicons
               name={isLastSlide ? 'arrow-forward' : 'chevron-forward'}

@@ -38,7 +38,8 @@ import type {
   PriceType,
   MasterSetupData,
 } from '../../types';
-import { EXPERIENCE_RANGE_LABELS, SKILL_LEVEL_LABELS, PRICE_TYPE_LABELS } from '../../types';
+// Labels are now provided via i18n (labels.experience.*, labels.skillLevel.*, labels.priceType.*)
+import { useTranslation } from 'react-i18next';
 
 const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
@@ -63,24 +64,33 @@ function normalizePhone(raw: string): string {
   return digits.slice(0, 10);
 }
 
-const EXPERIENCE_OPTIONS: { value: ExperienceRange; label: string }[] = [
-  { value: 'less_1', label: '< 1 года' },
-  { value: '1_3', label: '1–3 года' },
-  { value: '3_5', label: '3–5 лет' },
-  { value: '5_10', label: '5–10 лет' },
-  { value: 'more_10', label: '10+ лет' },
+/**
+ * Format 10-digit phone for display: "9991234567" → "+7 999 123-45-67"
+ */
+function formatPhoneDisplay(digits: string): string {
+  if (!digits || digits.length < 10) return digits;
+  const d = digits.slice(0, 10);
+  return `+7 ${d.slice(0, 3)} ${d.slice(3, 6)}-${d.slice(6, 8)}-${d.slice(8, 10)}`;
+}
+
+const EXPERIENCE_KEYS: { value: ExperienceRange; key: string }[] = [
+  { value: 'less_1', key: 'labels.experience.less_1' },
+  { value: '1_3', key: 'labels.experience.1_3' },
+  { value: '3_5', key: 'labels.experience.3_5' },
+  { value: '5_10', key: 'labels.experience.5_10' },
+  { value: 'more_10', key: 'labels.experience.more_10' },
 ];
 
-const SKILL_LEVELS: { value: SkillLevel; label: string; description: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: 'beginner', label: 'Начинающий', description: 'Осваиваю профессию, готов учиться', icon: 'leaf-outline' },
-  { value: 'experienced', label: 'Опытный', description: 'Уверенно работаю, есть портфолио', icon: 'hammer-outline' },
-  { value: 'expert', label: 'Эксперт', description: 'Высший уровень, обучаю других', icon: 'trophy-outline' },
+const SKILL_LEVEL_KEYS: { value: SkillLevel; labelKey: string; descKey: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'beginner', labelKey: 'master.setup.skillBeginner', descKey: 'master.setup.skillBeginnerDesc', icon: 'leaf-outline' },
+  { value: 'experienced', labelKey: 'master.setup.skillExperienced', descKey: 'master.setup.skillExperiencedDesc', icon: 'hammer-outline' },
+  { value: 'expert', labelKey: 'master.setup.skillExpert', descKey: 'master.setup.skillExpertDesc', icon: 'trophy-outline' },
 ];
 
-const PRICE_TYPES: { value: PriceType; label: string }[] = [
-  { value: 'per_sqm', label: '₽/м²' },
-  { value: 'fixed', label: 'Фикс' },
-  { value: 'hourly', label: '₽/час' },
+const PRICE_TYPE_KEYS: { value: PriceType; key: string }[] = [
+  { value: 'per_sqm', key: 'labels.priceType.per_sqm' },
+  { value: 'fixed', key: 'labels.priceType.fixed' },
+  { value: 'hourly', key: 'labels.priceType.hourly' },
 ];
 
 export function MasterSetupScreen({ onComplete }: Props) {
@@ -88,6 +98,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const { saveDraft, completeSetup, setupDraft } = useMasterStore();
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
+  const { t } = useTranslation();
 
   // Use auth data for name/city/phone — no need to ask again
   const name = setupDraft?.name || user?.name || '';
@@ -142,7 +153,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
     if (step < TOTAL_STEPS) {
       if (!canProceed) {
         if (step === 1) {
-          showToast('Выберите хотя бы одну специализацию');
+          showToast(t('master.setup.specRequired'));
         }
         return;
       }
@@ -185,7 +196,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const handleFinish = useCallback(async () => {
     if (!agreedToTerms) {
-      showToast('Необходимо принять условия');
+      showToast(t('master.setup.agreementRequired'));
       return;
     }
 
@@ -210,7 +221,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
       hapticSuccess();
       setShowSuccess(true);
     } catch {
-      showToast('Ошибка сохранения. Попробуйте ещё раз.', 'error');
+      showToast(t('master.setup.saveError'), 'error');
     } finally {
       setSaving(false);
     }
@@ -224,7 +235,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const addPortfolioProject = () => {
     if (!newProjectTitle.trim()) {
-      showToast('Введите название проекта');
+      showToast(t('master.setup.projectTitleRequired'));
       return;
     }
     const project: PortfolioProject = {
@@ -264,8 +275,8 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const renderStep2 = () => (
     <>
-      <Text style={styles.title}>Специализации</Text>
-      <Text style={styles.subtitle}>Выберите все направления, в которых вы работаете</Text>
+      <Text style={styles.title}>{t('master.setup.specTitle')}</Text>
+      <Text style={styles.subtitle}>{t('master.setup.specSubtitle')}</Text>
 
       {specCategories.map((cat) => (
         <View key={cat.category} style={styles.specCategory}>
@@ -288,7 +299,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
       {specializations.length > 0 && (
         <Text style={styles.selectedCount}>
-          Выбрано: {specializations.length}
+          {t('master.setup.selectedCount', { count: specializations.length })}
         </Text>
       )}
     </>
@@ -296,24 +307,24 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const renderStep3 = () => (
     <>
-      <Text style={styles.title}>Опыт работы</Text>
-      <Text style={styles.subtitle}>Расскажите о вашем опыте</Text>
+      <Text style={styles.title}>{t('master.setup.expTitle')}</Text>
+      <Text style={styles.subtitle}>{t('master.setup.expSubtitle')}</Text>
 
-      <Text style={styles.sectionTitle}>Стаж</Text>
+      <Text style={styles.sectionTitle}>{t('master.setup.tenureLabel')}</Text>
       <View style={styles.chipRow}>
-        {EXPERIENCE_OPTIONS.map((opt) => (
+        {EXPERIENCE_KEYS.map((opt) => (
           <Chip
             key={opt.value}
-            label={opt.label}
+            label={t(opt.key)}
             selected={experience === opt.value}
             onPress={() => setExperience(opt.value)}
           />
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Уровень мастерства</Text>
+      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>{t('master.setup.skillLevelLabel')}</Text>
       <View style={styles.levelCardsRow}>
-        {SKILL_LEVELS.map((level) => {
+        {SKILL_LEVEL_KEYS.map((level) => {
           const selected = skillLevel === level.value;
           return (
             <Pressable
@@ -324,8 +335,8 @@ export function MasterSetupScreen({ onComplete }: Props) {
               <View style={[styles.levelIconCircle, selected && styles.levelIconCircleSelected]}>
                 <Ionicons name={level.icon} size={24} color={selected ? colors.primary : colors.textLight} />
               </View>
-              <Text style={[styles.levelLabel, selected && styles.levelLabelSelected]}>{level.label}</Text>
-              <Text style={styles.levelDesc}>{level.description}</Text>
+              <Text style={[styles.levelLabel, selected && styles.levelLabelSelected]}>{t(level.labelKey)}</Text>
+              <Text style={styles.levelDesc}>{t(level.descKey)}</Text>
               {selected && (
                 <View style={styles.levelCheck}>
                   <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
@@ -336,11 +347,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
         })}
       </View>
 
-      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>О себе</Text>
+      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>{t('master.setup.aboutLabel')}</Text>
       <TextArea
         value={about}
         onChangeText={setAbout}
-        placeholder="Расскажите кратко о себе и вашем опыте (до 200 символов)"
+        placeholder={t('master.setup.aboutPlaceholder')}
         maxLength={200}
       />
     </>
@@ -348,9 +359,9 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const renderStep4 = () => (
     <>
-      <Text style={styles.title}>Портфолио</Text>
+      <Text style={styles.title}>{t('master.setup.portfolioTitle')}</Text>
       <Text style={styles.subtitle}>
-        Добавьте примеры ваших работ{specializations.includes('designer') ? ' (обязательно для дизайнеров)' : ' (необязательно)'}
+        {t('master.setup.portfolioSubtitle')}{specializations.includes('designer') ? t('master.setup.portfolioRequired') : t('master.setup.portfolioOptional')}
       </Text>
 
       {portfolio.map((project) => (
@@ -365,7 +376,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
             <Text style={styles.portfolioItemDesc}>{project.description}</Text>
           ) : null}
           <Text style={styles.portfolioPhotoHint}>
-            <Ionicons name="camera-outline" size={14} color={colors.textLight} /> Фото можно добавить позже
+            <Ionicons name="camera-outline" size={14} color={colors.textLight} /> {t('master.setup.photoLater')}
           </Text>
         </View>
       ))}
@@ -373,24 +384,24 @@ export function MasterSetupScreen({ onComplete }: Props) {
       {showAddProject ? (
         <View style={styles.addProjectForm}>
           <Input
-            placeholder="Название проекта"
+            placeholder={t('master.setup.projectTitle')}
             value={newProjectTitle}
             onChangeText={setNewProjectTitle}
           />
           <TextArea
             value={newProjectDesc}
             onChangeText={setNewProjectDesc}
-            placeholder="Описание (необязательно)"
+            placeholder={t('master.setup.projectDesc')}
             maxLength={200}
           />
           <View style={styles.addProjectActions}>
             <Button
-              title="Добавить"
+              title={t('common.add')}
               onPress={addPortfolioProject}
               size="sm"
             />
             <Button
-              title="Отмена"
+              title={t('common.cancel')}
               onPress={() => {
                 setShowAddProject(false);
                 setNewProjectTitle('');
@@ -407,7 +418,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
           style={styles.addProjectButton}
         >
           <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-          <Text style={styles.addProjectText}>Добавить проект</Text>
+          <Text style={styles.addProjectText}>{t('master.setup.addProject')}</Text>
         </Pressable>
       )}
     </>
@@ -420,8 +431,8 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
     return (
       <>
-        <Text style={styles.title}>Расценки</Text>
-        <Text style={styles.subtitle}>Укажите примерные расценки по каждой специализации</Text>
+        <Text style={styles.title}>{t('master.setup.pricingTitle')}</Text>
+        <Text style={styles.subtitle}>{t('master.setup.pricingSubtitle')}</Text>
 
         {pricing.map((p) => {
           const spec = specMap[p.specialization];
@@ -437,15 +448,15 @@ export function MasterSetupScreen({ onComplete }: Props) {
                   style={[styles.pricingInput, webInputReset]}
                   value={p.price > 0 ? String(p.price) : ''}
                   onChangeText={(text) => updatePricingValue(p.specialization, text)}
-                  placeholder="Цена"
+                  placeholder={t('master.setup.pricePlaceholder')}
                   keyboardType="numeric"
                   placeholderTextColor={colors.textLight}
                 />
                 <View style={styles.pricingTypeChips}>
-                  {PRICE_TYPES.map((pt) => (
+                  {PRICE_TYPE_KEYS.map((pt) => (
                     <Chip
                       key={pt.value}
-                      label={pt.label}
+                      label={t(pt.key)}
                       selected={p.price_type === pt.value}
                       onPress={() => updatePricingType(p.specialization, pt.value)}
                     />
@@ -457,7 +468,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
         })}
 
         <Text style={styles.pricingHint}>
-          Можете заполнить позже в разделе «Расценки»
+          {t('master.setup.pricingHint')}
         </Text>
       </>
     );
@@ -465,14 +476,14 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const renderStep6 = () => (
     <>
-      <Text style={styles.title}>Завершение</Text>
-      <Text style={styles.subtitle}>Последний шаг — подтвердите условия</Text>
+      <Text style={styles.title}>{t('master.setup.finishTitle')}</Text>
+      <Text style={styles.subtitle}>{t('master.setup.finishSubtitle')}</Text>
 
       {/* Certificates placeholder */}
       <View style={styles.certSection}>
         <Ionicons name="document-text-outline" size={32} color={colors.textLight} />
-        <Text style={styles.certTitle}>Сертификаты и дипломы</Text>
-        <Text style={styles.certHint}>Загрузка документов будет доступна в следующей версии</Text>
+        <Text style={styles.certTitle}>{t('master.setup.certsTitle')}</Text>
+        <Text style={styles.certHint}>{t('master.setup.certsHint')}</Text>
       </View>
 
       {/* Agreement */}
@@ -483,22 +494,22 @@ export function MasterSetupScreen({ onComplete }: Props) {
         />
         <Pressable onPress={() => setAgreedToTerms(!agreedToTerms)} style={{ flex: 1, marginLeft: spacing.sm }}>
           <Text style={styles.agreementText}>
-            Я принимаю условия использования платформы и даю согласие на обработку персональных данных
+            {t('master.setup.agreement')}
           </Text>
         </Pressable>
       </View>
 
       {/* Summary */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Ваш профиль</Text>
-        <SummaryRow icon="person-outline" label="Имя" value={name} />
-        <SummaryRow icon="location-outline" label="Город" value={city} />
-        <SummaryRow icon="call-outline" label="Телефон" value={phone} />
-        <SummaryRow icon="construct-outline" label="Специализации" value={`${specializations.length} шт.`} />
-        <SummaryRow icon="time-outline" label="Стаж" value={EXPERIENCE_RANGE_LABELS[experience]} />
-        <SummaryRow icon="trophy-outline" label="Уровень" value={SKILL_LEVEL_LABELS[skillLevel]} />
+        <Text style={styles.summaryTitle}>{t('master.setup.summaryTitle')}</Text>
+        <SummaryRow icon="person-outline" label={t('summary.name')} value={name || undefined} />
+        <SummaryRow icon="location-outline" label={t('summary.city')} value={city || undefined} />
+        <SummaryRow icon="call-outline" label={t('summary.phone')} value={phone ? formatPhoneDisplay(phone) : undefined} />
+        <SummaryRow icon="construct-outline" label={t('summary.specializations')} value={t('common.items', { count: specializations.length })} />
+        <SummaryRow icon="time-outline" label={t('summary.tenure')} value={t(`labels.experience.${experience}`)} />
+        <SummaryRow icon="trophy-outline" label={t('summary.level')} value={t(`labels.skillLevel.${skillLevel}`)} />
         {portfolio.length > 0 && (
-          <SummaryRow icon="images-outline" label="Портфолио" value={`${portfolio.length} проектов`} />
+          <SummaryRow icon="images-outline" label={t('summary.portfolio')} value={t('summary.portfolioCount', { count: portfolio.length })} />
         )}
       </View>
     </>
@@ -535,7 +546,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
             <View style={{ width: 44 }} />
           )}
           <View style={styles.progressArea}>
-            <Text style={styles.stepLabel}>Шаг {step} из {TOTAL_STEPS}</Text>
+            <Text style={styles.stepLabel}>{t('master.setup.stepLabel', { step, total: TOTAL_STEPS })}</Text>
             <ProgressBar progress={step / TOTAL_STEPS} height={4} />
           </View>
           <View style={{ width: 44 }} />
@@ -555,13 +566,13 @@ export function MasterSetupScreen({ onComplete }: Props) {
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {step < TOTAL_STEPS ? (
             <Button
-              title="Далее →"
+              title={t('common.next')}
               onPress={handleNext}
               fullWidth
             />
           ) : (
             <Button
-              title={saving ? 'Сохраняем...' : 'Завершить регистрацию'}
+              title={saving ? t('master.setup.saving') : t('master.setup.finishButton')}
               onPress={handleFinish}
               loading={saving}
               fullWidth
@@ -574,11 +585,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
       <AppDialog
         visible={showSuccess}
         onClose={() => {}}
-        title="Профиль создан!"
-        message="Теперь пройдите верификацию как самозанятый, чтобы начать получать задачи."
+        title={t('master.setup.successTitle')}
+        message={t('master.setup.successMessage')}
         buttons={[
           {
-            text: 'Перейти к задачам',
+            text: t('master.setup.successButton'),
             onPress: () => {
               setShowSuccess(false);
               onComplete();
@@ -592,12 +603,15 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
 // ─── Summary row sub-component ───
 
-function SummaryRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
+function SummaryRow({ icon, label, value, emptyText }: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string; emptyText?: string }) {
+  const isEmpty = !value || !value.trim();
   return (
     <View style={styles.summaryRow}>
       <Ionicons name={icon} size={16} color={colors.textLight} />
       <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={[styles.summaryValue, isEmpty && styles.summaryValueEmpty]}>
+        {isEmpty ? (emptyText || '—') : value}
+      </Text>
     </View>
   );
 }
@@ -885,6 +899,11 @@ const styles = StyleSheet.create({
     color: colors.heading,
     flex: 1,
     textAlign: 'right',
+  },
+  summaryValueEmpty: {
+    ...typography.body,
+    color: colors.textLight,
+    fontStyle: 'italic',
   },
   // Bottom bar
   bottomBar: {

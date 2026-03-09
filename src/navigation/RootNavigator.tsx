@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
+import { useLanguageStore } from '../store/languageStore';
 import { AuthNavigator } from './AuthNavigator';
 import { ClientNavigator } from './ClientNavigator';
 import { MasterNavigator } from './MasterNavigator';
@@ -11,9 +11,11 @@ import { SupervisorNavigator } from './SupervisorNavigator';
 import { AdminNavigator } from './AdminNavigator';
 import { SplashAnimation } from '../components/SplashAnimation';
 import { OnboardingScreen, ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
+import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { colors } from '../theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const navTheme = {
   dark: false,
@@ -36,18 +38,28 @@ const navTheme = {
 export function RootNavigator() {
   const { isAuthenticated, user, isLoading, initAuth } = useAuthStore();
   const { welcomeSeen, setupComplete, activeView, init: initMaster } = useMasterStore();
+  const { hasChosenLanguage, isLoaded: langLoaded, init: initLanguage } = useLanguageStore();
   const [showSplash, setShowSplash] = useState(true);
   const [animationDone, setAnimationDone] = useState(false);
   const [authDone, setAuthDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const [showLanguageSelect, setShowLanguageSelect] = useState<boolean | null>(null);
   const [masterInitDone, setMasterInitDone] = useState(false);
   const [masterWelcomeDone, setMasterWelcomeDone] = useState(false);
   const [masterSetupDone, setMasterSetupDone] = useState(false);
 
   useEffect(() => {
     initAuth();
+    initLanguage();
     checkOnboarding();
   }, []);
+
+  // Once language store is loaded, determine if language select should show
+  useEffect(() => {
+    if (langLoaded) {
+      setShowLanguageSelect(!hasChosenLanguage);
+    }
+  }, [langLoaded, hasChosenLanguage]);
 
   // Initialize master store for all authenticated users (dual-role support)
   useEffect(() => {
@@ -94,7 +106,8 @@ export function RootNavigator() {
   const prevNavKey = useRef('');
 
   const navKey = (() => {
-    if (!authDone || showOnboarding === null) return 'loading';
+    if (!authDone || showOnboarding === null || showLanguageSelect === null) return 'loading';
+    if (showLanguageSelect && !isAuthenticated) return 'language-select';
     if (showOnboarding && !isAuthenticated) return 'onboarding';
     if (!isAuthenticated || !user) return 'auth';
     if (!masterInitDone) return 'master-loading';
@@ -119,11 +132,20 @@ export function RootNavigator() {
     prevNavKey.current = navKey;
   }, [navKey]);
 
+  const handleLanguageComplete = () => {
+    setShowLanguageSelect(false);
+  };
+
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
   };
 
   const getNavigator = () => {
+    // Show language selection for first-time users (before onboarding)
+    if (showLanguageSelect && !isAuthenticated) {
+      return <LanguageSelectScreen onComplete={handleLanguageComplete} />;
+    }
+
     // Show onboarding for first-time users
     if (showOnboarding && !isAuthenticated) {
       return <OnboardingScreen onComplete={handleOnboardingComplete} />;
@@ -169,7 +191,7 @@ export function RootNavigator() {
     <View style={styles.root}>
       <NavigationContainer theme={navTheme}>
         <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
-          {authDone && showOnboarding !== null ? (
+          {authDone && showOnboarding !== null && showLanguageSelect !== null ? (
             getNavigator()
           ) : (
             <View style={styles.placeholder} />

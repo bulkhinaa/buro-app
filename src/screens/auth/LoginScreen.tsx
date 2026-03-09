@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
 import { UserRole } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -40,6 +41,7 @@ export function LoginScreen() {
   const [loading, setLoading] = useState<'yandex' | 'tinkoff' | null>(null);
   const { setUser, syncProfile } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
+  const { t } = useTranslation();
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
   useEffect(() => {
@@ -97,7 +99,7 @@ export function LoginScreen() {
           console.warn(`[YandexAuth] Fetch attempt ${attempt}/${MAX_RETRIES} failed:`, fetchErr.message);
           if (attempt === MAX_RETRIES) {
             console.error('[YandexAuth] FETCH FAILED after all retries:', fetchErr);
-            throw new Error(`Сетевая ошибка: ${fetchErr.message}`);
+            throw new Error(`${t('auth.networkError')}: ${fetchErr.message}`);
           }
           // Wait before retry (1s, 2s)
           await new Promise((r) => setTimeout(r, attempt * 1000));
@@ -109,7 +111,7 @@ export function LoginScreen() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         console.error('[YandexAuth] Edge Function error:', JSON.stringify(err));
-        throw new Error(err.error || `Ошибка сервера (${res.status})`);
+        throw new Error(err.error || `${t('auth.serverError')} (${res.status})`);
       }
 
       const responseData = await res.json();
@@ -126,7 +128,7 @@ export function LoginScreen() {
 
       if (verifyError) {
         console.error('[YandexAuth] Step 2 FAILED - verifyOtp:', JSON.stringify(verifyError));
-        throw new Error(`Ошибка OTP: ${verifyError.message}`);
+        throw new Error(`${t('auth.otpError')}: ${verifyError.message}`);
       }
 
       console.log('[YandexAuth] Step 3: Session established for:', sessionData.user?.id);
@@ -143,16 +145,16 @@ export function LoginScreen() {
         } catch (profileErr: any) {
           console.error('[YandexAuth] Step 4 FAILED - syncProfile:', profileErr);
           // Don't block login if profile sync fails
-          showToast('Вошли, но профиль не синхронизирован', 'warning');
+          showToast(t('auth.profileSyncWarning'), 'warning');
           return;
         }
       }
 
-      showToast('Вы успешно вошли!', 'success');
+      showToast(t('auth.loginSuccess'), 'success');
     } catch (e: any) {
       console.error('[YandexAuth] FINAL ERROR:', e.message, e);
       showToast(
-        e.message || 'Не удалось войти через Яндекс ID',
+        e.message || t('auth.loginError'),
         'error',
       );
     } finally {
@@ -173,7 +175,7 @@ export function LoginScreen() {
         response_type: 'code',
         client_id: YANDEX_CLIENT_ID,
         redirect_uri: redirectUri,
-        scope: 'login:email login:info',
+        scope: 'login:email login:info login:default_phone',
         force_confirm: 'yes',
       });
 
@@ -199,7 +201,7 @@ export function LoginScreen() {
     } catch (e: any) {
       console.error('[YandexAuth] Sign in error:', e);
       showToast(
-        e.message || 'Не удалось войти через Яндекс ID',
+        e.message || t('auth.loginError'),
         'error',
       );
     } finally {
@@ -208,7 +210,7 @@ export function LoginScreen() {
   };
 
   const handleTinkoffSignIn = () => {
-    showToast('Вход через Тинькофф ID будет доступен позже', 'info');
+    showToast(t('auth.tinkoffComingSoon'), 'info');
   };
 
   const handleDevLogin = (role: UserRole) => {
@@ -216,6 +218,7 @@ export function LoginScreen() {
       id: `dev-${role}`,
       phone: '+7 999 000 00 00',
       name: `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+      city: 'Москва',
       role,
       created_at: new Date().toISOString(),
       is_active: true,
@@ -229,10 +232,8 @@ export function LoginScreen() {
           <View style={styles.logoCircle}>
             <Ionicons name="home" size={40} color={colors.primary} />
           </View>
-          <Text style={styles.title}>Бюро ремонтов</Text>
-          <Text style={styles.subtitle}>
-            Войдите, чтобы управлять{'\n'}вашим ремонтом
-          </Text>
+          <Text style={styles.title}>{t('auth.title')}</Text>
+          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
         </View>
 
         <View style={styles.buttons}>
@@ -255,14 +256,14 @@ export function LoginScreen() {
                   <Text style={styles.yandexLogoText}>Я</Text>
                 </View>
                 <Text style={styles.yandexButtonText}>
-                  Войти с Яндекс ID
+                  {t('auth.yandexButton')}
                 </Text>
               </>
             )}
           </Pressable>
 
           <Button
-            title="Войти через Тинькофф ID"
+            title={t('auth.tinkoffButton')}
             onPress={handleTinkoffSignIn}
             disabled={loading !== null}
             variant="outline"
@@ -274,14 +275,14 @@ export function LoginScreen() {
         </View>
 
         <Text style={styles.terms}>
-          Продолжая, вы принимаете{'\n'}
-          <Text style={styles.termsLink}>Пользовательское соглашение</Text> и{' '}
-          <Text style={styles.termsLink}>Политику конфиденциальности</Text>
+          {t('auth.terms')}{'\n'}
+          <Text style={styles.termsLink}>{t('auth.termsOfService')}</Text>{t('auth.and')}
+          <Text style={styles.termsLink}>{t('auth.privacyPolicy')}</Text>
         </Text>
 
         {__DEV__ && (
           <View style={styles.devSection}>
-            <Text style={styles.devTitle}>DEV: Быстрый вход</Text>
+            <Text style={styles.devTitle}>{t('auth.devTitle')}</Text>
             <View style={styles.devButtons}>
               {(['client', 'master', 'supervisor', 'admin'] as UserRole[]).map(
                 (role) => (

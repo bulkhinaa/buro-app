@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, UserRole } from '../types';
+import { User, UserRole, SupportedLanguage } from '../types';
 import { supabase } from '../lib/supabase';
 import { upsertProfile, updateProfile, fetchProfile } from '../services/projectService';
 import { useMasterStore } from './masterStore';
@@ -13,8 +13,23 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   logout: () => void;
   initAuth: () => Promise<void>;
-  syncProfile: (authUser: { id: string; name: string; phone?: string }) => Promise<void>;
-  saveProfile: (updates: { name?: string; phone?: string; city?: string }) => Promise<void>;
+  syncProfile: (authUser: { id: string; name: string; phone?: string; city?: string }) => Promise<void>;
+  saveProfile: (updates: { name?: string; phone?: string; city?: string; preferred_language?: string }) => Promise<void>;
+}
+
+/** Build a User object from a Supabase profile row */
+function profileToUser(profile: any): User {
+  return {
+    id: profile.id,
+    phone: profile.phone || '',
+    name: profile.name || '',
+    role: profile.role as UserRole,
+    city: profile.city,
+    preferred_language: profile.preferred_language as SupportedLanguage | undefined,
+    avatar_url: profile.avatar_url,
+    created_at: profile.created_at,
+    is_active: profile.is_active,
+  };
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -41,16 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         const profile = await fetchProfile(session.user.id);
         if (profile) {
           set({
-            user: {
-              id: profile.id,
-              phone: profile.phone || '',
-              name: profile.name || '',
-              role: profile.role as UserRole,
-              city: profile.city,
-              avatar_url: profile.avatar_url,
-              created_at: profile.created_at,
-              is_active: profile.is_active,
-            },
+            user: profileToUser(profile),
             isAuthenticated: true,
             isLoading: false,
           });
@@ -63,22 +69,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: false });
   },
 
-  syncProfile: async ({ id, name, phone }) => {
+  syncProfile: async ({ id, name, phone, city }) => {
     try {
-      await upsertProfile({ id, name, phone, role: 'client' });
+      await upsertProfile({ id, name, phone, city, role: 'client' });
       const profile = await fetchProfile(id);
       if (profile) {
         set({
-          user: {
-            id: profile.id,
-            phone: profile.phone || '',
-            name: profile.name || '',
-            role: profile.role as UserRole,
-            city: profile.city,
-            avatar_url: profile.avatar_url,
-            created_at: profile.created_at,
-            is_active: profile.is_active,
-          },
+          user: profileToUser(profile),
           isAuthenticated: true,
           isLoading: false,
         });
