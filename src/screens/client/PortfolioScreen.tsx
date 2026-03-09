@@ -10,12 +10,22 @@ import {
   ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  LayoutAnimation,
+  UIManager,
+  Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Chip, GlassChip } from '../../components';
 import { colors, spacing, radius, typography, glass } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePortfolioStore } from '../../store/portfolioStore';
+import { hapticLight } from '../../utils/haptics';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
@@ -206,9 +216,30 @@ function ImageCarousel({ images, width }: { images: string[]; width: number }) {
 // --- Stage chips ---
 const STAGES_PREVIEW = ['Демонтаж', 'Электрика', 'Стяжка', 'Штукатурка', 'Плитка'];
 
+// Heartbeat scale animation for bookmark/like
+function useHeartbeat() {
+  const scale = useRef(new Animated.Value(1)).current;
+  const trigger = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 0.9, duration: 80, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1.0, duration: 100, useNativeDriver: true }),
+    ]).start();
+    hapticLight();
+  }, [scale]);
+  return { scale, trigger };
+}
+
 export function PortfolioScreen({ navigation }: Props) {
   const [selectedFilter, setSelectedFilter] = useState('Все');
   const { bookmarks, toggleBookmark, toggleLike, isLiked } = usePortfolioStore();
+  const bookmarkAnim = useHeartbeat();
+  const likeAnim = useHeartbeat();
+
+  const handleFilterChange = useCallback((filter: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSelectedFilter(filter);
+  }, []);
 
   const filteredCases =
     selectedFilter === 'Все'
@@ -236,19 +267,22 @@ export function PortfolioScreen({ navigation }: Props) {
             <GlassChip label={item.repairType} variant="light" />
           </View>
 
-          {/* Glass bookmark button (top-right) */}
+          {/* Glass bookmark button (top-right) with heartbeat animation */}
           <Pressable
             style={styles.bookmarkOverlay}
-            onPress={() => toggleBookmark(item.id)}
+            onPress={() => {
+              bookmarkAnim.trigger();
+              toggleBookmark(item.id);
+            }}
             hitSlop={8}
           >
-            <View style={styles.bookmarkCircle}>
+            <Animated.View style={[styles.bookmarkCircle, { transform: [{ scale: bookmarkAnim.scale }] }]}>
               <Ionicons
                 name={isSaved ? 'bookmark' : 'bookmark-outline'}
                 size={18}
                 color={isSaved ? colors.primary : colors.heading}
               />
-            </View>
+            </Animated.View>
           </Pressable>
         </View>
 
@@ -283,14 +317,19 @@ export function PortfolioScreen({ navigation }: Props) {
           <View style={styles.bottomRow}>
             <Pressable
               style={styles.likeButton}
-              onPress={() => toggleLike(item.id)}
+              onPress={() => {
+                likeAnim.trigger();
+                toggleLike(item.id);
+              }}
               hitSlop={8}
             >
-              <Ionicons
-                name={liked ? 'heart' : 'heart-outline'}
-                size={20}
-                color={liked ? colors.danger : colors.textLight}
-              />
+              <Animated.View style={{ transform: [{ scale: likeAnim.scale }] }}>
+                <Ionicons
+                  name={liked ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={liked ? colors.danger : colors.textLight}
+                />
+              </Animated.View>
               <Text style={[styles.likeCount, liked && { color: colors.danger }]}>
                 {likeCount}
               </Text>
@@ -334,7 +373,7 @@ export function PortfolioScreen({ navigation }: Props) {
           <Chip
             label={item}
             selected={selectedFilter === item}
-            onPress={() => setSelectedFilter(item)}
+            onPress={() => handleFilterChange(item)}
           />
         )}
       />

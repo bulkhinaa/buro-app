@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,10 @@ import {
   FlatList,
   ViewToken,
   Platform,
+  Pressable,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -61,6 +65,7 @@ interface CaseData {
     rating: number;
     reviewCount: number;
   };
+  masters: { name: string; role: string }[];
 }
 
 const MOCK_CASES_DETAIL: Record<string, CaseData> = {
@@ -96,6 +101,10 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.9,
       reviewCount: 87,
     },
+    masters: [
+      { name: 'Иван Кузнецов', role: 'Электрик' },
+      { name: 'Сергей Попов', role: 'Отделочник' },
+    ],
   },
   '2': {
     id: '2',
@@ -129,6 +138,11 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.8,
       reviewCount: 64,
     },
+    masters: [
+      { name: 'Дмитрий Лебедев', role: 'Сантехник' },
+      { name: 'Андрей Морозов', role: 'Плиточник' },
+      { name: 'Павел Новиков', role: 'Электрик' },
+    ],
   },
   '3': {
     id: '3',
@@ -160,6 +174,9 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.7,
       reviewCount: 35,
     },
+    masters: [
+      { name: 'Виктор Соловьёв', role: 'Маляр' },
+    ],
   },
   '4': {
     id: '4',
@@ -193,6 +210,11 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.9,
       reviewCount: 87,
     },
+    masters: [
+      { name: 'Роман Фёдоров', role: 'Дизайнер' },
+      { name: 'Алексей Козлов', role: 'Столяр' },
+      { name: 'Тимур Исаев', role: 'Электрик' },
+    ],
   },
   '5': {
     id: '5',
@@ -224,6 +246,10 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.8,
       reviewCount: 64,
     },
+    masters: [
+      { name: 'Николай Орлов', role: 'Штукатур' },
+      { name: 'Сергей Попов', role: 'Плиточник' },
+    ],
   },
   '6': {
     id: '6',
@@ -255,6 +281,9 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
       rating: 4.7,
       reviewCount: 35,
     },
+    masters: [
+      { name: 'Виктор Соловьёв', role: 'Маляр' },
+    ],
   },
 };
 
@@ -266,6 +295,14 @@ export function CaseDetailScreen({ navigation, route }: Props) {
   const caseData = MOCK_CASES_DETAIL[caseId] || DEFAULT_CASE;
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
+
+  // D3: Use onScroll for cross-platform dot sync (onViewableItemsChanged unreliable on web)
+  const handleGalleryScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    if (index !== activePhotoIndex) setActivePhotoIndex(index);
+  }, [activePhotoIndex]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -291,14 +328,19 @@ export function CaseDetailScreen({ navigation, route }: Props) {
             showsHorizontalScrollIndicator={false}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
+            onScroll={handleGalleryScroll}
+            scrollEventThrottle={16}
             keyExtractor={(_, i) => String(i)}
             renderItem={({ item }) => (
-              <View style={styles.photoSlide}>
+              <Pressable
+                style={styles.photoSlide}
+                onPress={() => setFullscreenPhoto(item.url)}
+              >
                 <Image source={{ uri: item.url }} style={styles.galleryImage} />
                 <View style={styles.photoLabel}>
                   <Chip label={item.label} />
                 </View>
-              </View>
+              </Pressable>
             )}
           />
 
@@ -345,14 +387,18 @@ export function CaseDetailScreen({ navigation, route }: Props) {
             contentContainerStyle={styles.stagePhotosScroll}
           >
             {caseData.stagePhotos.map((stage, i) => (
-              <View key={i} style={styles.stagePhotoCard}>
+              <Pressable
+                key={i}
+                style={styles.stagePhotoCard}
+                onPress={() => setFullscreenPhoto(stage.url)}
+              >
                 <Image
                   source={{ uri: stage.url }}
                   style={styles.stagePhotoImage}
                 />
                 <Text style={styles.stagePhotoTitle}>{stage.title}</Text>
                 <Chip label="Завершён" />
-              </View>
+              </Pressable>
             ))}
           </ScrollView>
 
@@ -380,17 +426,40 @@ export function CaseDetailScreen({ navigation, route }: Props) {
             <Text style={styles.reviewDate}>{caseData.review.date}</Text>
           </Card>
 
-          {/* Team */}
+          {/* Team — full: supervisor + masters */}
           <Text style={styles.sectionTitle}>Команда</Text>
           <Card>
-            <LabelMaster
-              level={caseData.supervisor.level}
-              rating={caseData.supervisor.rating}
-              reviewCount={caseData.supervisor.reviewCount}
-            />
-            <Text style={styles.supervisorName}>
-              {caseData.supervisor.name}
-            </Text>
+            {/* Supervisor */}
+            <View style={styles.teamMember}>
+              <View style={styles.teamAvatar}>
+                <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.teamInfo}>
+                <Text style={styles.teamName}>{caseData.supervisor.name}</Text>
+                <View style={styles.teamRoleRow}>
+                  <LabelMaster
+                    level={caseData.supervisor.level}
+                    rating={caseData.supervisor.rating}
+                    reviewCount={caseData.supervisor.reviewCount}
+                  />
+                </View>
+              </View>
+              <Chip label="Супервайзер" />
+            </View>
+
+            {/* Masters */}
+            {caseData.masters.map((master, i) => (
+              <View key={i} style={[styles.teamMember, i > 0 || true ? styles.teamMemberBorder : undefined]}>
+                <View style={[styles.teamAvatar, styles.teamAvatarMaster]}>
+                  <Ionicons name="construct" size={18} color={colors.gold} />
+                </View>
+                <View style={styles.teamInfo}>
+                  <Text style={styles.teamName}>{master.name}</Text>
+                  <Text style={styles.teamRole}>{master.role}</Text>
+                </View>
+                <Chip label="Мастер" />
+              </View>
+            ))}
           </Card>
 
           {/* CTA */}
@@ -404,6 +473,30 @@ export function CaseDetailScreen({ navigation, route }: Props) {
           <View style={{ height: spacing.huge }} />
         </View>
       </ScrollView>
+
+      {/* Fullscreen photo modal (D4) */}
+      <Modal
+        visible={!!fullscreenPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullscreenPhoto(null)}
+      >
+        <Pressable
+          style={styles.fullscreenOverlay}
+          onPress={() => setFullscreenPhoto(null)}
+        >
+          {fullscreenPhoto && (
+            <Image
+              source={{ uri: fullscreenPhoto }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+          )}
+          <View style={styles.fullscreenClose}>
+            <Ionicons name="close-circle" size={36} color={colors.white} />
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -519,9 +612,61 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     marginTop: 2,
   },
-  supervisorName: {
+  // ─── Team section ───
+  teamMember: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  teamMemberBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+  },
+  teamAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  teamAvatarMaster: {
+    backgroundColor: 'rgba(197, 165, 90, 0.1)',
+  },
+  teamInfo: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  teamName: {
     ...typography.bodyBold,
     color: colors.heading,
-    marginTop: spacing.sm,
+  },
+  teamRoleRow: {
+    marginTop: 2,
+  },
+  teamRole: {
+    ...typography.caption,
+    color: colors.textLight,
+    marginTop: 2,
+  },
+
+  // ─── Fullscreen photo modal ───
+  fullscreenOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullscreenImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH * 1.2,
+  },
+  fullscreenClose: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
   },
 });
