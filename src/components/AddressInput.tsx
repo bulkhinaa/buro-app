@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 
 // Reset web outline on focused inputs
@@ -16,10 +17,25 @@ const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
   : {};
 
-interface AddressSuggestion {
-  display_name: string;
-  lat: string;
-  lon: string;
+// ─── DaData configuration ───────────────────────────────────────────
+// Free tier: 10,000 requests/day
+// Get your token at https://dadata.ru/profile/#info
+const DADATA_TOKEN = '4f5dfae6e7088a2e5f51f6be3f94337b22504878';
+const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address';
+
+interface DaDataSuggestion {
+  value: string; // "г Москва, ул Тверская, д 1"
+  unrestricted_value: string;
+  data: {
+    city?: string;
+    city_with_type?: string;
+    street_with_type?: string;
+    house?: string;
+    flat?: string;
+    geo_lat?: string;
+    geo_lon?: string;
+    [key: string]: any;
+  };
 }
 
 interface AddressInputProps {
@@ -32,7 +48,7 @@ interface AddressInputProps {
   error?: string;
 }
 
-const DEBOUNCE_MS = 500;
+const DEBOUNCE_MS = 300; // DaData is fast, 300ms is enough
 const MIN_CHARS = 3;
 
 export function AddressInput({
@@ -45,7 +61,7 @@ export function AddressInput({
   error,
 }: AddressInputProps) {
   const [focused, setFocused] = useState(false);
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<DaDataSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,6 +74,43 @@ export function AddressInput({
       return;
     }
 
+    // If no DaData token — fall back to Nominatim
+    if (!DADATA_TOKEN) {
+      await searchNominatim(query);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(DADATA_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Token ${DADATA_TOKEN}`,
+        },
+        body: JSON.stringify({
+          query,
+          count: 7,
+          // Prioritize addresses with houses (not just streets)
+          from_bound: { value: 'city' },
+          to_bound: { value: 'house' },
+        }),
+      });
+      const json = await res.json();
+      const items: DaDataSuggestion[] = json.suggestions || [];
+      setSuggestions(items);
+      setShowDropdown(items.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowDropdown(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fallback: Nominatim (free, no API key, worse quality for Russia)
+  const searchNominatim = useCallback(async (query: string) => {
     setLoading(true);
     try {
       const encoded = encodeURIComponent(query);
@@ -65,9 +118,15 @@ export function AddressInput({
       const res = await fetch(url, {
         headers: { 'User-Agent': 'BuroRemontov/1.0' },
       });
-      const data: AddressSuggestion[] = await res.json();
-      setSuggestions(data);
-      setShowDropdown(data.length > 0);
+      const data = await res.json();
+      // Convert Nominatim response to DaData-like format
+      const items: DaDataSuggestion[] = data.map((item: any) => ({
+        value: formatNominatimAddress(item.display_name),
+        unrestricted_value: item.display_name,
+        data: { geo_lat: item.lat, geo_lon: item.lon },
+      }));
+      setSuggestions(items);
+      setShowDropdown(items.length > 0);
     } catch {
       setSuggestions([]);
       setShowDropdown(false);
@@ -100,11 +159,9 @@ export function AddressInput({
     }, DEBOUNCE_MS);
   };
 
-  const handleSelect = (item: AddressSuggestion) => {
+  const handleSelect = (item: DaDataSuggestion) => {
     skipNextSearch.current = true;
-    // Clean up the display name: take a shorter readable version
-    const short = formatAddress(item.display_name);
-    onChangeText(short);
+    onChangeText(item.value);
     onValidated?.(true);
     setSuggestions([]);
     setShowDropdown(false);
@@ -159,9 +216,14 @@ export function AddressInput({
                 ]}
                 onPress={() => handleSelect(item)}
               >
-                <Text style={styles.suggestionIcon}>📍</Text>
+                <Ionicons
+                  name="location-outline"
+                  size={16}
+                  color={colors.primary}
+                  style={styles.suggestionIcon}
+                />
                 <Text style={styles.suggestionText} numberOfLines={2}>
-                  {formatAddress(item.display_name)}
+                  {item.value}
                 </Text>
               </Pressable>
             )}
@@ -174,17 +236,17 @@ export function AddressInput({
   );
 }
 
-function formatAddress(displayName: string): string {
-  // Nominatim returns "street, city, region, country" — remove country/postcode for cleaner display
+/** Clean Nominatim display_name — remove country, postcode */
+function formatNominatimAddress(displayName: string): string {
   const parts = displayName.split(', ');
-  // Remove last parts that are typically country, postcode, region
-  const filtered = parts.filter(
-    (p) =>
-      !/^\d{5,6}$/.test(p.trim()) &&
-      p.trim() !== 'Россия' &&
-      p.trim() !== 'Russia',
-  );
-  return filtered.join(', ');
+  return parts
+    .filter(
+      (p) =>
+        !/^\d{5,6}$/.test(p.trim()) &&
+        p.trim() !== 'Россия' &&
+        p.trim() !== 'Russia',
+    )
+    .join(', ');
 }
 
 const styles = StyleSheet.create({
@@ -230,7 +292,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     marginTop: 4,
-    maxHeight: 220,
+    maxHeight: 260,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -250,7 +312,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   suggestionIcon: {
-    fontSize: 16,
     marginRight: spacing.sm,
   },
   suggestionText: {
