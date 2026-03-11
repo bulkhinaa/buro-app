@@ -124,11 +124,19 @@ export function MasterPortfolioScreen({ navigation }: any) {
         visible={!!deleteId}
         title="Удалить проект?"
         message="Проект будет удалён из вашего портфолио"
-        confirmText="Удалить"
-        cancelText="Отмена"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteId(null)}
-        destructive
+        onClose={() => setDeleteId(null)}
+        buttons={[
+          {
+            text: 'Удалить',
+            style: 'destructive',
+            onPress: handleDelete,
+          },
+          {
+            text: 'Отмена',
+            style: 'cancel',
+            onPress: () => setDeleteId(null),
+          },
+        ]}
       />
     </ScreenWrapper>
   );
