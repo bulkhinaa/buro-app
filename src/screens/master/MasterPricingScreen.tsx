@@ -196,12 +196,9 @@ const styles = StyleSheet.create({
     color: colors.heading,
   },
   pricingInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   pricingInput: {
-    flex: 1,
     backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
@@ -211,6 +208,7 @@ const styles = StyleSheet.create({
   },
   pricingTypeChips: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   emptyState: {

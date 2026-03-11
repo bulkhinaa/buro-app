@@ -71,7 +71,7 @@ const ru: Record<string, string> = {
   'master.welcome.slide1.title': 'Находите заказы\nбез посредников',
   'master.welcome.slide1.pain': 'Устали искать клиентов через сарафанное радио?',
   'master.welcome.slide1.solution': 'Получайте задачи напрямую от супервайзеров. Мы сами находим клиентов.',
-  'master.welcome.slide2.title': 'Работайте легально —\nмы берём налоги на себя',
+  'master.welcome.slide2.title': 'Работайте легально — мы берём налоги на себя',
   'master.welcome.slide2.pain': 'Не хотите разбираться с налогами и отчётностью?',
   'master.welcome.slide2.solution': 'Зарегистрируйтесь как самозанятый прямо в приложении. Мы уплатим налоги за вас — вы получите чистые деньги на карту.',
   'master.welcome.slide3.title': 'Полная прозрачность —\nвзаимные оценки',

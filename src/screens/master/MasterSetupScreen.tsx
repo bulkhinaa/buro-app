@@ -608,8 +608,8 @@ function SummaryRow({ icon, label, value, emptyText }: { icon: keyof typeof Ioni
   return (
     <View style={styles.summaryRow}>
       <Ionicons name={icon} size={16} color={colors.textLight} />
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryValue, isEmpty && styles.summaryValueEmpty]}>
+      <Text style={styles.summaryLabel} numberOfLines={1}>{label}</Text>
+      <Text style={[styles.summaryValue, isEmpty && styles.summaryValueEmpty]} numberOfLines={1}>
         {isEmpty ? (emptyText || '—') : value}
       </Text>
     </View>
@@ -817,12 +817,9 @@ const styles = StyleSheet.create({
     color: colors.heading,
   },
   pricingInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   pricingInput: {
-    flex: 1,
     backgroundColor: colors.bgInput,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
@@ -832,6 +829,7 @@ const styles = StyleSheet.create({
   },
   pricingTypeChips: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   pricingHint: {
@@ -892,7 +890,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     ...typography.small,
     color: colors.textLight,
-    width: 100,
+    width: 115,
   },
   summaryValue: {
     ...typography.bodyBold,

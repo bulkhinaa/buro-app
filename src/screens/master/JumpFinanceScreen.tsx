@@ -227,6 +227,13 @@ export function JumpFinanceScreen({ navigation }: any) {
                 <Ionicons name="checkmark-circle" size={18} color={colors.success} />
               </View>
             </Card>
+
+            <Button
+              title="Готово"
+              onPress={() => navigation.goBack()}
+              fullWidth
+              style={styles.actionButton}
+            />
           </>
         )}
 
