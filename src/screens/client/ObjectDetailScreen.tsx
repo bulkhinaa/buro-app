@@ -71,7 +71,7 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
     setLoadingProjects(true);
     try {
       // Dev objects — use local project store
-      if (object.id.startsWith('obj-')) {
+      if (object.id.startsWith('obj-') || object.id.startsWith('dev-')) {
         // For dev mode, filter projects by address match
         const store = useProjectStore.getState();
         const matched = store.projects.filter(
@@ -192,21 +192,27 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
           label="Комнат"
           value={ROOM_COUNT_LABELS[object.rooms]}
         />
-        <CellIndicator
-          variant="row"
-          label="Санузлы"
-          value={BATHROOM_LABELS[object.bathrooms]}
-        />
-        <CellIndicator
-          variant="row"
-          label="Кухня"
-          value={KITCHEN_TYPE_LABELS[object.kitchen_type]}
-        />
-        <CellIndicator
-          variant="row"
-          label="Цель"
-          value={RENOVATION_GOAL_LABELS[object.renovation_goal]}
-        />
+        {object.bathrooms && (
+          <CellIndicator
+            variant="row"
+            label="Санузлы"
+            value={BATHROOM_LABELS[object.bathrooms] ?? object.bathrooms}
+          />
+        )}
+        {object.kitchen_type && (
+          <CellIndicator
+            variant="row"
+            label="Кухня"
+            value={KITCHEN_TYPE_LABELS[object.kitchen_type] ?? object.kitchen_type}
+          />
+        )}
+        {object.renovation_goal && (
+          <CellIndicator
+            variant="row"
+            label="Цель"
+            value={RENOVATION_GOAL_LABELS[object.renovation_goal] ?? object.renovation_goal}
+          />
+        )}
         {layout && (
           <CellIndicator
             variant="row"

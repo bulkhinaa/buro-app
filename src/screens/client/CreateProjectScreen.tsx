@@ -261,7 +261,6 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         {
           text: 'Перейти к проекту',
           onPress: () => {
-            setDialogVisible(false);
             navigation.replace('ProjectDetail', {
               projectId: project.id,
               project,

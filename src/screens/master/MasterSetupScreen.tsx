@@ -109,6 +109,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Validation error states
+  const [specError, setSpecError] = useState(false);
+  const [projectTitleError, setProjectTitleError] = useState(false);
+  const [agreementError, setAgreementError] = useState(false);
+
   // Step 1: Specializations
   const [specializations, setSpecializations] = useState<SpecializationId[]>(setupDraft?.specializations || []);
 
@@ -153,10 +158,12 @@ export function MasterSetupScreen({ onComplete }: Props) {
     if (step < TOTAL_STEPS) {
       if (!canProceed) {
         if (step === 1) {
-          showToast(t('master.setup.specRequired'));
+          setSpecError(true);
+          showToast(t('master.setup.specRequired'), 'error');
         }
         return;
       }
+      setSpecError(false);
 
       // Save draft
       saveDraft({
@@ -196,9 +203,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const handleFinish = useCallback(async () => {
     if (!agreedToTerms) {
-      showToast(t('master.setup.agreementRequired'));
+      setAgreementError(true);
+      showToast(t('master.setup.agreementRequired'), 'error');
       return;
     }
+    setAgreementError(false);
 
     setSaving(true);
     try {
@@ -228,6 +237,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
   }, [agreedToTerms, name, city, phone, specializations, experience, about, skillLevel, portfolio, pricing, completeSetup, showToast]);
 
   const toggleSpecialization = (id: SpecializationId) => {
+    setSpecError(false);
     setSpecializations((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     );
@@ -235,9 +245,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
 
   const addPortfolioProject = () => {
     if (!newProjectTitle.trim()) {
-      showToast(t('master.setup.projectTitleRequired'));
+      setProjectTitleError(true);
+      showToast(t('master.setup.projectTitleRequired'), 'error');
       return;
     }
+    setProjectTitleError(false);
     const project: PortfolioProject = {
       id: `port-${Date.now()}`,
       title: newProjectTitle.trim(),
@@ -301,6 +313,10 @@ export function MasterSetupScreen({ onComplete }: Props) {
         <Text style={styles.selectedCount}>
           {t('master.setup.selectedCount', { count: specializations.length })}
         </Text>
+      )}
+
+      {specError && (
+        <Text style={styles.fieldError}>{t('master.setup.specRequired')}</Text>
       )}
     </>
   );
@@ -375,9 +391,10 @@ export function MasterSetupScreen({ onComplete }: Props) {
           {project.description ? (
             <Text style={styles.portfolioItemDesc}>{project.description}</Text>
           ) : null}
-          <Text style={styles.portfolioPhotoHint}>
-            <Ionicons name="camera-outline" size={14} color={colors.textLight} /> {t('master.setup.photoLater')}
-          </Text>
+          <View style={styles.portfolioPhotoHintRow}>
+            <Ionicons name="camera-outline" size={14} color={colors.textLight} />
+            <Text style={styles.portfolioPhotoHint}>{t('master.setup.photoLater')}</Text>
+          </View>
         </View>
       ))}
 
@@ -386,7 +403,11 @@ export function MasterSetupScreen({ onComplete }: Props) {
           <Input
             placeholder={t('master.setup.projectTitle')}
             value={newProjectTitle}
-            onChangeText={setNewProjectTitle}
+            onChangeText={(text) => {
+              setProjectTitleError(false);
+              setNewProjectTitle(text);
+            }}
+            error={projectTitleError ? t('master.setup.projectTitleRequired') : undefined}
           />
           <TextArea
             value={newProjectDesc}
@@ -406,6 +427,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
                 setShowAddProject(false);
                 setNewProjectTitle('');
                 setNewProjectDesc('');
+                setProjectTitleError(false);
               }}
               size="sm"
               variant="outline"
@@ -487,17 +509,29 @@ export function MasterSetupScreen({ onComplete }: Props) {
       </View>
 
       {/* Agreement */}
-      <View style={styles.agreementRow}>
+      <View style={[styles.agreementRow, agreementError && styles.agreementRowError]}>
         <Checkbox
           checked={agreedToTerms}
-          onPress={() => setAgreedToTerms(!agreedToTerms)}
+          onPress={() => {
+            setAgreementError(false);
+            setAgreedToTerms(!agreedToTerms);
+          }}
         />
-        <Pressable onPress={() => setAgreedToTerms(!agreedToTerms)} style={{ flex: 1, marginLeft: spacing.sm }}>
+        <Pressable
+          onPress={() => {
+            setAgreementError(false);
+            setAgreedToTerms(!agreedToTerms);
+          }}
+          style={{ flex: 1, marginLeft: spacing.sm }}
+        >
           <Text style={styles.agreementText}>
             {t('master.setup.agreement')}
           </Text>
         </Pressable>
       </View>
+      {agreementError && (
+        <Text style={styles.fieldError}>{t('master.setup.agreementRequired')}</Text>
+      )}
 
       {/* Summary */}
       <View style={styles.summaryCard}>
@@ -765,6 +799,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.xs,
   },
+  portfolioPhotoHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   portfolioPhotoHint: {
     ...typography.caption,
     color: colors.textLight,
@@ -859,7 +898,21 @@ const styles = StyleSheet.create({
   agreementRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  agreementRowError: {
+    borderColor: colors.danger,
+    backgroundColor: 'rgba(255, 59, 48, 0.05)',
+  },
+  fieldError: {
+    ...typography.small,
+    color: colors.danger,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
   agreementText: {
     ...typography.body,

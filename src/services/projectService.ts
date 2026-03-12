@@ -281,6 +281,96 @@ export async function fetchSupervisorProjects(
   return (data as Project[]) || [];
 }
 
+/** Fetch ALL projects for a supervisor across all statuses */
+export async function fetchSupervisorAllProjects(
+  supervisorId: string,
+): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('supervisor_id', supervisorId)
+    .order('updated_at', { ascending: false });
+
+  if (error) throw error;
+  return (data as Project[]) || [];
+}
+
+/** Supervisor accepts an offered project (planning → in_progress) */
+export async function supervisorAcceptProject(projectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+    .eq('id', projectId);
+
+  if (error) throw error;
+}
+
+/** Supervisor declines an offered project — clears supervisor and reverts to 'new' */
+export async function supervisorDeclineProject(projectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      supervisor_id: null,
+      status: 'new',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) throw error;
+}
+
+/** Supervisor approves a stage (done_by_master → approved) */
+export async function supervisorApproveStage(
+  stageId: string,
+  comment?: string,
+): Promise<void> {
+  const updates: Record<string, any> = {
+    status: 'approved',
+    approved_at: new Date().toISOString(),
+  };
+  if (comment) updates.supervisor_comment = comment;
+
+  const { error } = await supabase
+    .from('stages')
+    .update(updates)
+    .eq('id', stageId);
+
+  if (error) throw error;
+}
+
+/** Supervisor rejects a stage (done_by_master → rejected) */
+export async function supervisorRejectStage(
+  stageId: string,
+  comment: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('stages')
+    .update({
+      status: 'rejected',
+      supervisor_comment: comment,
+    })
+    .eq('id', stageId);
+
+  if (error) throw error;
+}
+
+/** Assign master to a stage */
+export async function assignMasterToStage(
+  stageId: string,
+  masterId: string,
+  deadline?: string,
+): Promise<void> {
+  const updates: Record<string, any> = { master_id: masterId };
+  if (deadline) updates.deadline = deadline;
+
+  const { error } = await supabase
+    .from('stages')
+    .update(updates)
+    .eq('id', stageId);
+
+  if (error) throw error;
+}
+
 // ---------- STAGES ----------
 
 export async function fetchStageTemplates(): Promise<StageTemplate[]> {

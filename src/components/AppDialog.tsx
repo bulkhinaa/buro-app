@@ -55,8 +55,10 @@ export function AppDialog({
                 <Pressable
                   key={index}
                   onPress={() => {
-                    btn.onPress();
                     onClose();
+                    // Delay btn.onPress so the Modal has time to unmount before
+                    // any navigation call runs (fixes BUG-39/41/42/46/47).
+                    setTimeout(() => btn.onPress(), 50);
                   }}
                   style={({ pressed }) => [
                     styles.button,

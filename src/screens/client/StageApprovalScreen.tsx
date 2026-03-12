@@ -77,7 +77,6 @@ export function StageApprovalScreen({ navigation, route }: Props) {
         {
           text: 'OK',
           onPress: () => {
-            setDialogVisible(false);
             navigation.goBack();
           },
         },
@@ -119,7 +118,6 @@ export function StageApprovalScreen({ navigation, route }: Props) {
         {
           text: 'OK',
           onPress: () => {
-            setDialogVisible(false);
             navigation.goBack();
           },
         },

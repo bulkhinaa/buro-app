@@ -91,9 +91,10 @@ export function MasterHomeScreen({ navigation }: any) {
           <Text style={styles.statLabel}>{t('master.home.completed')}</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: colors.primary }]}>
-            <Ionicons name="star" size={16} color={colors.primary} /> {rating}
-          </Text>
+          <View style={styles.ratingRow}>
+            <Ionicons name="star" size={16} color={colors.primary} />
+            <Text style={[styles.statNumber, { color: colors.primary }]}>{rating}</Text>
+          </View>
           <Text style={styles.statLabel}>{t('master.home.rating')}</Text>
         </View>
       </View>
@@ -217,6 +218,12 @@ const styles = StyleSheet.create({
   statNumber: {
     ...typography.h2,
     color: colors.primary,
+    marginBottom: 2,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginBottom: 2,
   },
   statLabel: {

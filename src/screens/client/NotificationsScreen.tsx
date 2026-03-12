@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
@@ -38,6 +39,7 @@ function formatTimeAgo(dateStr: string): string {
 
 export function NotificationsScreen() {
   const { user } = useAuthStore();
+  const navigation = useNavigation<any>();
   const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
     useNotificationStore();
 
@@ -48,6 +50,25 @@ export function NotificationsScreen() {
   const handleNotificationPress = (notification: AppNotification) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
+    }
+    // Navigate to relevant screen based on notification type (BUG-25)
+    const meta = notification.metadata as Record<string, string> | undefined;
+    const projectId = meta?.project_id;
+    const stageId = meta?.stage_id;
+
+    if (projectId) {
+      switch (notification.type) {
+        case 'new_message':
+          navigation.navigate('Chat', { projectId });
+          break;
+        case 'task_approved':
+        case 'task_rejected':
+        case 'stage_started':
+        case 'stage_completed':
+        case 'new_task':
+          navigation.navigate('ProjectDetail', { projectId });
+          break;
+      }
     }
   };
 

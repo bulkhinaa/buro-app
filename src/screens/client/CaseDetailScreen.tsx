@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   // ─── Fullscreen photo modal ───
   fullscreenOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
   },
