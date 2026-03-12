@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen';
 import { SupervisorProjectDetailScreen } from '../screens/supervisor/SupervisorProjectDetailScreen';
 import { SupervisorStageDetailScreen } from '../screens/supervisor/SupervisorStageDetailScreen';
+import { SupervisorStagePlanScreen } from '../screens/supervisor/SupervisorStagePlanScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -91,6 +92,13 @@ export function SupervisorNavigator() {
         options={({ route }: any) => ({
           headerTitle: route?.params?.stageTitle ?? 'Этап',
         })}
+      />
+
+      {/* Stage plan */}
+      <Stack.Screen
+        name="SupervisorStagePlan"
+        component={SupervisorStagePlanScreen}
+        options={{ headerTitle: 'План этапов' }}
       />
 
       {/* Chat */}

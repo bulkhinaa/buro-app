@@ -29,8 +29,12 @@ import {
   supervisorApproveStage,
   supervisorRejectStage,
 } from '../../services/projectService';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadFile, generateFilePath } from '../../services/storageService';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
+
+const MAX_SUPERVISOR_PHOTOS = 10;
 
 // ─── Web outline reset ────────────────────────────────────────────────────────
 
@@ -150,6 +154,86 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   // Master select modal
   const [masterModalVisible, setMasterModalVisible] = useState(false);
   const [assignedMaster, setAssignedMaster] = useState<MasterCandidate | null>(null);
+
+  // Supervisor photo upload
+  const [supervisorPhotos, setSupervisorPhotos] = useState<{ uri: string; uploading?: boolean }[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePickPhoto = useCallback(async () => {
+    if (supervisorPhotos.length >= MAX_SUPERVISOR_PHOTOS) {
+      showToast(`Максимум ${MAX_SUPERVISOR_PHOTOS} фото`, 'warning');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_SUPERVISOR_PHOTOS - supervisorPhotos.length,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const newPhotos = result.assets.map((a) => ({ uri: a.uri }));
+      setSupervisorPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_SUPERVISOR_PHOTOS));
+
+      // Upload to Supabase in background (non-dev only)
+      if (!isDev) {
+        setUploadingPhoto(true);
+        for (const asset of result.assets) {
+          const path = generateFilePath(`stages/${stageId}/supervisor`);
+          await uploadFile('photo-reports', path, asset.uri);
+        }
+        setUploadingPhoto(false);
+        showToast('Фото загружены', 'success');
+      } else {
+        showToast(`${newPhotos.length} фото добавлено`, 'success');
+      }
+    } catch {
+      showToast('Не удалось выбрать фото', 'error');
+    }
+  }, [supervisorPhotos.length, isDev, stageId, showToast]);
+
+  const handleTakePhoto = useCallback(async () => {
+    if (supervisorPhotos.length >= MAX_SUPERVISOR_PHOTOS) {
+      showToast(`Максимум ${MAX_SUPERVISOR_PHOTOS} фото`, 'warning');
+      return;
+    }
+
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        showToast('Нет доступа к камере', 'error');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const newPhoto = { uri: result.assets[0].uri };
+      setSupervisorPhotos((prev) => [...prev, newPhoto].slice(0, MAX_SUPERVISOR_PHOTOS));
+
+      if (!isDev) {
+        setUploadingPhoto(true);
+        const path = generateFilePath(`stages/${stageId}/supervisor`);
+        await uploadFile('photo-reports', path, result.assets[0].uri);
+        setUploadingPhoto(false);
+        showToast('Фото загружено', 'success');
+      } else {
+        showToast('Фото добавлено', 'success');
+      }
+    } catch {
+      showToast('Не удалось сделать фото', 'error');
+    }
+  }, [supervisorPhotos.length, isDev, stageId, showToast]);
+
+  const handleRemoveSupervisorPhoto = useCallback((idx: number) => {
+    setSupervisorPhotos((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
 
   const showDialog = (title: string, message: string, buttons: DialogButton[]) => {
     setDialogTitle(title);
@@ -455,6 +539,66 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
             </View>
           </Pressable>
         )}
+
+        {/* Supervisor photo upload */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Фото супервайзера</Text>
+            <Text style={styles.sectionCount}>
+              {supervisorPhotos.length}/{MAX_SUPERVISOR_PHOTOS}
+            </Text>
+          </View>
+
+          {/* Photo grid */}
+          {supervisorPhotos.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.photoRow}
+            >
+              {supervisorPhotos.map((photo, idx) => (
+                <View key={`sv-photo-${idx}`} style={styles.svPhotoWrap}>
+                  <Image
+                    source={{ uri: photo.uri }}
+                    style={styles.svPhoto}
+                    resizeMode="cover"
+                  />
+                  <Pressable
+                    style={styles.svPhotoRemove}
+                    onPress={() => handleRemoveSupervisorPhoto(idx)}
+                  >
+                    <Ionicons name="close-circle" size={22} color={colors.danger} />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Upload buttons */}
+          <View style={styles.uploadRow}>
+            <Pressable
+              style={styles.uploadBtn}
+              onPress={handlePickPhoto}
+              disabled={uploadingPhoto}
+            >
+              <Ionicons name="images-outline" size={20} color={colors.primary} />
+              <Text style={styles.uploadBtnText}>Галерея</Text>
+            </Pressable>
+            {Platform.OS !== 'web' && (
+              <Pressable
+                style={styles.uploadBtn}
+                onPress={handleTakePhoto}
+                disabled={uploadingPhoto}
+              >
+                <Ionicons name="camera-outline" size={20} color={colors.primary} />
+                <Text style={styles.uploadBtnText}>Камера</Text>
+              </Pressable>
+            )}
+            {uploadingPhoto && (
+              <ActivityIndicator size="small" color={colors.primary} />
+            )}
+          </View>
+        </View>
 
         {/* Checklist */}
         <View style={styles.section}>
@@ -962,6 +1106,48 @@ const styles = StyleSheet.create({
   assignedRatingText: {
     ...typography.smallBold,
     color: colors.heading,
+  },
+
+  // Supervisor photo upload
+  svPhotoWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  svPhoto: {
+    width: 120,
+    height: 120,
+  },
+  svPhotoRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 12,
+  },
+  uploadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.85)',
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+  },
+  uploadBtnText: {
+    ...typography.smallBold,
+    color: colors.primary,
   },
 
   // Empty

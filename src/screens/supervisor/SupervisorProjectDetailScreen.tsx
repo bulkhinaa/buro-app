@@ -429,6 +429,20 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
         </View>
       </View>
 
+      {/* Create plan button */}
+      <Button
+        title="Создать план этапов"
+        onPress={() =>
+          navigation.navigate('SupervisorStagePlan', {
+            projectId,
+            repairType: project?.repair_type ?? 'standard',
+            areaSqm: project?.area_sqm ?? 54,
+          })
+        }
+        variant="outline"
+        icon={<Ionicons name="create-outline" size={18} color={colors.primary} />}
+      />
+
       {/* Stages list */}
       {stages.length === 0 ? (
         <Card style={styles.emptyCard}>
