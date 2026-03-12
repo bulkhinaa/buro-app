@@ -5,6 +5,8 @@ export { StatusBadge } from './StatusBadge';
 export { ScreenWrapper } from './ScreenWrapper';
 export { AppDialog } from './AppDialog';
 export type { DialogButton } from './AppDialog';
+export { MasterSelectModal } from './MasterSelectModal';
+export type { MasterCandidate } from './MasterSelectModal';
 export { MapPreview } from './MapPreview';
 export { SplashAnimation } from './SplashAnimation';
 export { AddressInput } from './AddressInput';

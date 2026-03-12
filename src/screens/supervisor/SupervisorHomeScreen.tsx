@@ -7,7 +7,10 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
+  Share,
+  Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ScreenWrapper,
@@ -426,6 +429,23 @@ export function SupervisorHomeScreen({ navigation }: any) {
 
   const totalPendingReview = activeProjects.reduce((sum, p) => sum + p.pendingReview, 0);
 
+  // ─── Invite master ───────────────────────────────────────────────────────
+  const INVITE_URL = 'https://bulkhinaa.github.io/buro-app/';
+  const INVITE_TEXT = `Присоединяйся к платформе «Бюро ремонтов» как мастер!\n\nРегистрируйся: ${INVITE_URL}`;
+
+  const handleInviteMaster = async () => {
+    if (Platform.OS === 'web') {
+      await Clipboard.setStringAsync(INVITE_TEXT);
+      showToast('Ссылка скопирована', 'success');
+    } else {
+      try {
+        await Share.share({ message: INVITE_TEXT });
+      } catch {
+        // User cancelled share sheet
+      }
+    }
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -468,6 +488,21 @@ export function SupervisorHomeScreen({ navigation }: any) {
             <Text style={styles.statLabel}>На проверке</Text>
           </View>
         </View>
+
+        {/* Invite master */}
+        <Pressable
+          style={({ pressed }) => [styles.inviteRow, pressed && { opacity: 0.7 }]}
+          onPress={handleInviteMaster}
+        >
+          <View style={styles.inviteIcon}>
+            <Ionicons name="person-add" size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.inviteTitle}>Пригласить мастера</Text>
+            <Text style={styles.inviteSubtitle}>Отправьте ссылку для регистрации</Text>
+          </View>
+          <Ionicons name="share-outline" size={20} color={colors.primary} />
+        </Pressable>
 
         {/* Tab bar */}
         <View style={styles.tabBar}>
@@ -818,5 +853,35 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textLight,
     textAlign: 'center',
+  },
+
+  // Invite master
+  inviteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  inviteIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(123,45,62,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inviteTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+  },
+  inviteSubtitle: {
+    ...typography.small,
+    color: colors.textLight,
   },
 });

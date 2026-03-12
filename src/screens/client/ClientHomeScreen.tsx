@@ -331,12 +331,9 @@ export function ClientHomeScreen({ navigation }: Props) {
                   </Text>
                 </View>
 
-                {/* Cost + duration */}
+                {/* Cost */}
                 <Text style={styles.portfolioCost}>
                   {item.cost}
-                  <Text style={styles.portfolioDuration}>
-                    {' '}· {item.duration}
-                  </Text>
                 </Text>
               </View>
             </Pressable>

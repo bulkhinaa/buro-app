@@ -17,8 +17,9 @@ import {
   StatusBadge,
   Button,
   AppDialog,
+  MasterSelectModal,
 } from '../../components';
-import type { DialogButton } from '../../components';
+import type { DialogButton, MasterCandidate } from '../../components';
 import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { Stage, PhotoReport } from '../../types';
@@ -87,6 +88,17 @@ const MOCK_PHOTOS: PhotoReport[] = [
   },
 ];
 
+// ─── Mock masters for dev mode ────────────────────────────────────────────────
+
+const MOCK_MASTERS: MasterCandidate[] = [
+  { id: 'm-1', name: 'Иван Кузнецов', specialization: 'Штукатур', rating: 4.8, reviewCount: 34, activeTasksCount: 1 },
+  { id: 'm-2', name: 'Сергей Попов', specialization: 'Универсал', rating: 4.5, reviewCount: 22, activeTasksCount: 2 },
+  { id: 'm-3', name: 'Дмитрий Лебедев', specialization: 'Электрик', rating: 4.9, reviewCount: 56, activeTasksCount: 0 },
+  { id: 'm-4', name: 'Андрей Морозов', specialization: 'Плиточник', rating: 4.7, reviewCount: 18, activeTasksCount: 1 },
+  { id: 'm-5', name: 'Павел Новиков', specialization: 'Сантехник', rating: 4.6, reviewCount: 41, activeTasksCount: 0 },
+  { id: 'm-6', name: 'Виктор Соловьёв', specialization: 'Маляр', rating: 4.3, reviewCount: 12, activeTasksCount: 3 },
+];
+
 // ─── Checklist item state ─────────────────────────────────────────────────────
 
 type CheckState = 'unchecked' | 'done' | 'na';
@@ -135,11 +147,25 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   const [dialogMessage, setDialogMessage] = useState('');
   const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
 
+  // Master select modal
+  const [masterModalVisible, setMasterModalVisible] = useState(false);
+  const [assignedMaster, setAssignedMaster] = useState<MasterCandidate | null>(null);
+
   const showDialog = (title: string, message: string, buttons: DialogButton[]) => {
     setDialogTitle(title);
     setDialogMessage(message);
     setDialogButtons(buttons);
     setDialogVisible(true);
+  };
+
+  const handleAssignMaster = (master: MasterCandidate) => {
+    setAssignedMaster(master);
+    setMasterModalVisible(false);
+    // Transition stage from pending to in_progress
+    setStage((prev) => prev ? { ...prev, status: 'in_progress', started_at: new Date().toISOString() } : prev);
+    hapticSuccess();
+    showToast(`${master.name} назначен на этап`, 'success');
+    // TODO: In production, call assignMasterToStage(stageId, master.id) via Supabase
   };
 
   // ─── Load data ────────────────────────────────────────────────────────────
@@ -339,6 +365,34 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
             )}
           </Card>
         )}
+
+        {/* Assigned master or assign button */}
+        {assignedMaster ? (
+          <Card>
+            <Text style={styles.sectionLabel}>Мастер</Text>
+            <View style={styles.assignedRow}>
+              <View style={styles.assignedAvatar}>
+                <Ionicons name="person" size={18} color={colors.white} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.assignedName}>{assignedMaster.name}</Text>
+                <Text style={styles.assignedSpec}>{assignedMaster.specialization}</Text>
+              </View>
+              <View style={styles.assignedRating}>
+                <Ionicons name="star" size={12} color={colors.warning} />
+                <Text style={styles.assignedRatingText}>{assignedMaster.rating.toFixed(1)}</Text>
+              </View>
+            </View>
+          </Card>
+        ) : stage.status === 'pending' ? (
+          <Button
+            title="Назначить мастера"
+            onPress={() => setMasterModalVisible(true)}
+            variant="outline"
+            fullWidth
+            icon={<Ionicons name="person-add-outline" size={18} color={colors.primary} />}
+          />
+        ) : null}
 
         {/* Photo gallery */}
         <View style={styles.section}>
@@ -559,6 +613,14 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         message={dialogMessage}
         buttons={dialogButtons}
         onClose={() => setDialogVisible(false)}
+      />
+
+      <MasterSelectModal
+        visible={masterModalVisible}
+        onClose={() => setMasterModalVisible(false)}
+        onSelect={handleAssignMaster}
+        masters={isDev ? MOCK_MASTERS : []}
+        stageTitle={stage.title}
       />
     </ScreenWrapper>
   );
@@ -868,6 +930,38 @@ const styles = StyleSheet.create({
   decidedDate: {
     ...typography.small,
     color: colors.textLight,
+  },
+
+  // Assigned master
+  assignedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  assignedAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assignedName: {
+    ...typography.bodyBold,
+    color: colors.heading,
+  },
+  assignedSpec: {
+    ...typography.small,
+    color: colors.textLight,
+  },
+  assignedRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  assignedRatingText: {
+    ...typography.smallBold,
+    color: colors.heading,
   },
 
   // Empty
