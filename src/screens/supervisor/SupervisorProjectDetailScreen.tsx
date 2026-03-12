@@ -99,7 +99,7 @@ const MOCK_STAGES: Stage[] = [
     title: 'Штукатурка стен',
     description: 'Выравнивание стен, штукатурка по маякам',
     order_index: 5,
-    status: 'in_progress',
+    status: 'done_by_master',
     deadline: '2025-02-20',
     started_at: '2025-02-10',
   },

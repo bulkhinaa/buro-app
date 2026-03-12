@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,13 +49,14 @@ export function AdminNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        ...TransitionPresets.SlideFromRightIOS,
+        ...(Platform.OS !== 'web' ? TransitionPresets.SlideFromRightIOS : {}),
         headerStyle: { backgroundColor: colors.bgGradientStart, elevation: 0, shadowOpacity: 0 },
         headerTintColor: colors.primary,
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         cardStyle: { backgroundColor: colors.bgGradientEnd },
-        gestureEnabled: true,
-        animation: 'slide_from_right' as any,
+        gestureEnabled: Platform.OS !== 'web',
+        animationEnabled: Platform.OS !== 'web',
+        animation: Platform.OS === 'web' ? 'none' as any : 'slide_from_right' as any,
       }}
     >
       <Stack.Screen name="AdminTabs" component={AdminTabs} options={{ headerShown: false }} />

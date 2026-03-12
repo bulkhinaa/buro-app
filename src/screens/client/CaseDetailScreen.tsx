@@ -430,7 +430,10 @@ export function CaseDetailScreen({ navigation, route }: Props) {
           <Text style={styles.sectionTitle}>Команда</Text>
           <Card>
             {/* Supervisor */}
-            <View style={styles.teamMember}>
+            <Pressable
+              style={({ pressed }) => [styles.teamMember, pressed && styles.teamMemberPressed]}
+              onPress={() => {/* TODO: open profile modal */}}
+            >
               <View style={styles.teamAvatar}>
                 <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
               </View>
@@ -445,11 +448,20 @@ export function CaseDetailScreen({ navigation, route }: Props) {
                 </View>
               </View>
               <Chip label="Супервайзер" />
-            </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+            </Pressable>
 
             {/* Masters */}
             {caseData.masters.map((master, i) => (
-              <View key={i} style={[styles.teamMember, i > 0 || true ? styles.teamMemberBorder : undefined]}>
+              <Pressable
+                key={i}
+                style={({ pressed }) => [
+                  styles.teamMember,
+                  styles.teamMemberBorder,
+                  pressed && styles.teamMemberPressed,
+                ]}
+                onPress={() => {/* TODO: open profile modal */}}
+              >
                 <View style={[styles.teamAvatar, styles.teamAvatarMaster]}>
                   <Ionicons name="construct" size={18} color={colors.gold} />
                 </View>
@@ -458,7 +470,8 @@ export function CaseDetailScreen({ navigation, route }: Props) {
                   <Text style={styles.teamRole}>{master.role}</Text>
                 </View>
                 <Chip label="Мастер" />
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+              </Pressable>
             ))}
           </Card>
 
@@ -617,6 +630,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
+  },
+  teamMemberPressed: {
+    opacity: 0.6,
   },
   teamMemberBorder: {
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -54,6 +54,7 @@ export function StageApprovalScreen({ navigation, route }: Props) {
 
   const [showRejection, setShowRejection] = useState(false);
   const [rejectionText, setRejectionText] = useState('');
+  const [rejectionError, setRejectionError] = useState('');
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
@@ -97,10 +98,12 @@ export function StageApprovalScreen({ navigation, route }: Props) {
       return;
     }
     if (rejectionText.trim().length === 0) {
+      setRejectionError('Опишите замечания');
       showToast('Опишите замечания', 'error');
       hapticError();
       return;
     }
+    setRejectionError('');
 
     setLoading(true);
     try {
@@ -181,7 +184,8 @@ export function StageApprovalScreen({ navigation, route }: Props) {
           <TextArea
             placeholder="Опишите, что не устраивает"
             value={rejectionText}
-            onChangeText={setRejectionText}
+            onChangeText={(t) => { setRejectionText(t); if (rejectionError) setRejectionError(''); }}
+            error={rejectionError}
           />
         </View>
       )}

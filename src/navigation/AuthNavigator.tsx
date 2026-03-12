@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileSetupScreen } from '../screens/auth/ProfileSetupScreen';
@@ -10,11 +11,12 @@ export function AuthNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        ...TransitionPresets.SlideFromRightIOS,
+        ...(Platform.OS !== 'web' ? TransitionPresets.SlideFromRightIOS : {}),
         headerShown: false,
         cardStyle: { backgroundColor: colors.bg },
-        gestureEnabled: true,
-        animation: 'slide_from_right' as any,
+        gestureEnabled: Platform.OS !== 'web',
+        animationEnabled: Platform.OS !== 'web',
+        animation: Platform.OS === 'web' ? 'none' as any : 'slide_from_right' as any,
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

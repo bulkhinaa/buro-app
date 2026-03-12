@@ -157,22 +157,24 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
             </View>
           ) : null}
 
-          {/* Key dates */}
-          {(project?.created_at || timelineDays > 0) && (
+          {/* Key dates — prefer real start_date / estimated_completion, fall back to calculated */}
+          {(project?.start_date || project?.created_at || timelineDays > 0) && (
             <View style={styles.heroDates}>
-              {project?.created_at && (
+              {(project?.start_date || project?.created_at) && (
                 <View style={styles.heroDateItem}>
                   <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
                   <Text style={styles.heroDateText}>
-                    {new Date(project.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(project.start_date || project!.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 </View>
               )}
-              {project?.created_at && timelineDays > 0 && (
+              {(project?.estimated_completion || (project?.created_at && timelineDays > 0)) && (
                 <View style={styles.heroDateItem}>
                   <Ionicons name="flag-outline" size={14} color={colors.accent} />
                   <Text style={[styles.heroDateText, { color: colors.accent }]}>
-                    ~{new Date(new Date(project.created_at).getTime() + timelineDays * 86400000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {project?.estimated_completion
+                      ? new Date(project.estimated_completion).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : `~${new Date(new Date(project!.created_at).getTime() + timelineDays * 86400000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                   </Text>
                 </View>
               )}

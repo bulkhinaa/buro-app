@@ -36,6 +36,8 @@ export interface Project {
   budget_min?: number;
   budget_max?: number;
   status: ProjectStatus;
+  start_date?: string;
+  estimated_completion?: string;
   created_at: string;
   updated_at: string;
 }

@@ -412,7 +412,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
       </Text>
 
       <Input
-        placeholder="Название проекта (необязательно)"
+        placeholder="Название (необязательно)"
         value={projectName}
         onChangeText={setProjectName}
         leftIcon={
