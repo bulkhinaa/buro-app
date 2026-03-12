@@ -13,6 +13,16 @@ import { ScreenWrapper, Button, Card, AppDialog } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
+
+/** Russian pluralization: 1 проект, 2 проекта, 5 проектов */
+function pluralRu(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n) % 100;
+  const lastDigit = abs % 10;
+  if (abs > 10 && abs < 20) return many;
+  if (lastDigit > 1 && lastDigit < 5) return few;
+  if (lastDigit === 1) return one;
+  return many;
+}
 import { hapticSuccess } from '../../utils/haptics';
 import type { PortfolioProject } from '../../types';
 
@@ -78,7 +88,7 @@ export function MasterPortfolioScreen({ navigation }: any) {
         <Text style={styles.title}>Моё портфолио</Text>
         <Text style={styles.subtitle}>
           {portfolio.length > 0
-            ? `${portfolio.length} ${portfolio.length === 1 ? 'проект' : portfolio.length < 5 ? 'проекта' : 'проектов'}`
+            ? `${portfolio.length} ${pluralRu(portfolio.length, 'проект', 'проекта', 'проектов')}`
             : 'Покажите свои лучшие работы'}
         </Text>
       </View>

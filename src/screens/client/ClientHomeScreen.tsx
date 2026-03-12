@@ -314,17 +314,10 @@ export function ClientHomeScreen({ navigation }: Props) {
                   </View>
                 </View>
 
-                {/* Repair type + stages */}
-                <View style={styles.portfolioDescRow}>
-                  <Text style={styles.portfolioDescTitle} numberOfLines={1}>
-                    {item.repairType} ремонт
-                  </Text>
-                  <View style={styles.portfolioStagesChip}>
-                    <Text style={styles.portfolioStagesText}>
-                      +{item.stagesCount}
-                    </Text>
-                  </View>
-                </View>
+                {/* Repair type */}
+                <Text style={styles.portfolioDescTitle} numberOfLines={1}>
+                  {item.repairType} ремонт
+                </Text>
 
                 {/* Area + duration */}
                 <View style={styles.portfolioLocationRow}>

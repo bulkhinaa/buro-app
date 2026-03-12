@@ -353,10 +353,12 @@ export function SupervisorHomeScreen({ navigation }: any) {
 
           <View style={styles.activeCardFooter}>
             {project.pendingReview > 0 ? (
-              <Text style={styles.pendingReviewNote}>
-                <Ionicons name="hourglass-outline" size={13} color={colors.accent} />{' '}
-                {project.pendingReview} этап{project.pendingReview > 1 ? 'а' : ''} ожидает проверки
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="hourglass-outline" size={13} color={colors.accent} />
+                <Text style={styles.pendingReviewNote}>
+                  {project.pendingReview} этап{project.pendingReview > 1 ? 'а' : ''} ожидает проверки
+                </Text>
+              </View>
             ) : (
               <Text style={styles.activeNote}>Ожидание работ мастера</Text>
             )}

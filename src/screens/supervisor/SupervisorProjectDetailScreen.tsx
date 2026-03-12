@@ -471,10 +471,12 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
       {/* Header info */}
       <View style={styles.header}>
         <Text style={styles.projectTitle} numberOfLines={2}>{project.title}</Text>
-        <Text style={styles.projectAddress} numberOfLines={1}>
-          <Ionicons name="location-outline" size={13} color={colors.textLight} />{' '}
-          {project.address}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Ionicons name="location-outline" size={13} color={colors.textLight} />
+          <Text style={styles.projectAddress} numberOfLines={1}>
+            {project.address}
+          </Text>
+        </View>
       </View>
 
       {/* Tab switcher */}
