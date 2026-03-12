@@ -6,7 +6,7 @@ import {
   createProject as createProjectService,
   generateStagesForProject,
 } from '../services/projectService';
-import { estimateCost } from '../utils/calculator';
+import { estimateScopedCost } from '../utils/calculator';
 import { useAuthStore } from './authStore';
 
 interface ProjectState {
@@ -80,7 +80,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   submitProject: async ({ clientId, title, address, areaSqm, repairType, objectId, scope }) => {
     set({ isLoading: true, error: null });
     try {
-      const { min, max } = estimateCost(repairType, areaSqm);
+      const { min, max } = estimateScopedCost(repairType, areaSqm, scope || []);
 
       // Dev users — create locally without Supabase
       if (clientId.startsWith('dev-')) {
@@ -117,6 +117,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
         budgetMin: min,
         budgetMax: max,
         objectId,
+        scope: scope || undefined,
       });
 
       await generateStagesForProject(project.id, repairType, areaSqm);

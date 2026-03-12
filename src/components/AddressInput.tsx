@@ -182,10 +182,19 @@ export function AddressInput({
     setShowDropdown(false);
   };
 
+  // Track whether the user is pressing a suggestion so blur doesn't hide dropdown
+  const isPressingDropdown = useRef(false);
+
   const handleBlur = () => {
     setFocused(false);
-    // Delay hiding to allow press on suggestion
-    setTimeout(() => setShowDropdown(false), 200);
+    // On web, onMouseDown on a suggestion sets isPressingDropdown=true before blur fires.
+    // Give the onPress handler time to run before hiding the dropdown.
+    setTimeout(() => {
+      if (!isPressingDropdown.current) {
+        setShowDropdown(false);
+      }
+      isPressingDropdown.current = false;
+    }, 250);
   };
 
   return (
@@ -230,6 +239,13 @@ export function AddressInput({
                   pressed && styles.suggestionPressed,
                 ]}
                 onPress={() => handleSelect(item)}
+                // On web, prevent blur from closing dropdown before onPress fires
+                {...(Platform.OS === 'web' ? {
+                  onMouseDown: (e: any) => {
+                    e.preventDefault();
+                    isPressingDropdown.current = true;
+                  },
+                } : {})}
               >
                 <Ionicons
                   name="location-outline"

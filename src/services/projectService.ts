@@ -155,20 +155,26 @@ export async function createProject(params: {
   budgetMin: number;
   budgetMax: number;
   objectId?: string;
+  scope?: string[];
 }): Promise<Project> {
+  const insertData: Record<string, any> = {
+    client_id: params.clientId,
+    title: params.title,
+    address: params.address,
+    area_sqm: params.areaSqm,
+    repair_type: params.repairType,
+    budget_min: params.budgetMin,
+    budget_max: params.budgetMax,
+    object_id: params.objectId || null,
+    status: 'new',
+  };
+  // Only include scope if the column exists in DB
+  if (params.scope && params.scope.length > 0) {
+    insertData.scope = params.scope;
+  }
   const { data, error } = await supabase
     .from('projects')
-    .insert({
-      client_id: params.clientId,
-      title: params.title,
-      address: params.address,
-      area_sqm: params.areaSqm,
-      repair_type: params.repairType,
-      budget_min: params.budgetMin,
-      budget_max: params.budgetMax,
-      object_id: params.objectId || null,
-      status: 'new',
-    })
+    .insert(insertData)
     .select()
     .single();
 

@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: 100, // Extra padding so content doesn't hide behind fixed bottomBar
   },
   heading: {
     ...typography.h1,
