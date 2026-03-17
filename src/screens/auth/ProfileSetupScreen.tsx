@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hapticSuccess, hapticLight } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, SystemButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
+import { supabase } from '../../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -53,8 +55,25 @@ export function ProfileSetupScreen({ navigation }: Props) {
         id: user.id,
         name: name.trim(),
         city: city.trim(),
+        email: email.trim() || undefined,
         consent_version: '1.0',
       });
+      // Accept pending invite if exists
+      try {
+        const inviteCode = await AsyncStorage.getItem('pending_invite_code');
+        if (inviteCode && !user.id.startsWith('dev-')) {
+          await supabase
+            .from('invites')
+            .update({ status: 'accepted', accepted_by: user.id })
+            .eq('code', inviteCode)
+            .eq('status', 'pending');
+          await AsyncStorage.removeItem('pending_invite_code');
+          showToast('Вы присоединились по приглашению!', 'success');
+        }
+      } catch {
+        // Non-critical — invite acceptance failed
+      }
+
       hapticSuccess();
       // Navigation will be handled by RootNavigator detecting profile completion
     } catch (e: any) {

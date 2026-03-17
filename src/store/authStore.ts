@@ -14,8 +14,8 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   logout: () => void;
   initAuth: () => Promise<void>;
-  syncProfile: (authUser: { id: string; name: string; phone?: string; city?: string; consent_version?: string }) => Promise<void>;
-  saveProfile: (updates: { name?: string; phone?: string; city?: string; preferred_language?: string }) => Promise<void>;
+  syncProfile: (authUser: { id: string; name: string; phone?: string; city?: string; email?: string; consent_version?: string }) => Promise<void>;
+  saveProfile: (updates: { name?: string; phone?: string; city?: string; email?: string; preferred_language?: SupportedLanguage }) => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
 
@@ -26,6 +26,7 @@ function profileToUser(profile: any): User {
     phone: profile.phone || '',
     name: profile.name || '',
     role: profile.role as UserRole,
+    email: profile.email,
     city: profile.city,
     preferred_language: profile.preferred_language as SupportedLanguage | undefined,
     avatar_url: profile.avatar_url,
@@ -72,13 +73,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: false });
   },
 
-  syncProfile: async ({ id, name, phone, city, consent_version }) => {
+  syncProfile: async ({ id, name, phone, city, email, consent_version }) => {
     try {
       const extra: Record<string, any> = {};
       if (consent_version) {
         extra.consent_given_at = new Date().toISOString();
         extra.consent_version = consent_version;
       }
+      if (email) extra.email = email;
       await upsertProfile({ id, name, phone, city, role: 'client', ...extra });
       const profile = await fetchProfile(id);
       if (profile) {

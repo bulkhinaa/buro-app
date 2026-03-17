@@ -26,6 +26,7 @@ export function EditProfileScreen({ navigation }: Props) {
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [city, setCity] = useState(user?.city || '');
   const [saving, setSaving] = useState(false);
 
@@ -38,6 +39,7 @@ export function EditProfileScreen({ navigation }: Props) {
       await saveProfile({
         name: name.trim(),
         phone: phone.trim(),
+        email: email.trim() || undefined,
         city: city.trim() || undefined,
       });
       hapticSuccess();
@@ -111,6 +113,16 @@ export function EditProfileScreen({ navigation }: Props) {
               keyboardType="phone-pad"
               leftIcon={
                 <Ionicons name="call-outline" size={18} color={colors.textLight} />
+              }
+            />
+            <Input
+              placeholder="Email (необязательно)"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={
+                <Ionicons name="mail-outline" size={18} color={colors.textLight} />
               }
             />
             <CityPicker

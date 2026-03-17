@@ -7,6 +7,7 @@ import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen
 import { SupervisorProjectDetailScreen } from '../screens/supervisor/SupervisorProjectDetailScreen';
 import { SupervisorStageDetailScreen } from '../screens/supervisor/SupervisorStageDetailScreen';
 import { SupervisorStagePlanScreen } from '../screens/supervisor/SupervisorStagePlanScreen';
+import { SupervisorInvitesScreen } from '../screens/supervisor/SupervisorInvitesScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -99,6 +100,13 @@ export function SupervisorNavigator() {
         name="SupervisorStagePlan"
         component={SupervisorStagePlanScreen}
         options={{ headerTitle: 'План этапов' }}
+      />
+
+      {/* Invites */}
+      <Stack.Screen
+        name="SupervisorInvites"
+        component={SupervisorInvitesScreen}
+        options={{ headerTitle: 'Приглашения мастеров' }}
       />
 
       {/* Chat */}

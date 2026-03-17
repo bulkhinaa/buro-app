@@ -7,10 +7,7 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
-  Share,
-  Platform,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ScreenWrapper,
@@ -430,20 +427,8 @@ export function SupervisorHomeScreen({ navigation }: any) {
   const totalPendingReview = activeProjects.reduce((sum, p) => sum + p.pendingReview, 0);
 
   // ─── Invite master ───────────────────────────────────────────────────────
-  const INVITE_URL = 'https://bulkhinaa.github.io/buro-app/';
-  const INVITE_TEXT = `Присоединяйся к платформе «Бюро ремонтов» как мастер!\n\nРегистрируйся: ${INVITE_URL}`;
-
-  const handleInviteMaster = async () => {
-    if (Platform.OS === 'web') {
-      await Clipboard.setStringAsync(INVITE_TEXT);
-      showToast('Ссылка скопирована', 'success');
-    } else {
-      try {
-        await Share.share({ message: INVITE_TEXT });
-      } catch {
-        // User cancelled share sheet
-      }
-    }
+  const handleInviteMaster = () => {
+    navigation.navigate('SupervisorInvites');
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -501,7 +486,7 @@ export function SupervisorHomeScreen({ navigation }: any) {
             <Text style={styles.inviteTitle}>Пригласить мастера</Text>
             <Text style={styles.inviteSubtitle}>Отправьте ссылку для регистрации</Text>
           </View>
-          <Ionicons name="share-outline" size={20} color={colors.primary} />
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
         </Pressable>
 
         {/* Tab bar */}

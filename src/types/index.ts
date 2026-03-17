@@ -7,6 +7,7 @@ export interface User {
   phone: string;
   name: string;
   role: UserRole;
+  email?: string;
   city?: string;
   preferred_language?: SupportedLanguage;
   avatar_url?: string;

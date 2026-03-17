@@ -9,6 +9,7 @@ export async function upsertProfile(params: {
   name: string;
   phone?: string;
   city?: string;
+  email?: string;
   preferred_language?: string;
   role?: string;
   consent_given_at?: string;
@@ -22,6 +23,7 @@ export async function upsertProfile(params: {
   };
   if (params.phone) payload.phone = params.phone;
   if (params.city) payload.city = params.city;
+  if (params.email) payload.email = params.email;
   if (params.preferred_language) payload.preferred_language = params.preferred_language;
   if (params.consent_given_at) payload.consent_given_at = params.consent_given_at;
   if (params.consent_version) payload.consent_version = params.consent_version;
@@ -35,7 +37,7 @@ export async function upsertProfile(params: {
 
 export async function updateProfile(
   userId: string,
-  updates: { name?: string; phone?: string; city?: string; preferred_language?: string },
+  updates: { name?: string; phone?: string; city?: string; email?: string; preferred_language?: string },
 ): Promise<void> {
   const { error } = await supabase
     .from('profiles')

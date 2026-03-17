@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
@@ -84,11 +85,20 @@ export function LoginScreen() {
   }, []);
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
+  // ── Also capture invite code from URL (?invite=ABC123) ──
   useEffect(() => {
     if (Platform.OS !== 'web') return;
 
     const url = new URL(window.location.href);
     const code = url.searchParams.get('code');
+    const inviteCode = url.searchParams.get('invite');
+
+    // Save invite code for later (after registration)
+    if (inviteCode) {
+      AsyncStorage.setItem('pending_invite_code', inviteCode);
+      url.searchParams.delete('invite');
+      window.history.replaceState({}, '', url.toString());
+    }
 
     if (code) {
       // Clean URL so code doesn't persist on refresh
