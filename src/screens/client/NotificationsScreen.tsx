@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   list: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   notificationCard: {
     flexDirection: 'row',

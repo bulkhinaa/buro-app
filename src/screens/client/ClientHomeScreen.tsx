@@ -455,7 +455,7 @@ export function ClientHomeScreen({ navigation }: Props) {
         )}
 
         {/* Extra padding for glass tab bar */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </ScreenWrapper>
   );

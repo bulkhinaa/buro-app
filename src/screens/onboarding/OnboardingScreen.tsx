@@ -1,14 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
-  FlatList,
-  ViewToken,
+  ScrollView,
   Image,
   ImageSourcePropType,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,14 +70,10 @@ type Props = {
 
 export function OnboardingScreen({ onComplete }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const { t } = useTranslation();
 
   // Fix: RN Web Image sets internal opacity:0 for its loading fade-in.
-  // When nested inside an Animated.View that also manipulates opacity
-  // (RootNavigator fade transition), the Image's internal animation
-  // never resolves, leaving <img> elements stuck at opacity:0.
-  // Inject a targeted CSS rule to force images visible on web.
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const style = document.createElement('style');
@@ -92,37 +89,28 @@ export function OnboardingScreen({ onComplete }: Props) {
     };
   }, []);
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setActiveIndex(viewableItems[0].index);
-      }
-    },
-  ).current;
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
   const isLast = activeIndex === SLIDE_CONFIGS.length - 1;
 
-  const getItemLayout = (_: any, index: number) => ({
-    length: width,
-    offset: width * index,
-    index,
-  });
+  // Track active slide from scroll position (works on web and native)
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / width);
+    if (index >= 0 && index < SLIDE_CONFIGS.length) {
+      setActiveIndex(index);
+    }
+  }, []);
 
   const handleNext = async () => {
     if (isLast) {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       onComplete();
     } else {
-      flatListRef.current?.scrollToIndex({
-        index: activeIndex + 1,
-        animated: true,
-      });
+      const nextIndex = activeIndex + 1;
+      scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
     }
   };
 
-  const renderSlide = ({ item }: { item: SlideConfig }) => (
+  const renderSlide = (item: SlideConfig) => (
     <View style={styles.slide}>
       {/* 3D illustration — fills upper portion, edge to edge */}
       <Image
@@ -144,21 +132,19 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={flatListRef}
-        data={SLIDE_CONFIGS}
-        renderItem={renderSlide}
-        keyExtractor={(item) => item.id}
+      <ScrollView
+        ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        getItemLayout={getItemLayout}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         bounces={false}
         style={{ flex: 1 }}
         testID="onboarding-slides"
-      />
+      >
+        {SLIDE_CONFIGS.map((item) => renderSlide(item))}
+      </ScrollView>
 
       {/* Footer with dots + button */}
       <SafeAreaView style={styles.footerSafe} edges={['bottom']} pointerEvents="box-none">

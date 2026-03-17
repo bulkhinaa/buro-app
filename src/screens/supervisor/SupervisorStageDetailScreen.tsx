@@ -51,9 +51,9 @@ const MOCK_STAGE: Stage = {
   description: 'Выравнивание стен, штукатурка по маякам. Все стены должны быть отштукатурены под правило 2 метра с допуском не более 2 мм.',
   order_index: 5,
   status: 'done_by_master',
-  deadline: '2025-02-20',
-  started_at: '2025-02-10',
-  completed_at: '2025-02-18',
+  deadline: '2026-03-20',
+  started_at: '2026-03-10',
+  completed_at: '2026-03-18',
 };
 
 const MOCK_CHECKLIST = [
@@ -72,7 +72,7 @@ const MOCK_PHOTOS: PhotoReport[] = [
     uploaded_by: 'master-1',
     url: 'https://images.unsplash.com/photo-1581093806997-124204d9fa9d?w=600',
     comment: 'Грунтовка нанесена',
-    created_at: '2025-02-11T10:00:00Z',
+    created_at: '2026-03-11T10:00:00Z',
   },
   {
     id: 'ph-2',
@@ -80,7 +80,7 @@ const MOCK_PHOTOS: PhotoReport[] = [
     uploaded_by: 'master-1',
     url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600',
     comment: 'Маяки установлены',
-    created_at: '2025-02-12T14:00:00Z',
+    created_at: '2026-03-12T14:00:00Z',
   },
   {
     id: 'ph-3',
@@ -88,7 +88,7 @@ const MOCK_PHOTOS: PhotoReport[] = [
     uploaded_by: 'master-1',
     url: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600',
     comment: 'Штукатурка нанесена, финальный слой',
-    created_at: '2025-02-18T16:00:00Z',
+    created_at: '2026-03-18T16:00:00Z',
   },
 ];
 
@@ -396,11 +396,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <ScreenWrapper>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+    <ScreenWrapper style={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -749,7 +745,6 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
             <Text style={styles.decidedDate}>Мастер получил задание на доработку</Text>
           </Card>
         )}
-      </ScrollView>
 
       <AppDialog
         visible={dialogVisible}

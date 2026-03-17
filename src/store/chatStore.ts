@@ -17,14 +17,14 @@ const DEV_MOCK_MESSAGES: ChatMessage[] = [
     project_id: 'proj-1',
     sender_id: 'dev-supervisor',
     text: 'Добрый день! Я ваш супервайзер, Михаил. Сегодня провёл проверку — штукатурка стен идёт по графику.',
-    created_at: '2025-02-05T10:00:00Z',
+    created_at: '2026-03-15T10:00:00Z',
   },
   {
     id: 'msg-2',
     project_id: 'proj-1',
     sender_id: 'dev-master',
     text: 'Отлично, спасибо! Завтра заканчиваю штукатурку в коридоре, загружу фото.',
-    created_at: '2025-02-05T14:00:00Z',
+    created_at: '2026-03-15T14:00:00Z',
   },
   {
     id: 'msg-3',
@@ -32,7 +32,7 @@ const DEV_MOCK_MESSAGES: ChatMessage[] = [
     sender_id: 'dev-supervisor',
     text: 'Хорошо. Обратите внимание на стыки возле окна — нужно пройти ещё раз.',
     image_url: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=400',
-    created_at: '2025-02-05T16:30:00Z',
+    created_at: '2026-03-15T16:30:00Z',
   },
 ];
 

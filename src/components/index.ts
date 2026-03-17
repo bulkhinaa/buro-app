@@ -53,5 +53,8 @@ export { GlassView } from './GlassView';
 export { GlassChip } from './GlassChip';
 export { GlassTabBar } from './GlassTabBar';
 
+// Schedule
+export { WeekGrid } from './WeekGrid';
+
 // Error handling
 export { ErrorBoundary } from './ErrorBoundary';

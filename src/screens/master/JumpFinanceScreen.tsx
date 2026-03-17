@@ -1,19 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, Button } from '../../components';
+import { ScreenWrapper, Card, Button, Input } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
-
-const SUPABASE_URL = 'https://aaghopgrlxdjsrvmbuds.supabase.co';
+import { supabase } from '../../lib/supabase';
 
 const REQUIREMENTS = [
-  { icon: 'id-card-outline' as const, text: 'Паспорт гражданина РФ' },
-  { icon: 'document-text-outline' as const, text: 'ИНН (индивидуальный номер налогоплательщика)' },
+  { icon: 'document-text-outline' as const, text: 'ИНН (12 цифр)' },
   { icon: 'phone-portrait-outline' as const, text: 'Приложение «Мой налог» (установлено)' },
+  { icon: 'shield-checkmark-outline' as const, text: 'Статус самозанятого в ФНС' },
+];
+
+const PENDING_STEPS = [
+  { step: '1', text: 'Откройте приложение «Мой налог»' },
+  { step: '2', text: 'Перейдите в раздел «Партнёры»' },
+  { step: '3', text: 'Примите приглашение от «Jump.Работа»' },
 ];
 
 export function JumpFinanceScreen({ navigation }: any) {
@@ -23,41 +28,40 @@ export function JumpFinanceScreen({ navigation }: any) {
   const setVerificationStatus = useMasterStore((s) => s.setVerificationStatus);
   const showToast = useToastStore((s) => s.show);
   const [loading, setLoading] = useState(false);
+  const [inn, setInn] = useState('');
+  const [innError, setInnError] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const status = profile?.verification_status || 'none';
-  const isDev = user?.id?.startsWith('dev-');
 
   const callJumpFunction = async (action: string, payload: Record<string, unknown> = {}) => {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/jump-finance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload }),
+    const { data, error } = await supabase.functions.invoke('jump-finance', {
+      body: { action, ...payload },
     });
-    return res.json();
+    if (error) throw new Error(error.message);
+    return data;
+  };
+
+  const validateInn = (value: string): boolean => {
+    const clean = value.replace(/\s/g, '');
+    if (!/^\d{12}$/.test(clean)) {
+      setInnError('ИНН должен содержать 12 цифр');
+      return false;
+    }
+    setInnError('');
+    return true;
   };
 
   const handleStartVerification = async () => {
+    if (!validateInn(inn)) return;
+
     setLoading(true);
     try {
-      if (isDev) {
-        // Dev mode — simulate verification
-        await setVerificationStatus('pending');
-        showToast('Верификация запущена (dev-режим)', 'info');
-        timerRef.current = setTimeout(async () => {
-          await setVerificationStatus('approved');
-          showToast('Верификация пройдена!', 'success');
-          hapticSuccess();
-        }, 2000);
-        setLoading(false);
-        return;
-      }
-
-      // 1. Create contractor
+      // Create contractor in Jump Finance
       const createRes = await callJumpFunction('create_contractor', {
         name: user?.name || 'Мастер',
         phone: user?.phone || '',
-        email: '',
+        inn: inn.replace(/\s/g, ''),
       });
 
       if (createRes.error) {
@@ -68,23 +72,11 @@ export function JumpFinanceScreen({ navigation }: any) {
 
       const contractorId = createRes.contractor_id;
       await updateProfile({ jump_contractor_id: contractorId });
-
-      // 2. Start identification
-      const identRes = await callJumpFunction('start_identification', {
-        contractor_id: contractorId,
-      });
-
-      if (identRes.error) {
-        showToast(identRes.error, 'error');
-        setLoading(false);
-        return;
-      }
-
       await setVerificationStatus('pending');
-      showToast('Верификация запущена', 'success');
+      showToast('Регистрация прошла успешно! Примите приглашение в «Мой налог»', 'success');
       hapticSuccess();
-    } catch {
-      showToast('Ошибка при запуске верификации', 'error');
+    } catch (err: any) {
+      showToast(err.message || 'Ошибка при регистрации', 'error');
     }
     setLoading(false);
   };
@@ -92,14 +84,6 @@ export function JumpFinanceScreen({ navigation }: any) {
   const handleCheckStatus = async () => {
     setLoading(true);
     try {
-      if (isDev) {
-        await setVerificationStatus('approved');
-        showToast('Верификация пройдена!', 'success');
-        hapticSuccess();
-        setLoading(false);
-        return;
-      }
-
       const contractorId = profile?.jump_contractor_id;
       if (!contractorId) {
         showToast('ID подрядчика не найден', 'error');
@@ -123,7 +107,7 @@ export function JumpFinanceScreen({ navigation }: any) {
       } else if (res.status === 'rejected') {
         showToast(res.reason || 'Верификация отклонена', 'error');
       } else {
-        showToast('Верификация ещё в процессе', 'info');
+        showToast(res.reason || 'Ожидание подтверждения в «Мой налог»', 'info');
       }
     } catch {
       showToast('Ошибка при проверке статуса', 'error');
@@ -134,6 +118,8 @@ export function JumpFinanceScreen({ navigation }: any) {
   const handleRetry = async () => {
     await setVerificationStatus('none');
     await updateProfile({ jump_contractor_id: null });
+    setInn('');
+    setInnError('');
   };
 
   // Cleanup timer on unmount
@@ -170,10 +156,32 @@ export function JumpFinanceScreen({ navigation }: any) {
               ))}
             </Card>
 
+            <View style={styles.innInputContainer}>
+              <Input
+                label="ИНН"
+                showLabel
+                placeholder="Введите ваш ИНН (12 цифр)"
+                value={inn}
+                onChangeText={(text) => {
+                  // Allow only digits
+                  const digits = text.replace(/\D/g, '').slice(0, 12);
+                  setInn(digits);
+                  if (innError) setInnError('');
+                }}
+                error={innError}
+                keyboardType="numeric"
+                maxLength={12}
+                leftIcon={
+                  <Ionicons name="document-text-outline" size={20} color={colors.textLight} />
+                }
+              />
+            </View>
+
             <Button
-              title="Начать верификацию"
+              title="Зарегистрироваться"
               onPress={handleStartVerification}
               loading={loading}
+              disabled={inn.length < 12}
               fullWidth
               style={styles.actionButton}
             />
@@ -186,12 +194,24 @@ export function JumpFinanceScreen({ navigation }: any) {
             <View style={[styles.statusBanner, styles.pendingBanner]}>
               <Ionicons name="time-outline" size={32} color={colors.warning} />
               <Text style={[styles.statusTitle, { color: colors.warning }]}>
-                Верификация в процессе
+                Ожидание подтверждения
               </Text>
               <Text style={styles.statusText}>
-                Обычно проверка занимает 1-2 рабочих дня. Мы уведомим вас о результате.
+                Вы зарегистрированы в Jump Finance. Теперь подтвердите партнёрство в приложении «Мой налог».
               </Text>
             </View>
+
+            <Card style={styles.stepsCard}>
+              <Text style={styles.requirementsTitle}>Как подтвердить:</Text>
+              {PENDING_STEPS.map((item, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={styles.stepCircle}>
+                    <Text style={styles.stepNumber}>{item.step}</Text>
+                  </View>
+                  <Text style={styles.stepText}>{item.text}</Text>
+                </View>
+              ))}
+            </Card>
 
             {loading && (
               <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
@@ -295,7 +315,7 @@ const styles = StyleSheet.create({
   },
   requirementsCard: {
     width: '100%',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   requirementsTitle: {
     ...typography.bodyBold,
@@ -317,6 +337,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   requirementText: {
+    ...typography.body,
+    color: colors.text,
+    flex: 1,
+  },
+  innInputContainer: {
+    width: '100%',
+    marginBottom: spacing.sm,
+  },
+  stepsCard: {
+    width: '100%',
+    marginBottom: spacing.xl,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumber: {
+    ...typography.bodyBold,
+    color: '#fff',
+    fontSize: 14,
+  },
+  stepText: {
     ...typography.body,
     color: colors.text,
     flex: 1,

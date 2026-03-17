@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Animated, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer, NavigationState } from '@react-navigation/native';
+import { NavigationContainer, NavigationState, createNavigationContainerRef } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
 import { useLanguageStore } from '../store/languageStore';
@@ -35,6 +35,8 @@ const navTheme = {
     heavy: { fontFamily: 'System', fontWeight: '800' as const },
   },
 };
+
+export const navigationRef = createNavigationContainerRef();
 
 export function RootNavigator() {
   const { isAuthenticated, user, isLoading, initAuth } = useAuthStore();
@@ -205,7 +207,7 @@ export function RootNavigator() {
 
   return (
     <View style={styles.root}>
-      <NavigationContainer theme={navTheme} onStateChange={handleNavigationStateChange}>
+      <NavigationContainer ref={navigationRef} theme={navTheme} onStateChange={handleNavigationStateChange}>
         <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
           {authDone && showOnboarding !== null && showLanguageSelect !== null ? (
             getNavigator()

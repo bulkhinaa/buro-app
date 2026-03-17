@@ -10,6 +10,10 @@ import { MasterPortfolioScreen } from '../screens/master/MasterPortfolioScreen';
 import { MasterPortfolioEditScreen } from '../screens/master/MasterPortfolioEditScreen';
 import { MasterPricingScreen } from '../screens/master/MasterPricingScreen';
 import { JumpFinanceScreen } from '../screens/master/JumpFinanceScreen';
+import { MasterScheduleScreen } from '../screens/master/MasterScheduleScreen';
+import { MasterScheduleTemplateScreen } from '../screens/master/MasterScheduleTemplateScreen';
+import { MasterVacationsScreen } from '../screens/master/MasterVacationsScreen';
+import { MasterOfferDetailScreen } from '../screens/master/MasterOfferDetailScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -54,6 +58,16 @@ function MasterTabs() {
           tabBarLabel: t('tabs.tasks'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Schedule"
+        component={MasterScheduleScreen}
+        options={{
+          tabBarLabel: 'График',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -107,21 +121,25 @@ export function MasterNavigator() {
         animation: Platform.OS === 'web' ? 'none' as any : 'slide_from_right' as any,
       }}
     >
-      <Stack.Screen name="MasterTabs" component={MasterTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="MasterTabs" component={MasterTabs} options={{ headerShown: false, title: 'Бюро ремонтов — Мастер' }} />
       <Stack.Screen
         name="MasterTaskDetail"
         component={MasterTaskDetailScreen}
         options={{
           headerShown: false,
+          title: 'Задача',
           ...TransitionPresets.ModalSlideFromBottomIOS,
           animation: 'slide_from_bottom' as any,
         }}
       />
+      <Stack.Screen name="MasterScheduleTemplate" component={MasterScheduleTemplateScreen} options={{ headerShown: false, title: 'Шаблон графика' }} />
+      <Stack.Screen name="MasterVacations" component={MasterVacationsScreen} options={{ headerShown: false, title: 'Отпуска' }} />
+      <Stack.Screen name="MasterOfferDetail" component={MasterOfferDetailScreen} options={{ headerShown: false, title: 'Предложение' }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ headerTitle: t('nav.chatSupervisor') }} />
       {/* Portfolio — has its own header */}
-      <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerShown: false, title: 'Портфолио' }} />
       {/* Pricing — has its own header */}
-      <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false, title: 'Расценки' }} />
       {/* Verification — uses ScreenWrapper, needs stack header */}
       <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: t('nav.verification') }} />
       {/* Profile sub-screens */}

@@ -83,7 +83,7 @@ export function AboutScreen() {
 
         {/* Legal */}
         <Text style={styles.legalText}>
-          {'\u00A9'} 2025 Бюро ремонтов. Все права защищены.
+          {'\u00A9'} 2026 Бюро ремонтов. Все права защищены.
         </Text>
         <Text style={styles.legalText}>ИП Бульхин Артём Викторович</Text>
         <Text style={styles.legalText}>ИНН: 000000000000</Text>

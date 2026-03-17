@@ -36,7 +36,7 @@ export function ScreenWrapper({
   edges = ['top'],
 }: ScreenWrapperProps) {
   const content = (
-    <View style={[styles.inner, padded && styles.padded, style]}>
+    <View style={[scroll ? styles.innerScroll : styles.inner, padded && styles.padded, style]}>
       {children}
     </View>
   );
@@ -98,6 +98,9 @@ const styles = StyleSheet.create({
   },
   inner: {
     flex: 1,
+  },
+  innerScroll: {
+    flexGrow: 1,
   },
   padded: {
     paddingHorizontal: spacing.xl,

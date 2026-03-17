@@ -76,8 +76,12 @@ export function Toast() {
       }),
     ]).start();
 
-    // Auto-dismiss
-    timerRef.current = setTimeout(dismiss, toast.duration);
+    // Auto-dismiss — use hide() directly as fallback in case animation stalls
+    timerRef.current = setTimeout(() => {
+      dismiss();
+      // Safety: force-hide after animation timeout
+      setTimeout(() => hide(), 300);
+    }, toast.duration);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);

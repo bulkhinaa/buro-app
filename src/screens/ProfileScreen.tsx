@@ -49,7 +49,7 @@ export function ProfileScreen() {
   const isMasterView = (isClient && setupComplete && activeView === 'master') || user?.role === 'master';
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper style={styles.tabBarSpacer}>
       <View style={styles.header}>
         {user?.avatar_url ? (
           <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
@@ -242,8 +242,6 @@ export function ProfileScreen() {
       </Pressable>
 
       <Text style={styles.version}>{t('profile.version')}</Text>
-      <View style={{ height: 140 }} />
-
       <AppDialog
         visible={showLogoutDialog}
         title={t('profile.logoutTitle')}
@@ -429,5 +427,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
     marginBottom: spacing.xxl,
+  },
+  tabBarSpacer: {
+    paddingBottom: 120,
   },
 });

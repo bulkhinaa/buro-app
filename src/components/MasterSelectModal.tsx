@@ -55,8 +55,10 @@ export function MasterSelectModal({ visible, onClose, onSelect, masters, stageTi
 
   const filteredMasters = useMemo(() => {
     if (filter === 'all') return masters;
+    const spec = SPECIALIZATIONS.find((s) => s.value === filter);
+    if (!spec) return masters;
     return masters.filter((m) =>
-      m.specialization.toLowerCase().includes(filter),
+      m.specialization.toLowerCase().includes(spec.label.toLowerCase()),
     );
   }, [masters, filter]);
 

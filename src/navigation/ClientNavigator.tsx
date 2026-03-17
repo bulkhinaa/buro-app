@@ -24,6 +24,7 @@ import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
 import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
+import { MasterMatchScreen } from '../screens/client/MasterMatchScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { GlassTabBar } from '../components/GlassTabBar';
 import { useNotificationStore } from '../store/notificationStore';
@@ -143,28 +144,28 @@ export function ClientNavigator() {
       <Stack.Screen
         name="ClientTabs"
         component={ClientTabs}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: 'Бюро ремонтов' }}
       />
       {/* Object screens */}
       <Stack.Screen
         name="AddObject"
         component={AddObjectScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: 'Новый объект' }}
       />
       <Stack.Screen
         name="ObjectDetail"
         component={ObjectDetailScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: 'Объект' }}
       />
       <Stack.Screen
         name="CreateProject"
         component={CreateProjectScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: 'Новый проект' }}
       />
       <Stack.Screen
         name="ProjectDetail"
         component={ProjectDetailScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: 'Проект' }}
       />
       <Stack.Screen
         name="Chat"
@@ -174,22 +175,22 @@ export function ClientNavigator() {
       <Stack.Screen
         name="CaseDetail"
         component={CaseDetailScreen}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Портфолио', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="StageApproval"
         component={StageApprovalScreen}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Приёмка этапа', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="Review"
         component={ReviewScreen}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Отзыв', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="ProjectComplete"
         component={ProjectCompleteScreen}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Проект завершён', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       {/* Profile sub-screens */}
       <Stack.Screen
@@ -227,16 +228,21 @@ export function ClientNavigator() {
         component={LanguageSelectScreen}
         options={{ headerTitle: t('nav.language') }}
       />
+      <Stack.Screen
+        name="MasterMatch"
+        component={MasterMatchScreen}
+        options={{ headerShown: false, title: 'Подбор мастера' }}
+      />
       {/* Master onboarding (triggered from Profile "Стать мастером") */}
       <Stack.Screen
         name="MasterWelcome"
         component={MasterWelcomeWrapper}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Стать мастером', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
       <Stack.Screen
         name="MasterSetup"
         component={MasterSetupWrapper}
-        options={{ headerShown: false, ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
+        options={{ headerShown: false, title: 'Настройка профиля', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
     </Stack.Navigator>
   );

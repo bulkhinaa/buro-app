@@ -152,7 +152,7 @@ export function MasterHomeScreen({ navigation }: any) {
       )}
 
       {/* Bottom padding for tab bar */}
-      <View style={{ height: 100 }} />
+      <View style={{ height: 120 }} />
     </ScreenWrapper>
   );
 }

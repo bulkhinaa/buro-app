@@ -61,6 +61,30 @@ export function usePushNotifications(navigationRef: any) {
         return;
       }
 
+      // Master offer: navigate to offer detail
+      if (data?.type === 'master_offer' && data.stageId) {
+        nav.navigate('MasterOfferDetail', {
+          offerId: data.offerId,
+          stageId: data.stageId,
+          projectId: data.projectId,
+        });
+        return;
+      }
+
+      // Master accepted/declined: navigate to project detail
+      if (data?.type === 'master_accepted' || data?.type === 'master_declined') {
+        if (data.projectId) {
+          nav.navigate('ProjectDetail', { projectId: data.projectId });
+        }
+        return;
+      }
+
+      // Schedule reminder: navigate to schedule
+      if (data?.type === 'schedule_reminder') {
+        nav.navigate('Schedule');
+        return;
+      }
+
       if (data?.projectId) {
         nav.navigate('ProjectDetail', { projectId: data.projectId });
         return;

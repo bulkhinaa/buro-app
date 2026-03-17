@@ -40,8 +40,8 @@ const MOCK_PROJECT: Project = {
   area_sqm: 54,
   repair_type: 'standard',
   status: 'in_progress',
-  created_at: '2025-01-15',
-  updated_at: '2025-02-05',
+  created_at: '2026-02-15',
+  updated_at: '2026-03-05',
 };
 
 const MOCK_STAGES: Stage[] = [
@@ -52,10 +52,10 @@ const MOCK_STAGES: Stage[] = [
     description: 'Снятие старых покрытий, демонтаж перегородок, вынос строительного мусора',
     order_index: 1,
     status: 'approved',
-    deadline: '2025-01-25',
-    started_at: '2025-01-18',
-    completed_at: '2025-01-23',
-    approved_at: '2025-01-24',
+    deadline: '2026-02-25',
+    started_at: '2026-02-18',
+    completed_at: '2026-02-23',
+    approved_at: '2026-02-24',
   },
   {
     id: 'stg-2',
@@ -64,10 +64,10 @@ const MOCK_STAGES: Stage[] = [
     description: 'Прокладка кабелей, установка подрозетников, электрощита',
     order_index: 2,
     status: 'approved',
-    deadline: '2025-02-01',
-    started_at: '2025-01-25',
-    completed_at: '2025-01-30',
-    approved_at: '2025-01-31',
+    deadline: '2026-03-01',
+    started_at: '2026-02-25',
+    completed_at: '2026-02-30',
+    approved_at: '2026-02-31',
   },
   {
     id: 'stg-3',
@@ -76,10 +76,10 @@ const MOCK_STAGES: Stage[] = [
     description: 'Разводка труб водоснабжения и канализации',
     order_index: 3,
     status: 'approved',
-    deadline: '2025-02-03',
-    started_at: '2025-01-25',
-    completed_at: '2025-02-01',
-    approved_at: '2025-02-02',
+    deadline: '2026-03-03',
+    started_at: '2026-02-25',
+    completed_at: '2026-03-01',
+    approved_at: '2026-03-02',
   },
   {
     id: 'stg-4',
@@ -88,10 +88,10 @@ const MOCK_STAGES: Stage[] = [
     description: 'Выравнивание основания пола, устройство стяжки',
     order_index: 4,
     status: 'approved',
-    deadline: '2025-02-10',
-    started_at: '2025-02-04',
-    completed_at: '2025-02-09',
-    approved_at: '2025-02-09',
+    deadline: '2026-03-10',
+    started_at: '2026-03-04',
+    completed_at: '2026-03-09',
+    approved_at: '2026-03-09',
   },
   {
     id: 'stg-5',
@@ -100,8 +100,8 @@ const MOCK_STAGES: Stage[] = [
     description: 'Выравнивание стен, штукатурка по маякам',
     order_index: 5,
     status: 'done_by_master',
-    deadline: '2025-02-20',
-    started_at: '2025-02-10',
+    deadline: '2026-03-20',
+    started_at: '2026-03-10',
   },
   {
     id: 'stg-6',
@@ -110,7 +110,7 @@ const MOCK_STAGES: Stage[] = [
     description: 'Облицовка стен и пола плиткой в мокрых зонах',
     order_index: 6,
     status: 'pending',
-    deadline: '2025-03-01',
+    deadline: '2026-04-01',
   },
   {
     id: 'stg-7',
@@ -119,7 +119,7 @@ const MOCK_STAGES: Stage[] = [
     description: 'Установка розеток, выключателей, светильников',
     order_index: 7,
     status: 'pending',
-    deadline: '2025-03-05',
+    deadline: '2026-04-05',
   },
   {
     id: 'stg-8',
@@ -128,7 +128,7 @@ const MOCK_STAGES: Stage[] = [
     description: 'Установка смесителей, унитаза, раковин',
     order_index: 8,
     status: 'pending',
-    deadline: '2025-03-07',
+    deadline: '2026-04-07',
   },
   {
     id: 'stg-9',
@@ -137,7 +137,7 @@ const MOCK_STAGES: Stage[] = [
     description: 'Финишное выравнивание стен, покраска или поклейка обоев',
     order_index: 9,
     status: 'pending',
-    deadline: '2025-03-15',
+    deadline: '2026-04-15',
   },
   {
     id: 'stg-10',
@@ -146,7 +146,7 @@ const MOCK_STAGES: Stage[] = [
     description: 'Укладка ламината, паркета или линолеума',
     order_index: 10,
     status: 'pending',
-    deadline: '2025-03-20',
+    deadline: '2026-04-20',
   },
 ];
 

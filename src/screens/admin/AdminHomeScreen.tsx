@@ -24,8 +24,8 @@ const MOCK_REQUESTS: RequestItem[] = [
     area_sqm: 8,
     repair_type: 'standard',
     status: 'new',
-    created_at: '2025-02-06T09:00:00Z',
-    updated_at: '2025-02-06T09:00:00Z',
+    created_at: '2026-03-06T09:00:00Z',
+    updated_at: '2026-03-06T09:00:00Z',
     clientName: 'Сидоров В.М.',
     clientPhone: '+7 (916) 123-45-67',
   },
@@ -37,8 +37,8 @@ const MOCK_REQUESTS: RequestItem[] = [
     area_sqm: 78,
     repair_type: 'premium',
     status: 'new',
-    created_at: '2025-02-05T14:00:00Z',
-    updated_at: '2025-02-05T14:00:00Z',
+    created_at: '2026-03-05T14:00:00Z',
+    updated_at: '2026-03-05T14:00:00Z',
     clientName: 'Козлова И.А.',
     clientPhone: '+7 (903) 987-65-43',
   },
@@ -50,8 +50,8 @@ const MOCK_REQUESTS: RequestItem[] = [
     area_sqm: 34,
     repair_type: 'cosmetic',
     status: 'new',
-    created_at: '2025-02-04T11:00:00Z',
-    updated_at: '2025-02-04T11:00:00Z',
+    created_at: '2026-03-04T11:00:00Z',
+    updated_at: '2026-03-04T11:00:00Z',
     clientName: 'Новиков Д.А.',
     clientPhone: '+7 (925) 555-12-34',
   },
@@ -207,7 +207,7 @@ export function AdminHomeScreen({ navigation }: any) {
   const totalNew = requests.length;
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper style={styles.tabBarSpacer}>
       <View style={styles.header}>
         <Text style={styles.title}>Админ-панель</Text>
         <Text style={styles.subtitle}>Управление проектами и пользователями</Text>
@@ -359,5 +359,8 @@ const styles = StyleSheet.create({
   emptySubtext: {
     ...typography.body,
     color: colors.textLight,
+  },
+  tabBarSpacer: {
+    paddingBottom: 120,
   },
 });

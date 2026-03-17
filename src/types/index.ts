@@ -263,6 +263,37 @@ export interface MasterPricing {
   price_type: PriceType;
 }
 
+// --- Master Schedule ---
+
+export type ScheduleSlotStatus = 'available' | 'working' | 'booked';
+
+export interface ScheduleSlot {
+  id: string;
+  master_id: string;
+  date: string; // YYYY-MM-DD
+  hour: number; // 8-23
+  status: ScheduleSlotStatus;
+  project_id?: string;
+  stage_id?: string;
+}
+
+export interface ScheduleTemplate {
+  id: string;
+  master_id: string;
+  day_of_week: number; // 0=Mon, 6=Sun
+  hour: number; // 8-23
+  is_working: boolean;
+}
+
+export interface MasterVacation {
+  id: string;
+  master_id: string;
+  date_from: string; // YYYY-MM-DD
+  date_to: string;
+  reason?: string;
+  created_at: string;
+}
+
 export interface MasterSetupData {
   // Step 1: Basic info
   name: string;
