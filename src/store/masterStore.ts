@@ -85,6 +85,8 @@ async function syncToSupabase(userId: string, profile: MasterProfile) {
       rating: profile.rating,
       reviews_count: profile.reviews_count,
       is_verified: profile.verification_status === 'approved',
+      verification_status: profile.verification_status,
+      jump_contractor_id: profile.jump_contractor_id,
       experience: profile.experience,
       about: profile.about,
       skill_level: profile.skill_level,
@@ -115,8 +117,8 @@ async function loadFromSupabase(userId: string): Promise<MasterProfile | null> {
       portfolio: [], // Portfolio projects stored separately for now
       pricing: data.pricing || [],
       certificates: data.certificates || [],
-      verification_status: data.is_verified ? 'approved' : 'none',
-      jump_contractor_id: null,
+      verification_status: data.verification_status || (data.is_verified ? 'approved' : 'none'),
+      jump_contractor_id: data.jump_contractor_id || null,
       rating: data.rating || 0,
       reviews_count: data.reviews_count || 0,
       completed_tasks: data.completed_tasks || 0,
@@ -241,6 +243,8 @@ export const useMasterStore = create<MasterState>((set, get) => ({
     const updated = { ...current, verification_status: status };
     set({ profile: updated });
     await AsyncStorage.setItem(MASTER_PROFILE_KEY, JSON.stringify(updated));
+    // Sync to Supabase (non-blocking)
+    syncToSupabase(_currentUserId, updated);
   },
 
   addPortfolioProject: async (project: PortfolioProject) => {

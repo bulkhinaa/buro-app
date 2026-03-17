@@ -22,6 +22,10 @@ const NOTIFICATION_ICONS: Record<
   new_message: { icon: 'chatbubble-outline', bg: colors.accentLight },
   stage_started: { icon: 'play-outline', bg: colors.primaryLight },
   stage_completed: { icon: 'flag-outline', bg: colors.successLight },
+  master_offer: { icon: 'hand-left-outline', bg: colors.accentLight },
+  master_accepted: { icon: 'checkmark-done-outline', bg: colors.successLight },
+  master_declined: { icon: 'close-circle-outline', bg: colors.dangerLight },
+  schedule_reminder: { icon: 'calendar-outline', bg: colors.primaryLight },
 };
 
 function formatTimeAgo(dateStr: string): string {
@@ -52,20 +56,32 @@ export function NotificationsScreen() {
       markAsRead(notification.id);
     }
     // Navigate to relevant screen based on notification type (BUG-25)
-    const meta = notification.metadata as Record<string, string> | undefined;
-    const projectId = meta?.project_id;
-    const stageId = meta?.stage_id;
+    const meta = (notification as any).data as Record<string, string> | undefined;
+    const projectId = notification.project_id || meta?.project_id;
+    const stageId = notification.stage_id || meta?.stage_id;
 
     if (projectId) {
       switch (notification.type) {
         case 'new_message':
           navigation.navigate('Chat', { projectId });
           break;
+        case 'master_offer':
+          navigation.navigate('MasterOfferDetail', {
+            offerId: meta?.offer_id,
+            stageId: meta?.stage_id,
+            projectId,
+          });
+          break;
+        case 'schedule_reminder':
+          navigation.navigate('Schedule');
+          break;
         case 'task_approved':
         case 'task_rejected':
         case 'stage_started':
         case 'stage_completed':
         case 'new_task':
+        case 'master_accepted':
+        case 'master_declined':
           navigation.navigate('ProjectDetail', { projectId });
           break;
       }

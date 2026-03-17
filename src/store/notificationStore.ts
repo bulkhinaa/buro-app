@@ -9,7 +9,11 @@ export type NotificationType =
   | 'task_rejected'
   | 'new_message'
   | 'stage_started'
-  | 'stage_completed';
+  | 'stage_completed'
+  | 'master_offer'
+  | 'master_accepted'
+  | 'master_declined'
+  | 'schedule_reminder';
 
 export interface AppNotification {
   id: string;

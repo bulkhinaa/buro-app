@@ -56,5 +56,8 @@ export { GlassTabBar } from './GlassTabBar';
 // Schedule
 export { WeekGrid } from './WeekGrid';
 
+// Date picker
+export { DateRangePicker } from './DateRangePicker';
+
 // Error handling
 export { ErrorBoundary } from './ErrorBoundary';

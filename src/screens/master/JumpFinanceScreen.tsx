@@ -1,6 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 import { ScreenWrapper, Card, Button, Input } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
@@ -8,6 +18,8 @@ import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
 import { supabase } from '../../lib/supabase';
+
+const SMZ_URL = 'https://smz.tbank.ru/';
 
 const REQUIREMENTS = [
   { icon: 'document-text-outline' as const, text: 'ИНН (12 цифр)' },
@@ -30,6 +42,7 @@ export function JumpFinanceScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [inn, setInn] = useState('');
   const [innError, setInnError] = useState('');
+  const [smzVisible, setSmzVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const status = profile?.verification_status || 'none';
@@ -75,6 +88,8 @@ export function JumpFinanceScreen({ navigation }: any) {
       await setVerificationStatus('pending');
       showToast('Регистрация прошла успешно! Примите приглашение в «Мой налог»', 'success');
       hapticSuccess();
+      // Auto-open SMZ WebView after successful registration
+      setSmzVisible(true);
     } catch (err: any) {
       showToast(err.message || 'Ошибка при регистрации', 'error');
     }
@@ -224,6 +239,15 @@ export function JumpFinanceScreen({ navigation }: any) {
               fullWidth
               style={styles.actionButton}
             />
+
+            <Button
+              title="Открыть СМЗ"
+              variant="outline"
+              onPress={() => setSmzVisible(true)}
+              fullWidth
+              style={styles.smzButton}
+              icon={<Ionicons name="open-outline" size={18} color={colors.primary} />}
+            />
           </>
         )}
 
@@ -281,6 +305,52 @@ export function JumpFinanceScreen({ navigation }: any) {
       </View>
 
       <View style={{ height: 100 }} />
+
+      {/* SMZ WebView Bottom Sheet */}
+      <Modal
+        visible={smzVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSmzVisible(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          <Pressable style={styles.sheetBackdrop} onPress={() => setSmzVisible(false)} />
+          <View style={styles.sheetContainer}>
+            {/* Handle bar */}
+            <View style={styles.sheetHandle}>
+              <View style={styles.sheetHandleBar} />
+            </View>
+            {/* Header */}
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Самозанятость — Т-Банк</Text>
+              <Pressable onPress={() => setSmzVisible(false)} style={styles.sheetCloseBtn}>
+                <Ionicons name="close" size={22} color={colors.text} />
+              </Pressable>
+            </View>
+            {/* WebView */}
+            {Platform.OS === 'web' ? (
+              <View style={styles.webViewContainer}>
+                <iframe
+                  src={SMZ_URL}
+                  style={{ width: '100%', height: '100%', border: 'none' } as any}
+                  title="СМЗ Т-Банк"
+                />
+              </View>
+            ) : (
+              <WebView
+                source={{ uri: SMZ_URL }}
+                style={styles.webViewContainer}
+                startInLoadingState
+                renderLoading={() => (
+                  <View style={styles.webViewLoading}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                  </View>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -420,5 +490,64 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginTop: spacing.md,
+  },
+  smzButton: {
+    marginTop: spacing.sm,
+  },
+  // Bottom Sheet styles
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheetContainer: {
+    height: Dimensions.get('window').height * 0.85,
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  sheetHandle: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  sheetHandleBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  sheetTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webViewContainer: {
+    flex: 1,
+  },
+  webViewLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
   },
 });

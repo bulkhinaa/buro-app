@@ -28,6 +28,7 @@ import {
   fetchStagePhotos,
   supervisorApproveStage,
   supervisorRejectStage,
+  assignMasterToStage,
 } from '../../services/projectService';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadFile, generateFilePath } from '../../services/storageService';
@@ -242,14 +243,21 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
     setDialogVisible(true);
   };
 
-  const handleAssignMaster = (master: MasterCandidate) => {
+  const handleAssignMaster = async (master: MasterCandidate) => {
     setAssignedMaster(master);
     setMasterModalVisible(false);
     // Transition stage from pending to in_progress
     setStage((prev) => prev ? { ...prev, status: 'in_progress', started_at: new Date().toISOString() } : prev);
     hapticSuccess();
     showToast(`${master.name} назначен на этап`, 'success');
-    // TODO: In production, call assignMasterToStage(stageId, master.id) via Supabase
+    // Persist to Supabase — triggers autoblock_master_schedule for schedule slots
+    if (!isDev) {
+      try {
+        await assignMasterToStage(stageId, master.id, stage?.deadline || undefined);
+      } catch {
+        // Non-blocking — local state already updated
+      }
+    }
   };
 
   // ─── Load data ────────────────────────────────────────────────────────────
