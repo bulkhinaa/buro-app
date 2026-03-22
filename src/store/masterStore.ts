@@ -42,13 +42,13 @@ interface MasterState {
   // Profile data
   profile: MasterProfile | null;
   isLoading: boolean;
-  // Active view for dual-role switching
-  activeView: 'client' | 'master';
+  // Active view for multi-role switching
+  activeView: 'client' | 'master' | 'supervisor';
 
   // Actions
   init: (userId: string) => Promise<void>;
   markWelcomeSeen: () => Promise<void>;
-  setActiveView: (view: 'client' | 'master') => Promise<void>;
+  setActiveView: (view: 'client' | 'master' | 'supervisor') => Promise<void>;
   saveDraft: (draft: Partial<MasterSetupData>) => Promise<void>;
   completeSetup: (data: MasterSetupData) => Promise<void>;
   updateProfile: (updates: Partial<MasterProfile>) => Promise<void>;
@@ -169,7 +169,9 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         setupComplete: isSetupDone || !!remoteProfile,
         setupDraft: draftJson ? JSON.parse(draftJson) : null,
         profile,
-        activeView: (activeViewValue === 'master' && (isSetupDone || !!remoteProfile)) ? 'master' : 'client',
+        activeView: activeViewValue === 'supervisor'
+          ? 'supervisor'
+          : (activeViewValue === 'master' && (isSetupDone || !!remoteProfile)) ? 'master' : 'client',
         isLoading: false,
       });
     } catch {
@@ -182,7 +184,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, 'true');
   },
 
-  setActiveView: async (view: 'client' | 'master') => {
+  setActiveView: async (view: 'client' | 'master' | 'supervisor') => {
     set({ activeView: view });
     await AsyncStorage.setItem(ACTIVE_VIEW_KEY, view);
   },

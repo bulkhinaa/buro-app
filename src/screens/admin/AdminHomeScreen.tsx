@@ -1,285 +1,174 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, MapPreview } from '../../components';
-import type { DialogButton } from '../../components';
-import { hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography } from '../../theme';
-import { Project, REPAIR_TYPE_LABELS } from '../../types';
-import {
-  fetchAllProjects,
-  updateProjectStatus,
-  assignSupervisor,
-} from '../../services/projectService';
-import { supabase } from '../../lib/supabase';
+import { ScreenWrapper, Card, SharedHeader } from '../../components';
+import { hapticLight } from '../../utils/haptics';
+import { colors, spacing, typography, radius } from '../../theme';
+import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
+import { useAdminStore, MOCK_STATS, MOCK_PROJECTS, MOCK_LEADS, MOCK_USERS, type AdminStats } from '../../store/adminStore';
+import { fetchAdminStats } from '../../services/projectService';
 
-type RequestItem = Project & { clientName: string; clientPhone: string };
+interface QuickAction {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  route: string;
+  color: string;
+}
 
-const MOCK_REQUESTS: RequestItem[] = [
-  {
-    id: 'mock-1',
-    client_id: '5',
-    title: 'Ремонт ванной',
-    address: 'ул. Гагарина, 22, кв. 7',
-    area_sqm: 8,
-    repair_type: 'standard',
-    status: 'new',
-    created_at: '2026-03-06T09:00:00Z',
-    updated_at: '2026-03-06T09:00:00Z',
-    clientName: 'Сидоров В.М.',
-    clientPhone: '+7 (916) 123-45-67',
-  },
-  {
-    id: 'mock-2',
-    client_id: '6',
-    title: 'Капремонт 3-к',
-    address: 'пр. Мира, 101, кв. 55',
-    area_sqm: 78,
-    repair_type: 'premium',
-    status: 'new',
-    created_at: '2026-03-05T14:00:00Z',
-    updated_at: '2026-03-05T14:00:00Z',
-    clientName: 'Козлова И.А.',
-    clientPhone: '+7 (903) 987-65-43',
-  },
-  {
-    id: 'mock-3',
-    client_id: '7',
-    title: 'Косметический ремонт студии',
-    address: 'ул. Лесная, 5, кв. 18',
-    area_sqm: 34,
-    repair_type: 'cosmetic',
-    status: 'new',
-    created_at: '2026-03-04T11:00:00Z',
-    updated_at: '2026-03-04T11:00:00Z',
-    clientName: 'Новиков Д.А.',
-    clientPhone: '+7 (925) 555-12-34',
-  },
-];
-
-const MOCK_SUPERVISORS = [
-  { id: 'sv-1', name: 'Алексеев П.И.' },
-  { id: 'sv-2', name: 'Борисова Е.А.' },
-  { id: 'sv-3', name: 'Григорьев М.С.' },
+const QUICK_ACTIONS: QuickAction[] = [
+  { icon: 'document-text-outline', label: 'Заявки', route: 'AdminRequests', color: colors.primary },
+  { icon: 'megaphone-outline', label: 'Лиды', route: 'AdminLeads', color: colors.gold },
+  { icon: 'people-outline', label: 'Пользователи', route: 'AdminUsers', color: colors.success },
+  { icon: 'book-outline', label: 'База знаний', route: 'AdminTemplates', color: '#8B5CF6' },
 ];
 
 export function AdminHomeScreen({ navigation }: any) {
-  const [requests, setRequests] = useState<RequestItem[]>([]);
-  const [supervisors, setSupervisors] = useState(MOCK_SUPERVISORS);
-  const [assignedCount, setAssignedCount] = useState(0);
-  const [rejectedCount, setRejectedCount] = useState(0);
+  const user = useAuthStore((s) => s.user);
+  const isDev = user?.id.startsWith('dev-');
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+  const stats = useAdminStore((s) => s.stats);
+  const setStats = useAdminStore((s) => s.setStats);
+  const setProjects = useAdminStore((s) => s.setProjects);
+  const setLeads = useAdminStore((s) => s.setLeads);
+  const setUsers = useAdminStore((s) => s.setUsers);
 
-  // Dialog state
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogTitle, setDialogTitle] = useState('');
-  const [dialogMessage, setDialogMessage] = useState('');
-  const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
-
-  const showDialog = (title: string, message: string, buttons: DialogButton[]) => {
-    setDialogTitle(title);
-    setDialogMessage(message);
-    setDialogButtons(buttons);
-    setDialogVisible(true);
-  };
-
-  const loadData = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     try {
-      // Load projects
-      const projects = await fetchAllProjects('new');
-      if (projects.length > 0) {
-        setRequests(
-          projects.map((p) => ({
-            ...p,
-            clientName: p.title,
-            clientPhone: '',
-          })),
-        );
+      if (isDev) {
+        setStats(MOCK_STATS);
+        setProjects(MOCK_PROJECTS);
+        setLeads(MOCK_LEADS);
+        setUsers(MOCK_USERS);
       } else {
-        // Dev fallback
-        setRequests(MOCK_REQUESTS);
-      }
-
-      // Load real supervisors from profiles
-      const { data: svData } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('role', 'supervisor')
-        .eq('is_active', true);
-
-      if (svData && svData.length > 0) {
-        setSupervisors(svData.map((sv) => ({ id: sv.id, name: sv.name || 'Без имени' })));
+        const data = await fetchAdminStats();
+        setStats(data);
       }
     } catch {
-      // DEV mode: Supabase may fail without auth, use mocks
-      setRequests(MOCK_REQUESTS);
+      setStats(MOCK_STATS);
     }
-  }, []);
+  }, [isDev, setStats, setProjects, setLeads, setUsers]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleAssign = (item: RequestItem) => {
-    const svButtons: DialogButton[] = supervisors.map((sv) => ({
-      text: sv.name,
-      onPress: async () => {
-        try {
-          await assignSupervisor(item.id, sv.id);
-        } catch {
-          // DEV mode fallback
-        }
-        setRequests((prev) => prev.filter((r) => r.id !== item.id));
-        setAssignedCount((c) => c + 1);
-        hapticSuccess();
-        showDialog(
-          'Назначен',
-          `Супервайзер ${sv.name} назначен на проект «${item.title}»`,
-          [{ text: 'OK', onPress: () => {} }],
-        );
-      },
-    }));
-    svButtons.push({
-      text: 'Отмена',
-      style: 'cancel',
-      onPress: () => {},
-    });
-
-    showDialog('Выберите супервайзера', `Проект: ${item.address}`, svButtons);
-  };
-
-  const handleReject = (item: RequestItem) => {
-    showDialog(
-      'Отклонить заявку?',
-      `${item.clientName}\n${item.address}`,
-      [
-        {
-          text: 'Отклонить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateProjectStatus(item.id, 'cancelled');
-            } catch {
-              // DEV mode fallback
-            }
-            setRequests((prev) => prev.filter((r) => r.id !== item.id));
-            setRejectedCount((c) => c + 1);
-          },
-        },
-        { text: 'Нет', style: 'cancel', onPress: () => {} },
-      ],
-    );
-  };
-
-  const renderRequest = ({ item }: { item: RequestItem }) => (
-    <Card style={styles.card}>
-      <View style={styles.cardHeader}>
-        <StatusBadge status={item.status} type="project" />
-        <Text style={styles.cardDate}>
-          {new Date(item.created_at).toLocaleDateString('ru-RU')}
-        </Text>
-      </View>
-      <Text style={styles.cardTitle}>{item.clientName}</Text>
-      {item.clientPhone ? (
-        <Text style={styles.cardPhone}>{item.clientPhone}</Text>
-      ) : null}
-      <Text style={styles.cardAddress}>
-        {item.address} · {item.area_sqm} м² · {REPAIR_TYPE_LABELS[item.repair_type]}
-      </Text>
-
-      <MapPreview address={item.address} />
-
-      <View style={styles.cardActions}>
-        <Button
-          title="Назначить супервайзера"
-          onPress={() => handleAssign(item)}
-          size="sm"
-        />
-        <Button
-          title="Отклонить"
-          onPress={() => handleReject(item)}
-          variant="ghost"
-          size="sm"
-        />
-      </View>
-    </Card>
-  );
-
-  const totalNew = requests.length;
+    loadStats();
+  }, [loadStats]);
 
   return (
-    <ScreenWrapper style={styles.tabBarSpacer}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Админ-панель</Text>
-        <Text style={styles.subtitle}>Управление проектами и пользователями</Text>
-      </View>
-
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: colors.primary }]}>
-            {totalNew}
-          </Text>
-          <Text style={styles.statLabel}>Новых заявок</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: colors.gold }]}>
-            {assignedCount}
-          </Text>
-          <Text style={styles.statLabel}>Назначено</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: colors.success }]}>8</Text>
-          <Text style={styles.statLabel}>Мастеров</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: colors.primary }]}>3</Text>
-          <Text style={styles.statLabel}>Супервайзеров</Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle}>
-        Новые заявки {totalNew > 0 ? `(${totalNew})` : ''}
-      </Text>
-
-      {totalNew === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Ionicons name="mail-open-outline" size={48} color={colors.primary} style={{ marginBottom: spacing.md }} />
-          <Text style={styles.emptyText}>Все заявки обработаны</Text>
-          <Text style={styles.emptySubtext}>
-            Назначено: {assignedCount} · Отклонено: {rejectedCount}
-          </Text>
-        </Card>
-      ) : (
-        <FlatList
-          data={requests}
-          renderItem={renderRequest}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
+    <ScreenWrapper style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <SharedHeader
+          title={user?.name || 'Администратор'}
+          subtitle="Админ-панель"
+          onAvatarPress={() => navigation.navigate('Profile')}
+          notificationCount={unreadCount}
+          onNotificationPress={() => navigation.navigate('NotificationsStack')}
         />
-      )}
 
-      <AppDialog
-        visible={dialogVisible}
-        title={dialogTitle}
-        message={dialogMessage}
-        buttons={dialogButtons}
-        onClose={() => setDialogVisible(false)}
-      />
+        {/* Stats grid */}
+        <View style={styles.statsGrid}>
+          <StatCard
+            number={stats.newProjects}
+            label="Новых заявок"
+            color={colors.primary}
+            onPress={() => navigation.navigate('AdminRequests')}
+          />
+          <StatCard
+            number={stats.activeProjects}
+            label="Активных"
+            color={colors.gold}
+            onPress={() => navigation.navigate('AdminRequests')}
+          />
+          <StatCard
+            number={stats.totalMasters}
+            label="Мастеров"
+            color={colors.success}
+            onPress={() => navigation.navigate('AdminUsers')}
+          />
+          <StatCard
+            number={stats.totalSupervisors}
+            label="Супервайзеров"
+            color="#8B5CF6"
+            onPress={() => navigation.navigate('AdminUsers')}
+          />
+        </View>
+
+        {/* Quick actions */}
+        <Text style={styles.sectionTitle}>Управление</Text>
+        <View style={styles.actionsGrid}>
+          {QUICK_ACTIONS.map((action) => (
+            <Pressable
+              key={action.route}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.actionCardPressed,
+              ]}
+              onPress={() => {
+                hapticLight();
+                navigation.navigate(action.route);
+              }}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: `${action.color}15` }]}>
+                <Ionicons name={action.icon} size={24} color={action.color} />
+              </View>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Summary cards */}
+        <Text style={styles.sectionTitle}>Сводка</Text>
+        <Card style={styles.summaryCard}>
+          <SummaryRow label="Всего проектов" value={stats.totalProjects} />
+          <SummaryRow label="Завершённых" value={stats.completedProjects} />
+          <SummaryRow label="Клиентов" value={stats.totalClients} />
+          <SummaryRow label="Лидов с лендинга" value={stats.totalLeads} />
+        </Card>
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
+function StatCard({
+  number,
+  label,
+  color,
+  onPress,
+}: {
+  number: number;
+  label: string;
+  color: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.statCard,
+        pressed && styles.statCardPressed,
+      ]}
+      onPress={() => {
+        hapticLight();
+        onPress?.();
+      }}
+    >
+      <Text style={[styles.statNumber, { color }]}>{number}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  header: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
+  container: {
+    paddingBottom: 24,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -301,6 +190,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  statCardPressed: {
+    opacity: 0.85,
+  },
   statNumber: {
     ...typography.h1,
     marginBottom: 2,
@@ -314,53 +206,57 @@ const styles = StyleSheet.create({
     color: colors.heading,
     marginBottom: spacing.lg,
   },
-  card: {
-    marginBottom: spacing.md,
+  actionsGrid: {
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
   },
-  cardHeader: {
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    gap: spacing.md,
+    shadowColor: 'rgba(123, 45, 62, 0.05)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  actionCardPressed: {
+    opacity: 0.85,
+  },
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    flex: 1,
+  },
+  summaryCard: {
+    marginBottom: spacing.xxl,
+  },
+  summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
   },
-  cardDate: {
-    ...typography.small,
+  summaryLabel: {
+    ...typography.body,
     color: colors.textLight,
   },
-  cardTitle: {
+  summaryValue: {
     ...typography.bodyBold,
     color: colors.heading,
-    marginBottom: 2,
-  },
-  cardPhone: {
-    ...typography.body,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  cardAddress: {
-    ...typography.small,
-    color: colors.textLight,
-    marginBottom: spacing.md,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-  },
-  // emptyIcon style removed — now using Ionicons inline
-  emptyText: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  emptySubtext: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  tabBarSpacer: {
-    paddingBottom: 120,
   },
 });

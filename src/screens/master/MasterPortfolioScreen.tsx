@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Button, Card, AppDialog } from '../../components';
+import { ScreenWrapper, Button, Card, AppDialog, EmptyStateIllustration } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
@@ -95,16 +95,16 @@ export function MasterPortfolioScreen({ navigation }: any) {
 
       {portfolio.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="images-outline" size={64} color={colors.textLight} />
-          <Text style={styles.emptyTitle}>У вас пока нет проектов</Text>
-          <Text style={styles.emptySubtitle}>
-            Добавьте фото выполненных работ, чтобы привлечь больше заказов
-          </Text>
+          <EmptyStateIllustration
+            variant="no-photos"
+            title="У вас пока нет проектов"
+            subtitle="Добавьте фото выполненных работ, чтобы привлечь больше заказов"
+          />
           <Button
             title="Добавить проект"
             onPress={() => navigation.navigate('MasterPortfolioEdit')}
             icon={<Ionicons name="add" size={20} color={colors.white} />}
-            style={{ marginTop: spacing.lg }}
+            style={{ marginTop: spacing.sm }}
           />
         </View>
       ) : (
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   listContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   cardWrapper: {
     width: CARD_WIDTH,

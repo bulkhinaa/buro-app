@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, StatusBadge } from '../../components';
+import { ScreenWrapper, Card, StatusBadge, EmptyStateIllustration, AnimatedEntry, SharedHeader } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
+import { useNotificationStore } from '../../store/notificationStore';
 import { useTranslation } from 'react-i18next';
 
 export function MasterHomeScreen({ navigation }: any) {
@@ -13,13 +14,17 @@ export function MasterHomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const { tasks, loadTasks } = useTaskStore();
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
 
   const isVerified = profile?.verification_status === 'approved';
-  const completedCount = profile?.completed_tasks || 12;
-  const rating = profile?.rating || 4.9;
+  const completedCount = profile?.completed_tasks ?? 0;
+  const rating = profile?.rating ?? 0;
 
   useEffect(() => {
-    if (user) loadTasks(user.id);
+    if (user) {
+      loadTasks(user.id);
+      useNotificationStore.getState().loadNotifications(user.id);
+    }
   }, [user]);
 
   const handleTaskPress = (task: TaskItem) => {
@@ -59,10 +64,13 @@ export function MasterHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
-      <View style={styles.greeting}>
-        <Text style={styles.greetingText}>{t('master.home.yourTasks')}</Text>
-        <Text style={styles.greetingName}>{user?.name || t('master.home.masterFallback')}</Text>
-      </View>
+      <SharedHeader
+        title={user?.name || t('master.home.masterFallback')}
+        subtitle={t('master.home.yourTasks')}
+        onAvatarPress={() => navigation?.navigate('Profile')}
+        notificationCount={unreadCount}
+        onNotificationPress={() => navigation?.navigate('NotificationsStack')}
+      />
 
       {/* Verification banner */}
       {!isVerified && (
@@ -142,13 +150,15 @@ export function MasterHomeScreen({ navigation }: any) {
 
       {/* Empty state */}
       {tasks.length === 0 && (
-        <Card style={styles.emptyCard}>
-          <Ionicons name="checkmark-done-outline" size={48} color={colors.primary} style={{ marginBottom: spacing.md }} />
-          <Text style={styles.emptyText}>{t('master.home.allDone')}</Text>
-          <Text style={styles.emptySubtext}>
-            {t('master.home.awaitAssignments')}
-          </Text>
-        </Card>
+        <AnimatedEntry index={0}>
+          <Card style={styles.emptyCard}>
+            <EmptyStateIllustration
+              variant="no-tasks"
+              title={t('master.home.allDone')}
+              subtitle={t('master.home.awaitAssignments')}
+            />
+          </Card>
+        </AnimatedEntry>
       )}
 
       {/* Bottom padding for tab bar */}
@@ -158,18 +168,6 @@ export function MasterHomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  greeting: {
-    marginBottom: spacing.xl,
-    marginTop: spacing.lg,
-  },
-  greetingText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  greetingName: {
-    ...typography.h1,
-    color: colors.heading,
-  },
   verificationBanner: {
     flexDirection: 'row',
     alignItems: 'center',

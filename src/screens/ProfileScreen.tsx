@@ -154,6 +154,20 @@ export function ProfileScreen() {
             showChevron
             onPress={() => navigation.navigate('MasterPricing')}
           />
+          <CellIndicator
+            variant="card"
+            icon={<Ionicons name="calendar-outline" size={20} color={colors.primary} />}
+            name="График работы"
+            showChevron
+            onPress={() => navigation.navigate('MasterSchedule')}
+          />
+          <CellIndicator
+            variant="card"
+            icon={<Ionicons name="images-outline" size={20} color={colors.primary} />}
+            name="Моё портфолио"
+            showChevron
+            onPress={() => navigation.navigate('MasterPortfolio')}
+          />
         </View>
       )}
 
@@ -176,55 +190,49 @@ export function ProfileScreen() {
         </View>
       )}
 
-      {/* Become master — client who hasn't set up master profile yet */}
-      {isClient && !setupComplete && (
-        <Pressable
-          style={styles.roleSwitchCard}
-          onPress={() => navigation.navigate('MasterWelcome')}
-        >
-          <View style={styles.roleSwitchContent}>
-            <View style={styles.roleSwitchIconCircle}>
-              <Ionicons name="hammer-outline" size={24} color={colors.primary} />
-            </View>
-            <View style={styles.roleSwitchTextBlock}>
-              <Text style={styles.roleSwitchTitle}>{t('profile.becomeMaster')}</Text>
-              <Text style={styles.roleSwitchSubtitle}>
-                {t('profile.becomeMasterSubtitle')}
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-        </Pressable>
-      )}
+      {/* Multi-role switcher */}
+      <Text style={styles.sectionTitle}>{t('profile.myCabinets')}</Text>
+      <View style={styles.rolesGrid}>
+        {/* Client role — always available */}
+        <RoleCard
+          icon="home-outline"
+          activeIcon="home"
+          label={t('profile.roleClient')}
+          isActive={activeView === 'client'}
+          onPress={() => setActiveView('client')}
+        />
 
-      {/* Switch between client and master views */}
-      {isClient && setupComplete && (
-        <Pressable
-          style={styles.roleSwitchCard}
-          onPress={() => setActiveView(activeView === 'master' ? 'client' : 'master')}
-        >
-          <View style={styles.roleSwitchContent}>
-            <View style={styles.roleSwitchIconCircle}>
-              <Ionicons
-                name={activeView === 'master' ? 'home-outline' : 'hammer-outline'}
-                size={24}
-                color={colors.primary}
-              />
-            </View>
-            <View style={styles.roleSwitchTextBlock}>
-              <Text style={styles.roleSwitchTitle}>
-                {activeView === 'master' ? t('profile.clientCabinet') : t('profile.masterCabinet')}
-              </Text>
-              <Text style={styles.roleSwitchSubtitle}>
-                {activeView === 'master'
-                  ? t('profile.switchToClient')
-                  : t('profile.switchToMaster')}
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="swap-horizontal" size={22} color={colors.primary} />
-        </Pressable>
-      )}
+        {/* Master role */}
+        {setupComplete ? (
+          <RoleCard
+            icon="hammer-outline"
+            activeIcon="hammer"
+            label={t('profile.roleMaster')}
+            isActive={activeView === 'master'}
+            onPress={() => setActiveView('master')}
+          />
+        ) : (
+          <RoleCard
+            icon="add-circle-outline"
+            activeIcon="add-circle"
+            label={t('profile.becomeMaster')}
+            isActive={false}
+            isAdd
+            onPress={() => navigation.navigate('MasterWelcome')}
+          />
+        )}
+
+        {/* Supervisor role — available for supervisors or any user with role access */}
+        {(user?.role === 'supervisor' || user?.role === 'admin') && (
+          <RoleCard
+            icon="eye-outline"
+            activeIcon="eye"
+            label={t('profile.roleSupervisor')}
+            isActive={activeView === 'supervisor'}
+            onPress={() => setActiveView('supervisor')}
+          />
+        )}
+      </View>
 
       <Button
         title={t('profile.logoutButton')}
@@ -279,6 +287,47 @@ export function ProfileScreen() {
         onClose={() => setShowDeleteDialog(false)}
       />
     </ScreenWrapper>
+  );
+}
+
+function RoleCard({
+  icon,
+  activeIcon,
+  label,
+  isActive,
+  isAdd,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  activeIcon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  isActive: boolean;
+  isAdd?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.roleCard,
+        isActive && styles.roleCardActive,
+        pressed && { opacity: 0.85 },
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.roleIconCircle, isActive && styles.roleIconCircleActive, isAdd && styles.roleIconCircleAdd]}>
+        <Ionicons
+          name={isActive ? activeIcon : icon}
+          size={24}
+          color={isActive ? colors.white : isAdd ? colors.gold : colors.primary}
+        />
+      </View>
+      <Text style={[styles.roleLabel, isActive && styles.roleLabelActive]}>
+        {label}
+      </Text>
+      {isActive && (
+        <View style={styles.roleActiveDot} />
+      )}
+    </Pressable>
   );
 }
 
@@ -343,48 +392,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  roleSwitchCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  roleSwitchContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  roleSwitchIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  roleSwitchTextBlock: {
-    flex: 1,
-  },
-  roleSwitchTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  roleSwitchSubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-    marginTop: 2,
-  },
   specsSection: {
     marginBottom: spacing.md,
   },
@@ -428,7 +435,67 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
     marginBottom: spacing.xxl,
   },
+  sectionTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: spacing.md,
+  },
+  rolesGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  roleCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  roleCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(123, 45, 62, 0.06)',
+  },
+  roleIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  roleIconCircleActive: {
+    backgroundColor: colors.primary,
+  },
+  roleIconCircleAdd: {
+    backgroundColor: 'rgba(197, 165, 90, 0.12)',
+  },
+  roleLabel: {
+    ...typography.small,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  roleLabelActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  roleActiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    marginTop: spacing.xs,
+  },
   tabBarSpacer: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
 });

@@ -41,11 +41,11 @@ const ro: Record<string, string> = {
 
   // ─── Onboarding ───
   'onboarding.slide1.title': 'Renovare fara stres',
-  'onboarding.slide1.subtitle': 'Noi controlam fiecare etapa —\nde la demolare pana la curatenia finala',
+  'onboarding.slide1.subtitle': 'Noi controlam fiecare etapa — de la demolare pana la curatenia finala',
   'onboarding.slide2.title': 'Control independent',
-  'onboarding.slide2.subtitle': 'Pe fiecare santier lucreaza un supervizor —\nel verifica calitatea si recepteaza lucrarile in locul dvs.',
-  'onboarding.slide3.title': 'Transparenta\nla fiecare pas',
-  'onboarding.slide3.subtitle': 'Vedeti progresul renovarii in timp real:\nrapoarte foto, etape, termene si cheltuieli',
+  'onboarding.slide2.subtitle': 'Pe fiecare santier lucreaza un supervizor — el verifica calitatea si recepteaza lucrarile in locul dvs.',
+  'onboarding.slide3.title': 'Transparenta la fiecare pas',
+  'onboarding.slide3.subtitle': 'Vedeti progresul renovarii in timp real: rapoarte foto, etape, termene si cheltuieli',
   'onboarding.start': 'Incepe',
 
   // ─── Profile setup ───

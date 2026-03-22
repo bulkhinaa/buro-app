@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   // Swipeable card
   swipeContainer: {

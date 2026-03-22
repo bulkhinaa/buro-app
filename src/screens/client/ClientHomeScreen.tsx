@@ -20,11 +20,16 @@ import {
   Chip,
   GlassChip,
   GlassView,
+  AnimatedEntry,
+  EmptyStateIllustration,
+  SkeletonCard,
+  SharedHeader,
 } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
+import { colors, spacing, radius, typography, glass, useSerifFont } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useObjectStore } from '../../store/objectStore';
+import { useNotificationStore } from '../../store/notificationStore';
 import {
   Project,
   PropertyObject,
@@ -99,9 +104,15 @@ const MOCK_PORTFOLIO = [
 
 export function ClientHomeScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const serifFont = useSerifFont();
   const { user } = useAuthStore();
   const { projects, isLoading, loadProjects } = useProjectStore();
   const { objects, loadObjects } = useObjectStore();
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+
+  useEffect(() => {
+    if (user) useNotificationStore.getState().loadNotifications(user.id);
+  }, [user]);
 
   const refresh = useCallback(() => {
     if (user?.id) {
@@ -148,47 +159,13 @@ export function ClientHomeScreen({ navigation }: Props) {
 
   return (
     <ScreenWrapper scroll={false} padded={false}>
-      {/* Compact Profile Header */}
-      <Pressable
-        style={styles.header}
-        onPress={() => navigation.navigate('Profile')}
-      >
-        <View style={styles.avatarButton}>
-          {user?.avatar_url ? (
-            <Image
-              source={{ uri: user.avatar_url }}
-              style={styles.avatarImage}
-            />
-          ) : (
-            <Text style={styles.avatarInitial}>
-              {user?.name ? user.name[0].toUpperCase() : '?'}
-            </Text>
-          )}
-        </View>
-        <View style={styles.headerTextBlock}>
-          <Text style={styles.headerName} numberOfLines={1}>
-            {user?.name || 'Клиент'}
-          </Text>
-          <View style={styles.headerObjectRow}>
-            <Ionicons
-              name="location-outline"
-              size={13}
-              color={colors.textLight}
-            />
-            <Text style={styles.headerObjectText} numberOfLines={1}>
-              {objects.length > 0
-                ? objects[0].address
-                : 'Добавьте объект'}
-            </Text>
-          </View>
-        </View>
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={colors.textLight}
-          style={{ marginLeft: 'auto' }}
-        />
-      </Pressable>
+      <SharedHeader
+        title={user?.name || 'Клиент'}
+        subtitle={objects.length > 0 ? objects[0].address : 'Добавьте объект'}
+        onAvatarPress={() => navigation.navigate('Profile')}
+        notificationCount={unreadCount}
+        onNotificationPress={() => navigation.navigate('NotificationsStack')}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -202,57 +179,63 @@ export function ClientHomeScreen({ navigation }: Props) {
         }
       >
         {/* Hero Banner */}
-        <View style={styles.padded}>
-          <Card style={styles.heroBanner}>
-            <Text style={styles.heroTitle}>
-              {t('home.heroTitle')}
-            </Text>
-            <Text style={styles.heroSubtitle}>
-              {t('home.heroSubtitle')}
-            </Text>
-            <Button
-              title={t('home.heroButton')}
-              onPress={() => navigation.navigate('AddObject')}
-              style={{ marginTop: spacing.lg }}
-            />
-          </Card>
-        </View>
+        <AnimatedEntry index={0}>
+          <View style={styles.padded}>
+            <Card style={styles.heroBanner}>
+              <Text style={[styles.heroTitle, serifFont]}>
+                {t('home.heroTitle')}
+              </Text>
+              <Text style={styles.heroSubtitle}>
+                {t('home.heroSubtitle')}
+              </Text>
+              <Button
+                title={t('home.heroButton')}
+                onPress={() => navigation.navigate('AddObject')}
+                style={{ marginTop: spacing.lg }}
+              />
+            </Card>
+          </View>
+        </AnimatedEntry>
 
         {/* How it works */}
-        <Text style={[styles.sectionTitle, styles.padded]}>
-          {t('home.howItWorks')}
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.howItWorksScroll}
-        >
-          {HOW_IT_WORKS_ICONS.map((icon, i) => (
-            <Card key={i} style={styles.howItWorksCard}>
-              <View style={styles.howItWorksIconCircle}>
-                <Ionicons name={icon} size={24} color={colors.primary} />
-              </View>
-              <Text style={styles.howItWorksTitle}>{t(`home.step${i + 1}Title`)}</Text>
-              <Text style={styles.howItWorksText}>{t(`home.step${i + 1}Text`)}</Text>
-            </Card>
-          ))}
-        </ScrollView>
+        <AnimatedEntry index={1}>
+          <Text style={[styles.sectionTitle, styles.padded]}>
+            {t('home.howItWorks')}
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.howItWorksScroll}
+          >
+            {HOW_IT_WORKS_ICONS.map((icon, i) => (
+              <Card key={i} style={styles.howItWorksCard}>
+                <View style={styles.howItWorksIconCircle}>
+                  <Ionicons name={icon} size={24} color={colors.primary} />
+                </View>
+                <Text style={styles.howItWorksTitle}>{t(`home.step${i + 1}Title`)}</Text>
+                <Text style={styles.howItWorksText}>{t(`home.step${i + 1}Text`)}</Text>
+              </Card>
+            ))}
+          </ScrollView>
+        </AnimatedEntry>
 
         {/* Platform stats — glass blocks */}
-        <Text style={[styles.sectionTitle, styles.padded]}>{t('home.trustUs')}</Text>
-        <View style={[styles.statsRow, styles.padded]}>
-          {[
-            { num: '150+', label: t('home.statsProjects'), icon: 'construct-outline' as keyof typeof Ionicons.glyphMap },
-            { num: '4.8', label: t('home.statsRating'), icon: 'star-outline' as keyof typeof Ionicons.glyphMap },
-            { num: '98%', label: t('home.statsClients'), icon: 'heart-outline' as keyof typeof Ionicons.glyphMap },
-          ].map((stat) => (
-            <View key={stat.num} style={styles.statBlock}>
-              <Ionicons name={stat.icon} size={20} color={colors.primary} style={{ marginBottom: 4 }} />
-              <Text style={styles.statNumber}>{stat.num}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
-        </View>
+        <AnimatedEntry index={2}>
+          <Text style={[styles.sectionTitle, styles.padded]}>{t('home.trustUs')}</Text>
+          <View style={[styles.statsRow, styles.padded]}>
+            {[
+              { num: '150+', label: t('home.statsProjects'), icon: 'construct-outline' as keyof typeof Ionicons.glyphMap },
+              { num: '4.8', label: t('home.statsRating'), icon: 'star-outline' as keyof typeof Ionicons.glyphMap },
+              { num: '98%', label: t('home.statsClients'), icon: 'heart-outline' as keyof typeof Ionicons.glyphMap },
+            ].map((stat) => (
+              <View key={stat.num} style={styles.statBlock}>
+                <Ionicons name={stat.icon} size={20} color={colors.primary} style={{ marginBottom: 4 }} />
+                <Text style={styles.statNumber}>{stat.num}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
+        </AnimatedEntry>
 
         {/* Portfolio carousel — reference card design */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
@@ -416,27 +399,27 @@ export function ClientHomeScreen({ navigation }: Props) {
               );
             })}
           </ScrollView>
-        ) : !isLoading ? (
+        ) : isLoading ? (
+          <View style={[styles.padded, { gap: spacing.lg }]}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : (
           <View style={styles.padded}>
             <Card style={styles.emptyCard}>
-              <Ionicons
-                name="home-outline"
-                size={56}
-                color={colors.primary}
-                style={{ marginBottom: spacing.lg }}
+              <EmptyStateIllustration
+                variant="no-projects"
+                title={t('home.addFirstObject')}
+                subtitle={t('home.addFirstObjectHint')}
               />
-              <Text style={styles.emptyTitle}>{t('home.addFirstObject')}</Text>
-              <Text style={styles.emptyText}>
-                {t('home.addFirstObjectHint')}
-              </Text>
               <Button
                 title={t('home.addObject')}
                 onPress={() => navigation.navigate('AddObject')}
-                style={{ marginTop: spacing.xl }}
+                style={{ marginTop: spacing.sm }}
               />
             </Card>
           </View>
-        ) : null}
+        )}
 
         {/* Active Projects (if any exist without objects — backward compat) */}
         {projects.filter((p) => !p.object_id).length > 0 && (
@@ -462,59 +445,6 @@ export function ClientHomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  avatarButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.15)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  avatarImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  avatarInitial: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  headerTextBlock: {
-    marginLeft: spacing.md,
-    flex: 1,
-  },
-  headerName: {
-    ...typography.h3,
-    color: colors.heading,
-    lineHeight: 22,
-  },
-  headerObjectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
-  },
-  headerObjectText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
   scroll: {
     flex: 1,
   },
@@ -528,7 +458,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   heroTitle: {
-    ...typography.h3,
+    ...typography.h2,
     color: colors.heading,
     marginBottom: spacing.sm,
   },

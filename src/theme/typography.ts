@@ -1,4 +1,16 @@
 import { TextStyle } from 'react-native';
+import { useFonts } from 'expo-font';
+
+/**
+ * Hook that returns serif font style only after the font is loaded.
+ * Safe to spread into any Text style — returns empty object while loading.
+ */
+export function useSerifFont(): TextStyle {
+  const [loaded] = useFonts({
+    'NotoSerif-Bold': require('../../assets/fonts/NotoSerif-Bold.ttf'),
+  });
+  return loaded ? { fontFamily: 'NotoSerif-Bold' } : {};
+}
 
 export const typography: Record<string, TextStyle> = {
   h1: { fontSize: 28, fontWeight: '800', lineHeight: 34 },

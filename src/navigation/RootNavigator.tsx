@@ -13,8 +13,11 @@ import { AdminNavigator } from './AdminNavigator';
 import { SplashAnimation } from '../components/SplashAnimation';
 import { OnboardingScreen, ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
+import { RoleSelectScreen, SELECTED_ROLE_KEY } from '../screens/RoleSelectScreen';
 import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
+import { SupervisorWelcomeScreen } from '../screens/supervisor/SupervisorWelcomeScreen';
+import { SupervisorSetupScreen, SUPERVISOR_SETUP_KEY } from '../screens/supervisor/SupervisorSetupScreen';
 import { colors } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -47,14 +50,18 @@ export function RootNavigator() {
   const [authDone, setAuthDone] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [showLanguageSelect, setShowLanguageSelect] = useState<boolean | null>(null);
+  const [showRoleSelect, setShowRoleSelect] = useState<boolean | null>(null);
   const [masterInitDone, setMasterInitDone] = useState(false);
   const [masterWelcomeDone, setMasterWelcomeDone] = useState(false);
   const [masterSetupDone, setMasterSetupDone] = useState(false);
+  const [supervisorWelcomeDone, setSupervisorWelcomeDone] = useState(false);
+  const [supervisorSetupDone, setSupervisorSetupDone] = useState(false);
 
   useEffect(() => {
     initAuth();
     initLanguage();
     checkOnboarding();
+    checkRoleSelect();
   }, []);
 
   // Once language store is loaded, determine if language select should show
@@ -68,6 +75,12 @@ export function RootNavigator() {
   useEffect(() => {
     if (isAuthenticated && user) {
       initMaster(user.id).then(() => setMasterInitDone(true));
+      // Check supervisor setup
+      if (user.role === 'supervisor') {
+        AsyncStorage.getItem(SUPERVISOR_SETUP_KEY).then((val) => {
+          setSupervisorSetupDone(val === 'true');
+        });
+      }
     } else {
       setMasterInitDone(true);
     }
@@ -90,6 +103,15 @@ export function RootNavigator() {
     }
   };
 
+  const checkRoleSelect = async () => {
+    try {
+      const role = await AsyncStorage.getItem(SELECTED_ROLE_KEY);
+      setShowRoleSelect(!role);
+    } catch {
+      setShowRoleSelect(false);
+    }
+  };
+
   // Track when auth finishes loading
   useEffect(() => {
     if (!isLoading) {
@@ -109,8 +131,9 @@ export function RootNavigator() {
   const prevNavKey = useRef('');
 
   const navKey = (() => {
-    if (!authDone || showOnboarding === null || showLanguageSelect === null) return 'loading';
+    if (!authDone || showOnboarding === null || showLanguageSelect === null || showRoleSelect === null) return 'loading';
     if (showLanguageSelect && !isAuthenticated) return 'language-select';
+    if (showRoleSelect && !isAuthenticated) return 'role-select';
     if (showOnboarding && !isAuthenticated) return 'onboarding';
     if (!isAuthenticated || !user) return 'auth';
     if (!masterInitDone) return 'master-loading';
@@ -119,7 +142,13 @@ export function RootNavigator() {
       if (!masterSetupDone) return 'master-setup';
       return 'master';
     }
+    if (user.role === 'supervisor') {
+      if (!supervisorWelcomeDone) return 'supervisor-welcome';
+      if (!supervisorSetupDone) return 'supervisor-setup';
+      return 'supervisor';
+    }
     if (user.role === 'client' && setupComplete && activeView === 'master') return 'master-view';
+    if (activeView === 'supervisor' && user.role !== 'admin') return 'supervisor-view';
     return user.role;
   })();
 
@@ -139,6 +168,10 @@ export function RootNavigator() {
     setShowLanguageSelect(false);
   };
 
+  const handleRoleSelectComplete = () => {
+    setShowRoleSelect(false);
+  };
+
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
   };
@@ -147,6 +180,11 @@ export function RootNavigator() {
     // Show language selection for first-time users (before onboarding)
     if (showLanguageSelect && !isAuthenticated) {
       return <LanguageSelectScreen onComplete={handleLanguageComplete} />;
+    }
+
+    // Show role selection after language
+    if (showRoleSelect && !isAuthenticated) {
+      return <RoleSelectScreen onComplete={handleRoleSelectComplete} />;
     }
 
     // Show onboarding for first-time users
@@ -174,16 +212,30 @@ export function RootNavigator() {
       return <MasterNavigator />;
     }
 
+    // Direct supervisor role: welcome → setup → navigator
+    if (user.role === 'supervisor') {
+      if (!supervisorWelcomeDone) {
+        return <SupervisorWelcomeScreen onComplete={() => setSupervisorWelcomeDone(true)} />;
+      }
+      if (!supervisorSetupDone) {
+        return <SupervisorSetupScreen onComplete={() => setSupervisorSetupDone(true)} />;
+      }
+      return <SupervisorNavigator />;
+    }
+
     // Dual-role: client who completed master setup and switched to master view
     if (user.role === 'client' && setupComplete && activeView === 'master') {
       return <MasterNavigator />;
     }
 
+    // Multi-role: switch to supervisor view (for supervisors or assigned users)
+    if (activeView === 'supervisor' && user.role !== 'admin') {
+      return <SupervisorNavigator />;
+    }
+
     switch (user.role) {
       case 'admin':
         return <AdminNavigator />;
-      case 'supervisor':
-        return <SupervisorNavigator />;
       case 'client':
       default:
         return <ClientNavigator />;
@@ -209,7 +261,7 @@ export function RootNavigator() {
     <View style={styles.root}>
       <NavigationContainer ref={navigationRef} theme={navTheme} onStateChange={handleNavigationStateChange}>
         <Animated.View style={[styles.animatedContainer, { opacity: fadeAnim }]}>
-          {authDone && showOnboarding !== null && showLanguageSelect !== null ? (
+          {authDone && showOnboarding !== null && showLanguageSelect !== null && showRoleSelect !== null ? (
             getNavigator()
           ) : (
             <View style={styles.placeholder} />

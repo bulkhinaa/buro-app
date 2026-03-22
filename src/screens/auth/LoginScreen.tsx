@@ -42,7 +42,7 @@ const getRedirectUri = (): string => {
 const DEV_TAP_TARGET = 5;
 
 export function LoginScreen() {
-  const [loading, setLoading] = useState<'yandex' | 'tinkoff' | null>(null);
+  const [loading, setLoading] = useState<'yandex' | null>(null);
   const [showDevMenu, setShowDevMenu] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -259,10 +259,6 @@ export function LoginScreen() {
     }
   };
 
-  const handleTinkoffSignIn = () => {
-    showToast(t('auth.tinkoffComingSoon'), 'info');
-  };
-
   const handleDevLogin = (role: UserRole) => {
     setUser({
       id: `dev-${role}`,
@@ -312,16 +308,6 @@ export function LoginScreen() {
             )}
           </Pressable>
 
-          <Button
-            title={t('auth.tinkoffButton')}
-            onPress={handleTinkoffSignIn}
-            disabled={loading !== null}
-            variant="outline"
-            fullWidth
-            icon={
-              <Ionicons name="card-outline" size={20} color={colors.primary} />
-            }
-          />
         </View>
 
         <Text style={styles.terms}>

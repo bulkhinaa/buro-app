@@ -1,8 +1,6 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { ClientHomeScreen } from '../screens/client/ClientHomeScreen';
 import { ProjectDetailScreen } from '../screens/client/ProjectDetailScreen';
@@ -26,9 +24,6 @@ import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { MasterMatchScreen } from '../screens/client/MasterMatchScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
-import { GlassTabBar } from '../components/GlassTabBar';
-import { useNotificationStore } from '../store/notificationStore';
-import { useAuthStore } from '../store/authStore';
 import { colors } from '../theme';
 
 // Wrappers adapt onComplete prop for stack navigation
@@ -42,89 +37,7 @@ function MasterSetupWrapper() {
   return <MasterSetupScreen onComplete={() => {}} />;
 }
 
-const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
-function ClientTabs() {
-  const { t } = useTranslation();
-  const { user } = useAuthStore();
-  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
-
-  // Load notifications on mount
-  React.useEffect(() => {
-    if (user) {
-      useNotificationStore.getState().loadNotifications(user.id);
-    }
-  }, [user]);
-
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <GlassTabBar {...props} />}
-      sceneContainerStyle={{ backgroundColor: colors.bgGradientEnd }}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={ClientHomeScreen}
-        options={{
-          tabBarLabel: t('tabs.home'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Portfolio"
-        component={PortfolioScreen}
-        options={{
-          tabBarLabel: t('tabs.portfolio'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'images' : 'images-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Notifications"
-        component={NotificationsScreen}
-        options={{
-          tabBarLabel: t('tabs.notifications'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'notifications' : 'notifications-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: t('tabs.profile'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'person' : 'person-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
 
 export function ClientNavigator() {
   const { t } = useTranslation();
@@ -142,9 +55,15 @@ export function ClientNavigator() {
       }}
     >
       <Stack.Screen
-        name="ClientTabs"
-        component={ClientTabs}
+        name="ClientHome"
+        component={ClientHomeScreen}
         options={{ headerShown: false, title: 'Бюро ремонтов' }}
+      />
+      {/* Portfolio */}
+      <Stack.Screen
+        name="Portfolio"
+        component={PortfolioScreen}
+        options={{ headerShown: false, title: 'Портфолио' }}
       />
       {/* Object screens */}
       <Stack.Screen
@@ -192,47 +111,20 @@ export function ClientNavigator() {
         component={ProjectCompleteScreen}
         options={{ headerShown: false, title: 'Проект завершён', ...TransitionPresets.ModalSlideFromBottomIOS, animation: 'slide_from_bottom' as any }}
       />
-      {/* Profile sub-screens */}
+      {/* Profile & settings */}
       <Stack.Screen
-        name="EditProfile"
-        component={EditProfileScreen}
-        options={{ headerTitle: t('nav.editProfile') }}
+        name="Profile"
+        component={ProfileScreen}
+        options={{ headerShown: false, title: 'Профиль' }}
       />
-      <Stack.Screen
-        name="NotificationsStack"
-        component={NotificationsScreen}
-        options={{ headerTitle: t('nav.notifications') }}
-      />
-      <Stack.Screen
-        name="MyReviews"
-        component={MyReviewsScreen}
-        options={{ headerTitle: t('nav.myReviews') }}
-      />
-      <Stack.Screen
-        name="Support"
-        component={SupportScreen}
-        options={{ headerTitle: t('nav.support') }}
-      />
-      <Stack.Screen
-        name="Documents"
-        component={DocumentsScreen}
-        options={{ headerTitle: t('nav.documents') }}
-      />
-      <Stack.Screen
-        name="About"
-        component={AboutScreen}
-        options={{ headerTitle: t('nav.about') }}
-      />
-      <Stack.Screen
-        name="LanguageSelect"
-        component={LanguageSelectScreen}
-        options={{ headerTitle: t('nav.language') }}
-      />
-      <Stack.Screen
-        name="MasterMatch"
-        component={MasterMatchScreen}
-        options={{ headerShown: false, title: 'Подбор мастера' }}
-      />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: t('nav.editProfile') }} />
+      <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: t('nav.notifications') }} />
+      <Stack.Screen name="MyReviews" component={MyReviewsScreen} options={{ headerTitle: t('nav.myReviews') }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ headerTitle: t('nav.support') }} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: t('nav.documents') }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: t('nav.about') }} />
+      <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} options={{ headerTitle: t('nav.language') }} />
+      <Stack.Screen name="MasterMatch" component={MasterMatchScreen} options={{ headerShown: false, title: 'Подбор мастера' }} />
       {/* Master onboarding (triggered from Profile "Стать мастером") */}
       <Stack.Screen
         name="MasterWelcome"

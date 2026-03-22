@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
     gap: spacing.lg,
   },
 

@@ -5,10 +5,10 @@ export const colors = {
   accent: '#C5A55A',
   accentLight: 'rgba(197, 165, 90, 0.12)',
   orange: '#ff6b35',
-  success: '#34C759',
-  successLight: 'rgba(52, 199, 89, 0.1)',
-  danger: '#FF3B30',
-  dangerLight: 'rgba(255, 59, 48, 0.1)',
+  success: '#2A9D5C',
+  successLight: 'rgba(42, 157, 92, 0.1)',
+  danger: '#C44040',
+  dangerLight: 'rgba(196, 64, 64, 0.1)',
   warning: '#FF9500',
 
   bg: '#FFFFFF',
@@ -22,8 +22,8 @@ export const colors = {
   bgGradientMid: '#EDE5DF',
   bgGradientEnd: '#F8F5F2',
 
-  text: '#3D3D3D',
-  textLight: '#8E8E93',
+  text: '#4A4440',
+  textLight: '#8A837D',
   textBright: '#1A1A1A',
   heading: '#1A1A1A',
 

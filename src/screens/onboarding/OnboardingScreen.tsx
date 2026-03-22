@@ -10,10 +10,12 @@ import {
   Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
 import { colors, spacing } from '../../theme';
 import { useTranslation } from 'react-i18next';
@@ -71,6 +73,7 @@ type Props = {
 export function OnboardingScreen({ onComplete }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const isScrolling = useRef(false);
   const { t } = useTranslation();
 
   // Fix: RN Web Image sets internal opacity:0 for its loading fade-in.
@@ -100,14 +103,46 @@ export function OnboardingScreen({ onComplete }: Props) {
     }
   }, []);
 
+  const scrollToIndex = useCallback((index: number) => {
+    if (isScrolling.current) return;
+    isScrolling.current = true;
+
+    const targetX = index * width;
+
+    if (Platform.OS === 'web') {
+      // Web: use DOM scrollTo which is more reliable than RN scrollTo
+      const scrollNode = (scrollRef.current as any)?.getScrollableNode?.() ||
+        (scrollRef.current as any)?._nativeRef?.current;
+      if (scrollNode) {
+        scrollNode.scrollTo({ left: targetX, behavior: 'smooth' });
+      } else {
+        // Fallback: try RN scrollTo
+        scrollRef.current?.scrollTo({ x: targetX, animated: true });
+      }
+    } else {
+      scrollRef.current?.scrollTo({ x: targetX, animated: true });
+    }
+
+    // Update index immediately for responsive UI
+    setActiveIndex(index);
+
+    setTimeout(() => {
+      isScrolling.current = false;
+    }, 400);
+  }, []);
+
   const handleNext = async () => {
     if (isLast) {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       onComplete();
     } else {
-      const nextIndex = activeIndex + 1;
-      scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+      scrollToIndex(activeIndex + 1);
     }
+  };
+
+  const handleSkip = async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    onComplete();
   };
 
   const renderSlide = (item: SlideConfig) => (
@@ -119,19 +154,32 @@ export function OnboardingScreen({ onComplete }: Props) {
         resizeMode="contain"
       />
 
-      {/* Text content — anchored at bottom, overlaps illustration tail */}
-      <View style={styles.slideContent}>
+      {/* Text content — anchored at bottom, gradient fade over illustration */}
+      <LinearGradient
+        colors={['transparent', BG_CREAM, BG_CREAM]}
+        locations={[0, 0.25, 1]}
+        style={styles.slideContent}
+      >
         <View style={styles.iconPill}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
         </View>
         <Text style={styles.title}>{t(item.titleKey)}</Text>
         <Text style={styles.subtitle}>{t(item.subtitleKey)}</Text>
-      </View>
+      </LinearGradient>
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Skip button — top right */}
+      {!isLast && (
+        <SafeAreaView style={styles.skipSafe} edges={['top']} pointerEvents="box-none">
+          <Pressable style={styles.skipButton} onPress={handleSkip}>
+            <Text style={styles.skipText}>{t('onboarding.skip', 'Пропустить')}</Text>
+          </Pressable>
+        </SafeAreaView>
+      )}
+
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -140,6 +188,9 @@ export function OnboardingScreen({ onComplete }: Props) {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         bounces={false}
+        decelerationRate="fast"
+        snapToInterval={width}
+        snapToAlignment="start"
         style={{ flex: 1 }}
         testID="onboarding-slides"
       >
@@ -151,10 +202,15 @@ export function OnboardingScreen({ onComplete }: Props) {
         <View style={styles.footer} pointerEvents="box-none">
           <View style={styles.dots}>
             {SLIDE_CONFIGS.map((_, i) => (
-              <View
+              <Pressable
                 key={i}
-                style={[styles.dot, i === activeIndex && styles.dotActive]}
-              />
+                onPress={() => scrollToIndex(i)}
+                hitSlop={8}
+              >
+                <View
+                  style={[styles.dot, i === activeIndex && styles.dotActive]}
+                />
+              </Pressable>
             ))}
           </View>
 
@@ -177,6 +233,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG_CREAM,
   },
+  skipSafe: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  skipButton: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  skipText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textLight,
+  },
   slide: {
     width,
     height,
@@ -195,6 +266,7 @@ const styles = StyleSheet.create({
     left: 0,
     width,
     paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxxl,
   },
   iconPill: {
     width: 44,

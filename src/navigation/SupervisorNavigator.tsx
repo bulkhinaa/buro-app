@@ -1,8 +1,6 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen';
 import { SupervisorProjectDetailScreen } from '../screens/supervisor/SupervisorProjectDetailScreen';
 import { SupervisorStageDetailScreen } from '../screens/supervisor/SupervisorStageDetailScreen';
@@ -17,43 +15,9 @@ import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
-import { GlassTabBar } from '../components/GlassTabBar';
 import { colors } from '../theme';
 
-const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
-function SupervisorTabs() {
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <GlassTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen
-        name="Projects"
-        component={SupervisorHomeScreen}
-        options={{
-          tabBarLabel: 'Проекты',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'construct' : 'construct-outline'} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Профиль',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
 
 export function SupervisorNavigator() {
   return (
@@ -74,19 +38,17 @@ export function SupervisorNavigator() {
       }}
     >
       <Stack.Screen
-        name="SupervisorTabs"
-        component={SupervisorTabs}
+        name="SupervisorHome"
+        component={SupervisorHomeScreen}
         options={{ headerShown: false }}
       />
 
-      {/* Project detail — replaces broken SupervisorHomeScreen stub */}
       <Stack.Screen
         name="SupervisorProjectDetail"
         component={SupervisorProjectDetailScreen}
         options={{ headerTitle: 'Проект' }}
       />
 
-      {/* Stage detail for review */}
       <Stack.Screen
         name="SupervisorStageDetail"
         component={SupervisorStageDetailScreen}
@@ -95,63 +57,33 @@ export function SupervisorNavigator() {
         })}
       />
 
-      {/* Stage plan */}
       <Stack.Screen
         name="SupervisorStagePlan"
         component={SupervisorStagePlanScreen}
         options={{ headerTitle: 'План этапов' }}
       />
 
-      {/* Invites */}
       <Stack.Screen
         name="SupervisorInvites"
         component={SupervisorInvitesScreen}
         options={{ headerTitle: 'Приглашения мастеров' }}
       />
 
-      {/* Chat */}
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
         options={{ headerTitle: 'Чат проекта' }}
       />
 
-      {/* Profile sub-screens */}
-      <Stack.Screen
-        name="EditProfile"
-        component={EditProfileScreen}
-        options={{ headerTitle: 'Редактировать профиль' }}
-      />
-      <Stack.Screen
-        name="NotificationsStack"
-        component={NotificationsScreen}
-        options={{ headerTitle: 'Уведомления' }}
-      />
-      <Stack.Screen
-        name="MyReviews"
-        component={MyReviewsScreen}
-        options={{ headerTitle: 'Мои отзывы' }}
-      />
-      <Stack.Screen
-        name="Support"
-        component={SupportScreen}
-        options={{ headerTitle: 'Поддержка' }}
-      />
-      <Stack.Screen
-        name="Documents"
-        component={DocumentsScreen}
-        options={{ headerTitle: 'Документы' }}
-      />
-      <Stack.Screen
-        name="About"
-        component={AboutScreen}
-        options={{ headerTitle: 'О приложении' }}
-      />
-      <Stack.Screen
-        name="LanguageSelect"
-        component={LanguageSelectScreen}
-        options={{ headerTitle: 'Язык' }}
-      />
+      {/* Profile & settings */}
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false, title: 'Профиль' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: 'Редактировать профиль' }} />
+      <Stack.Screen name="NotificationsStack" component={NotificationsScreen} options={{ headerTitle: 'Уведомления' }} />
+      <Stack.Screen name="MyReviews" component={MyReviewsScreen} options={{ headerTitle: 'Мои отзывы' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ headerTitle: 'Поддержка' }} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: 'Документы' }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: 'О приложении' }} />
+      <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} options={{ headerTitle: 'Язык' }} />
     </Stack.Navigator>
   );
 }

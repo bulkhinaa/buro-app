@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ScreenWrapper,
@@ -9,6 +9,8 @@ import {
   ProgressBar,
   LabelMaster,
   StageAccordion,
+  ProjectTimeline,
+  PhotoGallery,
   SystemButton,
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
@@ -17,6 +19,7 @@ import { useAuthStore } from '../../store/authStore';
 import { fetchProfile } from '../../services/projectService';
 import {
   Project,
+  PhotoReport,
   REPAIR_TYPE_LABELS,
   RENOVATION_SCOPE_LABELS,
   PROJECT_STATUS_LABELS,
@@ -30,6 +33,21 @@ import {
 } from '../../utils/calculator';
 import { getStageBreakdown } from '../../data/stageBreakdown';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type ViewMode = 'accordion' | 'timeline';
+type SectionTab = 'stages' | 'photos';
+
+// Mock photo reports for dev users
+const MOCK_PHOTOS: Record<string, PhotoReport[]> = {
+  'stg-5': [
+    { id: 'ph-1', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1581093806997-124204d9fa9d?w=600', comment: 'Грунтовка нанесена', created_at: '2026-03-11T10:00:00Z' },
+    { id: 'ph-2', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600', comment: 'Маяки установлены', created_at: '2026-03-12T14:00:00Z' },
+    { id: 'ph-3', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600', comment: 'Штукатурка нанесена', created_at: '2026-03-18T16:00:00Z' },
+  ],
+  'stg-1': [
+    { id: 'ph-4', stage_id: 'stg-1', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600', comment: 'Демонтаж завершён', created_at: '2026-03-05T12:00:00Z' },
+  ],
+};
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -52,6 +70,8 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
   const { user } = useAuthStore();
   const { stages, loadStages } = useProjectStore();
   const [supervisorName, setSupervisorName] = useState('Загрузка...');
+  const [viewMode, setViewMode] = useState<ViewMode>('accordion');
+  const [sectionTab, setSectionTab] = useState<SectionTab>('stages');
 
   useEffect(() => {
     if (projectId) loadStages(projectId);
@@ -271,51 +291,132 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           </Card>
         )}
 
-        {/* ─── E. Stages ─── */}
+        {/* ─── E. Stages / Photos ─── */}
         <View style={styles.stagesSection}>
+          {/* Section tabs */}
+          <View style={styles.sectionTabs}>
+            <Pressable
+              style={[styles.sectionTab, sectionTab === 'stages' && styles.sectionTabActive]}
+              onPress={() => setSectionTab('stages')}
+            >
+              <Ionicons
+                name="layers-outline"
+                size={16}
+                color={sectionTab === 'stages' ? colors.primary : colors.textLight}
+              />
+              <Text style={[styles.sectionTabText, sectionTab === 'stages' && styles.sectionTabTextActive]}>
+                Этапы
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sectionTab, sectionTab === 'photos' && styles.sectionTabActive]}
+              onPress={() => setSectionTab('photos')}
+            >
+              <Ionicons
+                name="images-outline"
+                size={16}
+                color={sectionTab === 'photos' ? colors.primary : colors.textLight}
+              />
+              <Text style={[styles.sectionTabText, sectionTab === 'photos' && styles.sectionTabTextActive]}>
+                Фото
+              </Text>
+            </Pressable>
+          </View>
+
+          {sectionTab === 'photos' ? (
+            <PhotoGallery
+              stages={stages}
+              photosByStage={user?.id.startsWith('dev-') ? MOCK_PHOTOS : {}}
+            />
+          ) : (
+          <>
           <View style={styles.stagesHeader}>
             <Text style={styles.sectionTitle}>Этапы ремонта</Text>
-            <View style={styles.stagesCountBadge}>
-              <Text style={styles.stagesCountText}>
-                {hasDbStages ? totalStages : stageBreakdown.length} этапов
-              </Text>
+            <View style={styles.stagesHeaderRight}>
+              {/* View mode toggle */}
+              {hasDbStages && (
+                <View style={styles.viewToggle}>
+                  <Pressable
+                    style={[styles.viewToggleBtn, viewMode === 'accordion' && styles.viewToggleBtnActive]}
+                    onPress={() => setViewMode('accordion')}
+                  >
+                    <Ionicons
+                      name="list-outline"
+                      size={16}
+                      color={viewMode === 'accordion' ? colors.white : colors.textLight}
+                    />
+                  </Pressable>
+                  <Pressable
+                    style={[styles.viewToggleBtn, viewMode === 'timeline' && styles.viewToggleBtnActive]}
+                    onPress={() => setViewMode('timeline')}
+                  >
+                    <Ionicons
+                      name="git-branch-outline"
+                      size={16}
+                      color={viewMode === 'timeline' ? colors.white : colors.textLight}
+                    />
+                  </Pressable>
+                </View>
+              )}
+              <View style={styles.stagesCountBadge}>
+                <Text style={styles.stagesCountText}>
+                  {hasDbStages ? totalStages : stageBreakdown.length} этапов
+                </Text>
+              </View>
             </View>
           </View>
 
           {hasDbStages ? (
-            // Real stages from database
-            stages.map((stage) => {
-              const breakdown = stageBreakdown.find(
-                (b) => b.orderIndex === stage.order_index,
-              );
-              return (
-                <StageAccordion
-                  key={stage.id}
-                  index={stage.order_index}
-                  title={stage.title}
-                  description={breakdown?.description || stage.description}
-                  checklist={breakdown?.checklist}
-                  costMin={breakdown?.costMin}
-                  costMax={breakdown?.costMax}
-                  days={breakdown?.days}
-                  status={stage.status}
-                  deadline={stage.deadline}
-                  defaultOpen={stage.status === 'in_progress'}
-                  onApprove={
-                    stage.status === 'done_by_master'
-                      ? () =>
-                          navigation.navigate('StageApproval', {
-                            stageId: stage.id,
-                            stageTitle: stage.title,
-                            stageIndex: stage.order_index,
-                            projectId,
-                            projectTitle: project?.title,
-                          })
-                      : undefined
+            viewMode === 'timeline' ? (
+              <ProjectTimeline
+                stages={stages}
+                onStagePress={(stage) => {
+                  if (stage.status === 'done_by_master') {
+                    navigation.navigate('StageApproval', {
+                      stageId: stage.id,
+                      stageTitle: stage.title,
+                      stageIndex: stage.order_index,
+                      projectId,
+                      projectTitle: project?.title,
+                    });
                   }
-                />
-              );
-            })
+                }}
+              />
+            ) : (
+              // Accordion view — real stages from database
+              stages.map((stage) => {
+                const breakdown = stageBreakdown.find(
+                  (b) => b.orderIndex === stage.order_index,
+                );
+                return (
+                  <StageAccordion
+                    key={stage.id}
+                    index={stage.order_index}
+                    title={stage.title}
+                    description={breakdown?.description || stage.description}
+                    checklist={breakdown?.checklist}
+                    costMin={breakdown?.costMin}
+                    costMax={breakdown?.costMax}
+                    days={breakdown?.days}
+                    status={stage.status}
+                    deadline={stage.deadline}
+                    defaultOpen={stage.status === 'in_progress'}
+                    onApprove={
+                      stage.status === 'done_by_master'
+                        ? () =>
+                            navigation.navigate('StageApproval', {
+                              stageId: stage.id,
+                              stageTitle: stage.title,
+                              stageIndex: stage.order_index,
+                              projectId,
+                              projectTitle: project?.title,
+                            })
+                        : undefined
+                    }
+                  />
+                );
+              })
+            )
           ) : (
             // Preview stages from breakdown (no DB stages yet)
             stageBreakdown.map((item) => (
@@ -344,6 +445,8 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
               Примерный план и стоимость. Точную смету составит супервайзер после осмотра объекта
             </Text>
           </View>
+          </>
+          )}
         </View>
 
         {/* ─── F. CTA ─── */}
@@ -385,7 +488,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
 
   // ─── Hero ───
@@ -561,6 +664,39 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
 
+  // ─── Section tabs ───
+  sectionTabs: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: radius.lg,
+    padding: 3,
+    marginBottom: spacing.lg,
+  },
+  sectionTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.lg - 3,
+  },
+  sectionTabActive: {
+    backgroundColor: colors.white,
+    shadowColor: 'rgba(0,0,0,0.08)',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTabText: {
+    ...typography.smallBold,
+    color: colors.textLight,
+  },
+  sectionTabTextActive: {
+    color: colors.primary,
+  },
+
   // ─── Stages ───
   stagesSection: {
     marginBottom: spacing.lg,
@@ -574,6 +710,25 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.h3,
     color: colors.heading,
+  },
+  stagesHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: radius.md,
+    padding: 2,
+  },
+  viewToggleBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md - 2,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: colors.primary,
   },
   stagesCountBadge: {
     backgroundColor: colors.primaryLight,

@@ -1,9 +1,11 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserRole, SupportedLanguage } from '../types';
 import { supabase } from '../lib/supabase';
 import { upsertProfile, updateProfile, fetchProfile } from '../services/projectService';
 import { useMasterStore } from './masterStore';
 import { flushAnalytics } from '../services/analyticsService';
+import { SELECTED_ROLE_KEY } from '../screens/RoleSelectScreen';
 
 interface AuthState {
   user: User | null;
@@ -75,13 +77,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   syncProfile: async ({ id, name, phone, city, email, consent_version }) => {
     try {
+      // Read role chosen during onboarding (defaults to 'client')
+      let chosenRole: UserRole = 'client';
+      try {
+        const saved = await AsyncStorage.getItem(SELECTED_ROLE_KEY);
+        if (saved === 'master' || saved === 'supervisor') {
+          chosenRole = saved;
+        }
+      } catch { /* ignore */ }
+
       const extra: Record<string, any> = {};
       if (consent_version) {
         extra.consent_given_at = new Date().toISOString();
         extra.consent_version = consent_version;
       }
       if (email) extra.email = email;
-      await upsertProfile({ id, name, phone, city, role: 'client', ...extra });
+      await upsertProfile({ id, name, phone, city, role: chosenRole, ...extra });
       const profile = await fetchProfile(id);
       if (profile) {
         set({

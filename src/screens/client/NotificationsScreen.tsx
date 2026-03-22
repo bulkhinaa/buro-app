@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { ScreenWrapper } from '../../components';
+import { ScreenWrapper, EmptyStateIllustration } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import {
@@ -142,16 +142,7 @@ export function NotificationsScreen() {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons
-            name="notifications-outline"
-            size={56}
-            color={colors.primary}
-            style={{ marginBottom: spacing.lg }}
-          />
-          <Text style={styles.emptyTitle}>Пока нет уведомлений</Text>
-          <Text style={styles.emptyText}>
-            Здесь будут появляться обновления{'\n'}по вашим задачам
-          </Text>
+          <EmptyStateIllustration variant="no-notifications" />
         </View>
       )}
     </ScreenWrapper>
@@ -179,7 +170,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   list: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   notificationCard: {
     flexDirection: 'row',

@@ -516,7 +516,7 @@ function formatRublesShort(amount: number): string {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
     gap: spacing.lg,
   },
 

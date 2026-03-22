@@ -16,12 +16,15 @@ import {
   Button,
   AppDialog,
   ProgressBar,
+  EmptyStateIllustration,
+  SharedHeader,
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
+import { useNotificationStore } from '../../store/notificationStore';
 import { Project, REPAIR_TYPE_LABELS } from '../../types';
 import {
   fetchSupervisorAllProjects,
@@ -120,6 +123,11 @@ export function SupervisorHomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id?.startsWith('dev-');
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+
+  useEffect(() => {
+    if (user) useNotificationStore.getState().loadNotifications(user.id);
+  }, [user]);
 
   const [activeTab, setActiveTab] = useState<HomeTab>('active');
   const [offeredProjects, setOfferedProjects] = useState<ProjectItem[]>(isDev ? MOCK_OFFERED : []);
@@ -416,9 +424,11 @@ export function SupervisorHomeScreen({ navigation }: any) {
 
   const renderEmpty = (title: string, subtitle: string) => (
     <Card style={styles.emptyCard} key="empty">
-      <Ionicons name="clipboard-outline" size={48} color={colors.primary} />
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptySubtitle}>{subtitle}</Text>
+      <EmptyStateIllustration
+        variant="no-projects"
+        title={title}
+        subtitle={subtitle}
+      />
     </Card>
   );
 
@@ -446,11 +456,13 @@ export function SupervisorHomeScreen({ navigation }: any) {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <Text style={styles.headerLabel}>Панель супервайзера</Text>
-          <Text style={styles.headerName}>{user?.name || 'Супервайзер'}</Text>
-        </View>
+        <SharedHeader
+          title={user?.name || 'Супервайзер'}
+          subtitle="Панель супервайзера"
+          onAvatarPress={() => navigation.navigate('Profile')}
+          notificationCount={unreadCount}
+          onNotificationPress={() => navigation.navigate('NotificationsStack')}
+        />
 
         {/* Stats */}
         <View style={styles.statsRow}>
@@ -558,21 +570,7 @@ function enrichProject(p: Project): ProjectItem {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 120,
-  },
-
-  // Header
-  headerSection: {
-    marginBottom: spacing.xl,
-    marginTop: spacing.lg,
-  },
-  headerLabel: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  headerName: {
-    ...typography.h1,
-    color: colors.heading,
+    paddingBottom: 24,
   },
 
   // Stats row

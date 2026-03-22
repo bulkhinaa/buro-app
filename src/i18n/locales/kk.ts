@@ -41,11 +41,11 @@ const kk: Record<string, string> = {
 
   // ─── Onboarding ───
   'onboarding.slide1.title': 'Стресссіз жөндеу',
-  'onboarding.slide1.subtitle': 'Біз әр кезеңді бақылаймыз —\nдемонтаждан соңғы тазалауға дейін',
+  'onboarding.slide1.subtitle': 'Біз әр кезеңді бақылаймыз — демонтаждан соңғы тазалауға дейін',
   'onboarding.slide2.title': 'Тәуелсіз бақылау',
-  'onboarding.slide2.subtitle': 'Әр нысанда супервайзер жұмыс істейді —\nол сапатты тексереді және жұмыстарды сіз үшін қабылдайды',
-  'onboarding.slide3.title': 'Ашықтық\nәр қадамда',
-  'onboarding.slide3.subtitle': 'Сіз жөндеу барысын нақты уақытта көресіз:\nфотоесептер, кезеңдер, мерзімдер мен шығындар',
+  'onboarding.slide2.subtitle': 'Әр нысанда супервайзер жұмыс істейді — ол сапатты тексереді және жұмыстарды сіз үшін қабылдайды',
+  'onboarding.slide3.title': 'Ашықтық әр қадамда',
+  'onboarding.slide3.subtitle': 'Сіз жөндеу барысын нақты уақытта көресіз: фотоесептер, кезеңдер, мерзімдер мен шығындар',
   'onboarding.start': 'Бастау',
 
   // ─── Profile setup ───

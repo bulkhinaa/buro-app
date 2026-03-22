@@ -41,11 +41,11 @@ const uz: Record<string, string> = {
 
   // ─── Onboarding ───
   'onboarding.slide1.title': 'Taʼmir stresssiz',
-  'onboarding.slide1.subtitle': 'Biz har bir bosqichni nazorat qilamiz —\ndemontajdan yakuniy tozalashgacha',
+  'onboarding.slide1.subtitle': 'Biz har bir bosqichni nazorat qilamiz — demontajdan yakuniy tozalashgacha',
   'onboarding.slide2.title': 'Mustaqil nazorat',
-  'onboarding.slide2.subtitle': 'Har bir obyektda supervayzer ishlaydi —\nu sifatni tekshiradi va ishlarni siz uchun qabul qiladi',
-  'onboarding.slide3.title': 'Shaffoflik\nhar bir qadamda',
-  'onboarding.slide3.subtitle': 'Siz taʼmir jarayonini real vaqtda koʻrasiz:\nfotohisobotlar, bosqichlar, muddatlar va xarajatlar',
+  'onboarding.slide2.subtitle': 'Har bir obyektda supervayzer ishlaydi — u sifatni tekshiradi va ishlarni siz uchun qabul qiladi',
+  'onboarding.slide3.title': 'Shaffoflik har bir qadamda',
+  'onboarding.slide3.subtitle': 'Siz taʼmir jarayonini real vaqtda koʻrasiz: fotohisobotlar, bosqichlar, muddatlar va xarajatlar',
   'onboarding.start': 'Boshlash',
 
   // ─── Profile setup ───

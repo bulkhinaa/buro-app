@@ -146,6 +146,12 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // F-67: Checklist CRUD
+  const [editingChecklist, setEditingChecklist] = useState(false);
+  const [newCheckText, setNewCheckText] = useState('');
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
+
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
@@ -273,9 +279,16 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
       const found = allStages.find((s) => s.id === stageId);
       if (found) {
         setStage(found);
-        // Load checklist from template data
-        // In production, checklist would come from stage_templates or stage record
-        setChecklist(MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })));
+        // Load checklist: from saved JSON if available, otherwise from template
+        if ((found as any).checklist_json) {
+          try {
+            setChecklist(JSON.parse((found as any).checklist_json));
+          } catch {
+            setChecklist(MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })));
+          }
+        } else {
+          setChecklist(MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })));
+        }
       }
       setPhotos(stagePhotos);
     } catch {
@@ -308,6 +321,42 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
     );
   };
 
+  // ─── Checklist CRUD ──────────────────────────────────────────────────────
+
+  const addCheckItem = () => {
+    const text = newCheckText.trim();
+    if (!text) return;
+    setChecklist((prev) => [...prev, { text, state: 'unchecked' }]);
+    setNewCheckText('');
+    showToast('Пункт добавлен', 'success');
+  };
+
+  const removeCheckItem = (idx: number) => {
+    setChecklist((prev) => prev.filter((_, i) => i !== idx));
+    showToast('Пункт удалён', 'info');
+  };
+
+  const startEditItem = (idx: number) => {
+    setEditingIdx(idx);
+    setEditingText(checklist[idx].text);
+  };
+
+  const saveEditItem = () => {
+    if (editingIdx === null) return;
+    const text = editingText.trim();
+    if (!text) return;
+    setChecklist((prev) =>
+      prev.map((item, i) => (i === editingIdx ? { ...item, text } : item)),
+    );
+    setEditingIdx(null);
+    setEditingText('');
+  };
+
+  const cancelEdit = () => {
+    setEditingIdx(null);
+    setEditingText('');
+  };
+
   // ─── Approve ──────────────────────────────────────────────────────────────
 
   const handleApprove = () => {
@@ -324,7 +373,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
           onPress: async () => {
             setSaving(true);
             try {
-              if (!isDev) await supervisorApproveStage(stageId);
+              if (!isDev) await supervisorApproveStage(stageId, undefined, JSON.stringify(checklist));
               setStage((prev) => prev ? { ...prev, status: 'approved', approved_at: new Date().toISOString() } : prev);
               hapticSuccess();
               showToast('Этап принят. Клиент уведомлён.', 'success');
@@ -608,15 +657,32 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Чек-лист</Text>
-            <Text style={[
-              styles.sectionCount,
-              allChecked && { color: colors.success },
-            ]}>
-              {doneCount}/{checklist.length}
-            </Text>
+            <View style={styles.checklistHeaderRight}>
+              {!isDecided && (
+                <Pressable
+                  style={styles.editToggleBtn}
+                  onPress={() => setEditingChecklist((v) => !v)}
+                >
+                  <Ionicons
+                    name={editingChecklist ? 'checkmark-done-outline' : 'create-outline'}
+                    size={18}
+                    color={editingChecklist ? colors.success : colors.primary}
+                  />
+                  <Text style={[styles.editToggleText, editingChecklist && { color: colors.success }]}>
+                    {editingChecklist ? 'Готово' : 'Править'}
+                  </Text>
+                </Pressable>
+              )}
+              <Text style={[
+                styles.sectionCount,
+                allChecked && { color: colors.success },
+              ]}>
+                {doneCount}/{checklist.length}
+              </Text>
+            </View>
           </View>
 
-          {!isReviewable && !isDecided && (
+          {!isReviewable && !isDecided && !editingChecklist && (
             <View style={styles.checklistNote}>
               <Ionicons name="information-circle-outline" size={15} color={colors.textLight} />
               <Text style={styles.checklistNoteText}>
@@ -627,45 +693,93 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
 
           <Card style={styles.checklistCard}>
             {checklist.map((item, idx) => (
-              <Pressable
+              <View
                 key={idx}
-                onPress={() => cycleCheckState(idx)}
                 style={[
                   styles.checkRow,
                   idx < checklist.length - 1 && styles.checkRowBorder,
                 ]}
               >
-                {/* Checkbox */}
-                <View style={[
-                  styles.checkbox,
-                  item.state === 'done' && styles.checkboxDone,
-                  item.state === 'na' && styles.checkboxNa,
-                ]}>
-                  {item.state === 'done' && (
-                    <Ionicons name="checkmark" size={14} color={colors.white} />
-                  )}
-                  {item.state === 'na' && (
-                    <Text style={styles.naText}>Н/П</Text>
-                  )}
-                </View>
-
-                {/* Text */}
-                <Text style={[
-                  styles.checkText,
-                  item.state === 'done' && styles.checkTextDone,
-                  item.state === 'na' && styles.checkTextNa,
-                ]}>
-                  {item.text}
-                </Text>
-
-                {/* Tap hint */}
-                {isReviewable && (
-                  <Text style={styles.checkHint}>
-                    {item.state === 'unchecked' ? '→ ✓' : item.state === 'done' ? '→ Н/П' : '→ ☐'}
-                  </Text>
+                {editingChecklist ? (
+                  /* ── Edit mode ── */
+                  editingIdx === idx ? (
+                    <View style={styles.checkEditRow}>
+                      <TextInput
+                        style={[styles.checkEditInput, webInputReset]}
+                        value={editingText}
+                        onChangeText={setEditingText}
+                        onSubmitEditing={saveEditItem}
+                        autoFocus
+                      />
+                      <Pressable onPress={saveEditItem} style={styles.checkEditBtn}>
+                        <Ionicons name="checkmark" size={18} color={colors.success} />
+                      </Pressable>
+                      <Pressable onPress={cancelEdit} style={styles.checkEditBtn}>
+                        <Ionicons name="close" size={18} color={colors.textLight} />
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable style={styles.checkEditRow} onPress={() => startEditItem(idx)}>
+                      <Text style={styles.checkText}>{item.text}</Text>
+                      <Pressable onPress={() => startEditItem(idx)} style={styles.checkEditBtn}>
+                        <Ionicons name="pencil-outline" size={16} color={colors.textLight} />
+                      </Pressable>
+                      <Pressable onPress={() => removeCheckItem(idx)} style={styles.checkEditBtn}>
+                        <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                      </Pressable>
+                    </Pressable>
+                  )
+                ) : (
+                  /* ── Normal mode ── */
+                  <Pressable
+                    style={styles.checkRowInner}
+                    onPress={() => cycleCheckState(idx)}
+                  >
+                    <View style={[
+                      styles.checkbox,
+                      item.state === 'done' && styles.checkboxDone,
+                      item.state === 'na' && styles.checkboxNa,
+                    ]}>
+                      {item.state === 'done' && (
+                        <Ionicons name="checkmark" size={14} color={colors.white} />
+                      )}
+                      {item.state === 'na' && (
+                        <Text style={styles.naText}>Н/П</Text>
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.checkText,
+                      item.state === 'done' && styles.checkTextDone,
+                      item.state === 'na' && styles.checkTextNa,
+                    ]}>
+                      {item.text}
+                    </Text>
+                    {isReviewable && (
+                      <Text style={styles.checkHint}>
+                        {item.state === 'unchecked' ? '→ ✓' : item.state === 'done' ? '→ Н/П' : '→ ☐'}
+                      </Text>
+                    )}
+                  </Pressable>
                 )}
-              </Pressable>
+              </View>
             ))}
+
+            {/* Add new checklist item (edit mode) */}
+            {editingChecklist && (
+              <View style={[styles.checkRow, styles.addCheckRow]}>
+                <TextInput
+                  style={[styles.addCheckInput, webInputReset]}
+                  placeholder="Новый пункт..."
+                  placeholderTextColor={colors.textLight}
+                  value={newCheckText}
+                  onChangeText={setNewCheckText}
+                  onSubmitEditing={addCheckItem}
+                />
+                <Pressable onPress={addCheckItem} style={styles.addCheckBtn}>
+                  <Ionicons name="add-circle" size={28} color={colors.primary} />
+                </Pressable>
+              </View>
+            )}
           </Card>
 
           {isReviewable && !allChecked && (
@@ -777,7 +891,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
     gap: spacing.md,
   },
   center: {
@@ -1008,6 +1122,63 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.warning,
     flex: 1,
+  },
+
+  // Checklist CRUD
+  checklistHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  editToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  editToggleText: {
+    ...typography.smallBold,
+    color: colors.primary,
+  },
+  checkRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  checkEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  checkEditInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.heading,
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 0,
+  },
+  checkEditBtn: {
+    padding: spacing.xs,
+  },
+  addCheckRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  addCheckInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.heading,
+    paddingVertical: spacing.xs,
+    borderWidth: 0,
+  },
+  addCheckBtn: {
+    padding: spacing.xs,
   },
 
   // Actions

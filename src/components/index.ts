@@ -47,6 +47,7 @@ export { Toast } from './Toast';
 
 // Stage
 export { StageAccordion } from './StageAccordion';
+export { ProjectTimeline } from './ProjectTimeline';
 
 // Liquid Glass components
 export { GlassView } from './GlassView';
@@ -59,5 +60,16 @@ export { WeekGrid } from './WeekGrid';
 // Date picker
 export { DateRangePicker } from './DateRangePicker';
 
+// Photo
+export { PhotoGallery } from './PhotoGallery';
+
+// Header
+export { SharedHeader } from './SharedHeader';
+
 // Error handling
 export { ErrorBoundary } from './ErrorBoundary';
+
+// UI Polish
+export { EmptyStateIllustration } from './EmptyStateIllustration';
+export { AnimatedEntry } from './AnimatedEntry';
+export { Skeleton, SkeletonCard } from './Skeleton';

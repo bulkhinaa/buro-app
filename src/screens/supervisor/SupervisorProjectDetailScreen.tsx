@@ -66,8 +66,8 @@ const MOCK_STAGES: Stage[] = [
     status: 'approved',
     deadline: '2026-03-01',
     started_at: '2026-02-25',
-    completed_at: '2026-02-30',
-    approved_at: '2026-02-31',
+    completed_at: '2026-02-28',
+    approved_at: '2026-03-01',
   },
   {
     id: 'stg-3',
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
 
   // Scroll
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   tabContent: {
     gap: spacing.md,

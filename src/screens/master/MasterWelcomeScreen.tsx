@@ -45,17 +45,24 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
   const slide = SLIDE_CONFIGS[currentIndex];
 
   const goToSlide = useCallback((nextIndex: number) => {
-    // Fade out → change slide → fade in
+    if (Platform.OS === 'web') {
+      // Web: skip animation to avoid callback issues, just switch instantly
+      fadeAnim.setValue(0);
+      setCurrentIndex(nextIndex);
+      setTimeout(() => fadeAnim.setValue(1), 30);
+      return;
+    }
+    // Native: fade out → change slide → fade in
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: Platform.OS !== 'web',
+      useNativeDriver: true,
     }).start(() => {
       setCurrentIndex(nextIndex);
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: true,
       }).start();
     });
   }, [fadeAnim]);

@@ -56,7 +56,7 @@ export function GlassTabBar({
         const badge = options.tabBarBadge;
 
         const icon = options.tabBarIcon
-          ? options.tabBarIcon({ focused: isFocused, color, size: 22 })
+          ? options.tabBarIcon({ focused: isFocused, color, size: 24 })
           : null;
 
         return (
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   inner: {
     flexDirection: 'row',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   tab: {
     flex: 1,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     margin: 4,
   },
   label: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
   labelActive: {

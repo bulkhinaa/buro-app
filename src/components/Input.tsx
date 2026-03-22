@@ -110,7 +110,9 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   inputRowFocused: {
-    // No border on focus — clean look
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
   },
   inputRowError: {
     borderWidth: 1.5,

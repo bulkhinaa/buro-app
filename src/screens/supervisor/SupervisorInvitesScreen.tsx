@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
 
   listContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
     gap: spacing.sm,
   },
 

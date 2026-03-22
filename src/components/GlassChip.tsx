@@ -4,11 +4,12 @@ import { BlurView } from 'expo-blur';
 import { colors, spacing, radius, typography } from '../theme';
 import { glass } from '../theme/glass';
 
-interface GlassChipProps {
+export interface GlassChipProps {
   label: string;
   onPress?: () => void;
   variant?: 'light' | 'dark';
   size?: 'sm' | 'md';
+  active?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export function GlassChip({
   onPress,
   variant = 'light',
   size = 'md',
+  active = false,
 }: GlassChipProps) {
   const isLight = variant === 'light';
   const isSmall = size === 'sm';
@@ -29,7 +31,7 @@ export function GlassChip({
       style={[
         styles.label,
         isSmall && styles.labelSmall,
-        { color: isLight ? colors.heading : colors.white },
+        { color: active ? colors.white : isLight ? colors.heading : colors.white },
       ]}
     >
       {label}
@@ -40,8 +42,8 @@ export function GlassChip({
     styles.chip,
     isSmall && styles.chipSmall,
     {
-      backgroundColor: isLight ? glass.fill.light : glass.fill.dark,
-      borderColor: isLight ? glass.border.light : glass.border.subtle,
+      backgroundColor: active ? colors.primary : isLight ? glass.fill.light : glass.fill.dark,
+      borderColor: active ? colors.primary : isLight ? glass.border.light : glass.border.subtle,
     },
   ];
 
