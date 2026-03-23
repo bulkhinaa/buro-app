@@ -6,8 +6,8 @@ import { LevelBadge, MasterLevel } from './LevelBadge';
 
 interface LabelMasterProps {
   level: MasterLevel;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   visitCount?: number;
 }
 
@@ -20,12 +20,14 @@ export function LabelMaster({
   return (
     <View style={styles.container}>
       <LevelBadge level={level} variant="outline" size="sm" />
-      <View style={styles.ratingContainer}>
-        <Ionicons name="star" size={14} color={colors.primary} />
-        <Text style={styles.ratingText}>
-          {rating.toFixed(1)} ({reviewCount})
-        </Text>
-      </View>
+      {rating !== undefined && (
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={14} color={colors.primary} />
+          <Text style={styles.ratingText}>
+            {rating.toFixed(1)}{reviewCount !== undefined ? ` (${reviewCount})` : ''}
+          </Text>
+        </View>
+      )}
       {visitCount !== undefined && (
         <View style={styles.visitContainer}>
           <Text style={styles.visitText}>{visitCount} визита</Text>
