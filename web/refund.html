@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Политика возврата — Бюро ремонтов</title>
+  <style>
+    :root {
+      --primary: #7B2D3E;
+      --text: #4A4440;
+      --heading: #1A1A1A;
+      --bg: #F3EDE8;
+      --card: #FFFFFF;
+      --border: #E8E2D9;
+      --light: #8A837D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 28px 20px 24px;
+      text-align: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .header p { font-size: 13px; opacity: 0.8; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+    h2 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 12px; margin-top: 4px; }
+    p { margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li { margin-bottom: 6px; }
+    .section-num {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .section-header { display: flex; align-items: center; margin-bottom: 12px; }
+    .footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--light); }
+    a { color: var(--primary); }
+    .highlight {
+      background: #FFF8F0;
+      border-left: 3px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Политика возврата</h1>
+    <p>ООО «Бюро ремонтов» · Редакция от 01.03.2026</p>
+  </div>
+
+  <div class="container">
+
+    <div class="card">
+      <div class="highlight">
+        <p>Поэтапная система оплаты «Бюро ремонтов» минимизирует риски: вы платите только за принятые этапы. Тем не менее, мы описываем все возможные ситуации возврата.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">1</span>
+        <h2>Когда возврат невозможен</h2>
+      </div>
+      <p>Оплата за этап не возвращается, если:</p>
+      <ul>
+        <li>Этап принят Супервайзером и Клиентом без замечаний</li>
+        <li>Работы выполнены в соответствии с согласованным техническим заданием</li>
+        <li>Клиент изменил требования после начала этапа</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">2</span>
+        <h2>Когда возврат возможен</h2>
+      </div>
+      <p>Возврат денежных средств возможен в следующих случаях:</p>
+      <ul>
+        <li><strong>Отказ от этапа до его начала</strong> — полный возврат аванса, если работа не начата</li>
+        <li><strong>Ненадлежащее качество</strong> — если Мастер не устранил недостатки после повторного отклонения Супервайзером</li>
+        <li><strong>Срыв сроков</strong> — если задержка более 30 дней произошла по вине Мастера</li>
+        <li><strong>Ошибка платформы</strong> — двойное списание, технический сбой</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">3</span>
+        <h2>Порядок подачи заявки на возврат</h2>
+      </div>
+      <ul>
+        <li>Напишите на <a href="mailto:refund@buroremontov.ru">refund@buroremontov.ru</a> с темой «Возврат — [номер проекта]»</li>
+        <li>Опишите причину возврата и приложите доказательства (фото, переписку)</li>
+        <li>Мы рассмотрим заявку в течение 5 рабочих дней</li>
+        <li>При положительном решении возврат поступит в течение 10 рабочих дней</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">4</span>
+        <h2>Гарантийные обязательства</h2>
+      </div>
+      <p>На все выполненные работы действует гарантийный период:</p>
+      <ul>
+        <li>Черновые работы (стяжка, штукатурка, электрика) — 12 месяцев</li>
+        <li>Чистовые работы (плитка, покраска, укладка) — 6 месяцев</li>
+        <li>Сантехника — 12 месяцев на монтаж (не на оборудование)</li>
+      </ul>
+      <p>При обнаружении гарантийных дефектов Мастер обязан их устранить за свой счёт. Для гарантийных обращений пишите на <a href="mailto:support@buroremontov.ru">support@buroremontov.ru</a>.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">5</span>
+        <h2>Контакты</h2>
+      </div>
+      <p><strong>ООО «Бюро ремонтов»</strong></p>
+      <p>Email: <a href="mailto:refund@buroremontov.ru">refund@buroremontov.ru</a></p>
+      <p>Телефон: <a href="tel:+74951234567">+7 495 123-45-67</a></p>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 ООО «Бюро ремонтов». Все права защищены.</p>
+    </div>
+  </div>
+</body>
+</html>

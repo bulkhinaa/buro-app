@@ -13,6 +13,7 @@ import { MyReviewsScreen } from '../screens/profile/MyReviewsScreen';
 import { SupportScreen } from '../screens/profile/SupportScreen';
 import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
+import { DocumentViewerScreen } from '../screens/profile/DocumentViewerScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { colors } from '../theme';
@@ -84,6 +85,11 @@ export function SupervisorNavigator() {
       <Stack.Screen name="Documents" component={DocumentsScreen} options={{ headerTitle: 'Документы' }} />
       <Stack.Screen name="About" component={AboutScreen} options={{ headerTitle: 'О приложении' }} />
       <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} options={{ headerTitle: 'Язык' }} />
+      <Stack.Screen
+        name="DocumentViewer"
+        component={DocumentViewerScreen}
+        options={({ route }: any) => ({ headerTitle: route?.params?.title ?? 'Документ' })}
+      />
     </Stack.Navigator>
   );
 }

@@ -41,13 +41,6 @@ export function AboutScreen() {
           />
           <CellIndicator
             variant="card"
-            icon={<Ionicons name="paper-plane-outline" size={20} color={colors.primary} />}
-            name="Telegram"
-            showChevron
-            onPress={() => Linking.openURL('https://t.me/buroremontov')}
-          />
-          <CellIndicator
-            variant="card"
             icon={<Ionicons name="star-outline" size={20} color={colors.primary} />}
             name="Оценить приложение"
             showChevron
@@ -66,26 +59,11 @@ export function AboutScreen() {
           />
         </View>
 
-        {/* Stats */}
-        <Text style={styles.sectionTitle}>Платформа в цифрах</Text>
-        <View style={styles.statsRow}>
-          {[
-            { num: '150+', label: 'проектов' },
-            { num: '4.8', label: 'рейтинг' },
-            { num: '98%', label: 'довольны' },
-          ].map((stat) => (
-            <View key={stat.num} style={styles.statBlock}>
-              <Text style={styles.statNumber}>{stat.num}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* Legal */}
         <Text style={styles.legalText}>
           {'\u00A9'} 2026 Бюро ремонтов. Все права защищены.
         </Text>
-        <Text style={styles.legalText}>ИП Бульхин Артём Викторович</Text>
+        <Text style={styles.legalText}>ООО «Бюро ремонтов»</Text>
         <Text style={styles.legalText}>ИНН: в процессе регистрации</Text>
 
         <View style={{ height: 100 }} />
@@ -159,36 +137,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 12,
     elevation: 2,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: spacing.xxxl,
-  },
-  statBlock: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    paddingVertical: spacing.lg,
-    marginHorizontal: spacing.xs,
-  },
-  statNumber: {
-    ...typography.h2,
-    color: colors.primary,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
   },
   legalText: {
     ...typography.caption,

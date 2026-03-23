@@ -54,6 +54,16 @@ export function ProfileScreen() {
 
   return (
     <ScreenWrapper style={styles.tabBarSpacer}>
+      {/* Back button */}
+      <Pressable
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        accessibilityLabel="Назад"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons name="chevron-back" size={24} color={colors.primary} />
+      </Pressable>
+
       <View style={styles.header}>
         {user?.avatar_url ? (
           <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
@@ -206,7 +216,10 @@ export function ProfileScreen() {
           activeIcon="home"
           label={t('profile.roleClient')}
           isActive={activeView === 'client'}
-          onPress={() => setActiveView('client')}
+          onPress={() => {
+            setActiveView('client');
+            showToast('Кабинет клиента', 'info');
+          }}
         />
 
         {/* Master role */}
@@ -216,7 +229,10 @@ export function ProfileScreen() {
             activeIcon="hammer"
             label={t('profile.roleMaster')}
             isActive={activeView === 'master'}
-            onPress={() => setActiveView('master')}
+            onPress={() => {
+              setActiveView('master');
+              showToast('Кабинет мастера', 'info');
+            }}
           />
         ) : (
           <RoleCard
@@ -236,7 +252,10 @@ export function ProfileScreen() {
             activeIcon="eye"
             label={t('profile.roleSupervisor')}
             isActive={activeView === 'supervisor'}
-            onPress={() => setActiveView('supervisor')}
+            onPress={() => {
+              setActiveView('supervisor');
+              showToast('Кабинет супервайзера', 'info');
+            }}
           />
         )}
       </View>
@@ -339,6 +358,12 @@ function RoleCard({
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    padding: spacing.xs,
+  },
   header: {
     alignItems: 'center',
     marginTop: spacing.lg,

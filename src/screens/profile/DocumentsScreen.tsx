@@ -1,52 +1,57 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, CellIndicator } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 
+const BASE_URL = 'https://bulkhinaa.github.io/buro-app';
+
 interface DocItem {
   icon: keyof typeof Ionicons.glyphMap;
   name: string;
-  description: string;
-  url: string;
+  title: string;
+  uri: string;
 }
 
 const DOCUMENTS: DocItem[] = [
   {
     icon: 'document-text-outline',
     name: 'Пользовательское соглашение',
-    description: 'Условия использования платформы',
-    url: 'https://buroremontov.ru/terms',
+    title: 'Пользовательское соглашение',
+    uri: `${BASE_URL}/terms.html`,
   },
   {
     icon: 'shield-checkmark-outline',
     name: 'Политика конфиденциальности',
-    description: 'Обработка персональных данных',
-    url: 'https://buroremontov.ru/privacy',
+    title: 'Политика конфиденциальности',
+    uri: `${BASE_URL}/privacy.html`,
   },
   {
     icon: 'briefcase-outline',
     name: 'Публичная оферта',
-    description: 'Договор оказания услуг',
-    url: 'https://buroremontov.ru/offer',
+    title: 'Публичная оферта',
+    uri: `${BASE_URL}/offer.html`,
   },
   {
     icon: 'card-outline',
     name: 'Порядок оплаты',
-    description: 'Условия и способы оплаты',
-    url: 'https://buroremontov.ru/payment',
+    title: 'Порядок оплаты',
+    uri: `${BASE_URL}/payment.html`,
   },
   {
     icon: 'return-up-back-outline',
     name: 'Политика возврата',
-    description: 'Условия возврата средств',
-    url: 'https://buroremontov.ru/refund',
+    title: 'Политика возврата',
+    uri: `${BASE_URL}/refund.html`,
   },
 ];
 
 export function DocumentsScreen() {
-  const handleOpenDoc = (url: string) => {
-    Linking.openURL(url);
+  const navigation = useNavigation<any>();
+
+  const handleOpenDoc = (uri: string, title: string) => {
+    navigation.navigate('DocumentViewer', { uri, title });
   };
 
   return (
@@ -67,7 +72,7 @@ export function DocumentsScreen() {
               icon={<Ionicons name={doc.icon} size={20} color={colors.primary} />}
               name={doc.name}
               showChevron
-              onPress={() => handleOpenDoc(doc.url)}
+              onPress={() => handleOpenDoc(doc.uri, doc.title)}
             />
           ))}
         </View>

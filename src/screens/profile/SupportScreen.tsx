@@ -77,10 +77,6 @@ export function SupportScreen() {
     Linking.openURL('mailto:support@buroremontov.ru');
   };
 
-  const handleTelegram = () => {
-    Linking.openURL('https://t.me/buroremontov_support');
-  };
-
   return (
     <ScreenWrapper scroll={false}>
       <KeyboardAvoidingView
@@ -109,13 +105,6 @@ export function SupportScreen() {
               value="support@br.ru"
               showChevron
               onPress={handleEmailSupport}
-            />
-            <CellIndicator
-              variant="card"
-              icon={<Ionicons name="paper-plane-outline" size={20} color={colors.primary} />}
-              name="Telegram"
-              showChevron
-              onPress={handleTelegram}
             />
           </View>
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Порядок оплаты — Бюро ремонтов</title>
+  <style>
+    :root {
+      --primary: #7B2D3E;
+      --text: #4A4440;
+      --heading: #1A1A1A;
+      --bg: #F3EDE8;
+      --card: #FFFFFF;
+      --border: #E8E2D9;
+      --light: #8A837D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 28px 20px 24px;
+      text-align: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .header p { font-size: 13px; opacity: 0.8; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+    h2 { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 12px; margin-top: 4px; }
+    p { margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li { margin-bottom: 6px; }
+    .section-num {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .section-header { display: flex; align-items: center; margin-bottom: 12px; }
+    .footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--light); }
+    a { color: var(--primary); }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #F3EDE8;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Порядок оплаты</h1>
+    <p>ООО «Бюро ремонтов» · Редакция от 01.03.2026</p>
+  </div>
+
+  <div class="container">
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">1</span>
+        <h2>Принцип поэтапной оплаты</h2>
+      </div>
+      <p>«Бюро ремонтов» использует поэтапную систему оплаты. Вы платите только за этапы, которые:</p>
+      <ul>
+        <li>Полностью выполнены Мастером</li>
+        <li>Проверены и одобрены Супервайзером</li>
+        <li>Соответствуют согласованному стандарту качества</li>
+      </ul>
+      <p>Это защищает вас от оплаты некачественной работы.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">2</span>
+        <h2>Как происходит оплата</h2>
+      </div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <p>Мастер завершает этап и отправляет отчёт с фотографиями</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <p>Супервайзер проверяет качество и принимает работу</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <p>Вы получаете уведомление об оплате с суммой и реквизитами</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <p>Производите оплату удобным способом</p>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <p>Мастер получает вознаграждение за выполненный этап</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">3</span>
+        <h2>Способы оплаты</h2>
+      </div>
+      <p>В текущей версии платформы оплата производится по реквизитам, которые предоставляет администратор проекта. Способы оплаты:</p>
+      <ul>
+        <li>Банковский перевод по реквизитам</li>
+        <li>Перевод через СБП (Система быстрых платежей)</li>
+        <li>Наличными (по согласованию)</li>
+      </ul>
+      <p>Онлайн-оплата банковской картой будет доступна в следующих версиях платформы.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">4</span>
+        <h2>Комиссия платформы</h2>
+      </div>
+      <p>Платформа взимает комиссию от 10 до 20% от стоимости каждого этапа. Размер комиссии фиксируется при создании проекта и не изменяется в ходе его реализации.</p>
+      <p>Комиссия включает:</p>
+      <ul>
+        <li>Организацию и координацию работ</li>
+        <li>Контроль качества через Супервайзера</li>
+        <li>Техническую поддержку и сопровождение проекта</li>
+        <li>Гарантию исправления недочётов</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">5</span>
+        <h2>Документы об оплате</h2>
+      </div>
+      <p>После оплаты каждого этапа администратор формирует и отправляет вам документы об оплате. По запросу предоставляется акт выполненных работ.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <span class="section-num">6</span>
+        <h2>Вопросы по оплате</h2>
+      </div>
+      <p>По вопросам оплаты обращайтесь:</p>
+      <p>Email: <a href="mailto:payments@buroremontov.ru">payments@buroremontov.ru</a></p>
+      <p>Телефон: <a href="tel:+74951234567">+7 495 123-45-67</a></p>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 ООО «Бюро ремонтов». Все права защищены.</p>
+    </div>
+  </div>
+</body>
+</html>
