@@ -219,24 +219,6 @@ export function ClientHomeScreen({ navigation }: Props) {
           </ScrollView>
         </AnimatedEntry>
 
-        {/* Platform stats — glass blocks */}
-        <AnimatedEntry index={2}>
-          <Text style={[styles.sectionTitle, styles.padded]}>{t('home.trustUs')}</Text>
-          <View style={[styles.statsRow, styles.padded]}>
-            {[
-              { num: '150+', label: t('home.statsProjects'), icon: 'construct-outline' as keyof typeof Ionicons.glyphMap },
-              { num: '4.8', label: t('home.statsRating'), icon: 'star-outline' as keyof typeof Ionicons.glyphMap },
-              { num: '98%', label: t('home.statsClients'), icon: 'heart-outline' as keyof typeof Ionicons.glyphMap },
-            ].map((stat) => (
-              <View key={stat.num} style={styles.statBlock}>
-                <Ionicons name={stat.icon} size={20} color={colors.primary} style={{ marginBottom: 4 }} />
-                <Text style={styles.statNumber}>{stat.num}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            ))}
-          </View>
-        </AnimatedEntry>
-
         {/* Portfolio carousel — reference card design */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
           <Text style={styles.sectionTitle}>{t('home.realizedProjects')}</Text>
@@ -512,33 +494,6 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     lineHeight: 18,
   },
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: spacing.xxl,
-  },
-  statBlock: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    paddingVertical: spacing.lg,
-    marginHorizontal: spacing.xs,
-  },
-  statNumber: {
-    ...typography.h1,
-    color: colors.primary,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-
   // --- Portfolio carousel (reference card design) ---
   portfolioScroll: {
     paddingHorizontal: spacing.xl,
