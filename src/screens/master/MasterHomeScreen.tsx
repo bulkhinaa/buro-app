@@ -8,6 +8,7 @@ import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useTranslation } from 'react-i18next';
+import { trackTap } from '../../services/analyticsService';
 
 // Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
 // Set to true once the function is deployed and tested.
@@ -32,6 +33,7 @@ export function MasterHomeScreen({ navigation }: any) {
   }, [user]);
 
   const handleTaskPress = (task: TaskItem) => {
+    trackTap('MasterHome', 'open_task', { stage_id: task.id, status: task.status });
     navigation?.navigate('MasterTaskDetail', { task });
   };
 

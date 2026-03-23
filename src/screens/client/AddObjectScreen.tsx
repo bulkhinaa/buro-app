@@ -29,6 +29,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useObjectStore } from '../../store/objectStore';
 import { useToastStore } from '../../store/toastStore';
 import { filterLayouts } from '../../data/layouts';
+import { trackForm } from '../../services/analyticsService';
 import {
   PropertyType,
   RoomCount,
@@ -286,6 +287,7 @@ export function AddObjectScreen({ navigation }: Props) {
         customLayoutUrl: null,
       });
       setCreatedObjectId(object.id);
+      trackForm('AddObject', 'complete', { property_type: propertyType, rooms, area: parseFloat(area) });
       setShowSuccess(true);
       hapticSuccess();
     } catch {
@@ -330,7 +332,9 @@ export function AddObjectScreen({ navigation }: Props) {
         />
 
         <Input
-          placeholder="Общая площадь, м²"
+          label="Общая площадь"
+          showLabel={true}
+          placeholder="Площадь, м²"
           value={area}
           onChangeText={(text) => {
             setArea(text);

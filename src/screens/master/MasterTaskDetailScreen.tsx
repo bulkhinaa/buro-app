@@ -27,6 +27,7 @@ import { useToastStore } from '../../store/toastStore';
 import { useTaskStore } from '../../store/taskStore';
 import { useAuthStore } from '../../store/authStore';
 import { STAGE_STATUS_LABELS } from '../../types';
+import { trackTap } from '../../services/analyticsService';
 
 const MAX_PHOTOS = 5;
 
@@ -122,6 +123,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
         {
           text: 'Выполнено',
           onPress: async () => {
+            trackTap('StageDetail', 'mark_done', { stage_id: task.id });
             setSaving(true);
             try {
               // Upload photos to Supabase Storage + photo_reports table

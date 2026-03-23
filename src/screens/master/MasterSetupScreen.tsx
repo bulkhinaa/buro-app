@@ -40,6 +40,7 @@ import type {
 } from '../../types';
 // Labels are now provided via i18n (labels.experience.*, labels.skillLevel.*, labels.priceType.*)
 import { useTranslation } from 'react-i18next';
+import { trackForm } from '../../services/analyticsService';
 
 const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
@@ -227,6 +228,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
       };
 
       await completeSetup(data);
+      trackForm('MasterSetup', 'complete', { specializations_count: specializations.length });
       hapticSuccess();
       setShowSuccess(true);
     } catch {
@@ -401,6 +403,8 @@ export function MasterSetupScreen({ onComplete }: Props) {
       {showAddProject ? (
         <View style={styles.addProjectForm}>
           <Input
+            label={t('master.setup.projectTitle')}
+            showLabel={true}
             placeholder={t('master.setup.projectTitle')}
             value={newProjectTitle}
             onChangeText={(text) => {

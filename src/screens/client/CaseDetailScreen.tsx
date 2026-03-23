@@ -26,6 +26,7 @@ import {
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useToastStore } from '../../store/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -294,6 +295,8 @@ export function CaseDetailScreen({ navigation, route }: Props) {
   const caseId: string = route.params?.caseId || '1';
   const caseData = MOCK_CASES_DETAIL[caseId] || DEFAULT_CASE;
 
+  const showToast = useToastStore((s) => s.show);
+
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
 
@@ -432,7 +435,7 @@ export function CaseDetailScreen({ navigation, route }: Props) {
             {/* Supervisor */}
             <Pressable
               style={({ pressed }) => [styles.teamMember, pressed && styles.teamMemberPressed]}
-              onPress={() => {/* TODO: open profile modal */}}
+              onPress={() => showToast(`${caseData.supervisor.name} · Супервайзер`, 'info')}
             >
               <View style={styles.teamAvatar}>
                 <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
@@ -460,7 +463,7 @@ export function CaseDetailScreen({ navigation, route }: Props) {
                   styles.teamMemberBorder,
                   pressed && styles.teamMemberPressed,
                 ]}
-                onPress={() => {/* TODO: open profile modal */}}
+                onPress={() => showToast(`${master.name} · ${master.role}`, 'info')}
               >
                 <View style={[styles.teamAvatar, styles.teamAvatarMaster]}>
                   <Ionicons name="construct" size={18} color={colors.gold} />

@@ -21,6 +21,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
+import { trackTap } from '../../services/analyticsService';
 
 // Stable reference to avoid infinite re-renders in Zustand selector (BUG-14)
 const EMPTY_MESSAGES: ChatMessage[] = [];
@@ -94,6 +95,7 @@ export function ChatScreen({ route }: Props) {
       showToast('Сообщение изменено', 'success');
     } else {
       // Send mode
+      trackTap('Chat', 'send_message', { project_id: projectId });
       storeSendMessage(
         projectId,
         user.id,
@@ -295,16 +297,26 @@ export function ChatScreen({ route }: Props) {
             flatListRef.current?.scrollToEnd({ animated: false })
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="chatbubbles-outline"
-                size={48}
-                color={colors.textLight}
-              />
-              <Text style={styles.emptyText}>
-                {isLoading ? 'Загрузка...' : 'Начните диалог'}
-              </Text>
-            </View>
+            isLoading ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={48}
+                  color={colors.textLight}
+                />
+                <Text style={styles.emptyText}>Загрузка...</Text>
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={48}
+                  color={colors.textLight}
+                />
+                <Text style={styles.emptyTitle}>Начните общение</Text>
+                <Text style={styles.emptyText}>Задайте вопрос супервайзору или мастеру</Text>
+              </View>
+            )
           }
         />
 
@@ -459,9 +471,16 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
     gap: spacing.md,
   },
+  emptyTitle: {
+    ...typography.h3,
+    color: colors.heading,
+    textAlign: 'center',
+  },
   emptyText: {
     ...typography.body,
     color: colors.textLight,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
 
   // ─── Message bubble ───

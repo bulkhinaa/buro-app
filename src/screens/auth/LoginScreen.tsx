@@ -18,6 +18,7 @@ import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
 import { UserRole } from '../../types';
 import { useTranslation } from 'react-i18next';
+import { trackTap, trackForm } from '../../services/analyticsService';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -201,6 +202,8 @@ export function LoginScreen() {
         }
       }
 
+      const successUser = useAuthStore.getState().user;
+      trackForm('Login', 'login_success', { role: successUser?.role });
       showToast(t('auth.loginSuccess'), 'success');
     } catch (e: unknown) {
       if (__DEV__) { console.error('[YandexAuth] FINAL ERROR:', e); }
@@ -218,6 +221,7 @@ export function LoginScreen() {
    * Start Yandex OAuth flow.
    */
   const handleYandexSignIn = async () => {
+    trackTap('Login', 'yandex_tap');
     try {
       setLoading('yandex');
 

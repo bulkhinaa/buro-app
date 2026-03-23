@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../components';
 import { colors, spacing, radius, typography } from '../theme';
 import { hapticSuccess, hapticLight } from '../utils/haptics';
+import { trackTap } from '../services/analyticsService';
 
 export const SELECTED_ROLE_KEY = 'SELECTED_ROLE';
 
@@ -45,11 +46,13 @@ export function RoleSelectScreen({ onComplete }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleSelect = (key: RoleOption['key']) => {
+    trackTap('RoleSelect', 'select_role', { role: key });
     setSelected(key);
     hapticLight();
   };
 
   const handleConfirm = async () => {
+    trackTap('RoleSelect', 'confirm', { role: selected });
     setLoading(true);
     await AsyncStorage.setItem(SELECTED_ROLE_KEY, selected);
     hapticSuccess();

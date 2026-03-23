@@ -33,6 +33,7 @@ import {
 } from '../../utils/calculator';
 import { getStageBreakdown } from '../../data/stageBreakdown';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { trackTap } from '../../services/analyticsService';
 
 type ViewMode = 'accordion' | 'timeline';
 type SectionTab = 'stages' | 'photos';
@@ -459,21 +460,25 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           {allStagesApproved || project?.status === 'completed' ? (
             <Button
               title="Оставить отзыв"
-              onPress={() =>
+              onPress={() => {
+                trackTap('ProjectDetail', 'leave_review', { project_id: projectId });
                 navigation.navigate('Review', {
                   projectId,
                   supervisorId: project?.supervisor_id,
                   supervisorName,
                   masters: mastersFromStages,
-                })
-              }
+                });
+              }}
               fullWidth
               icon={<Ionicons name="star-outline" size={18} color={colors.white} />}
             />
           ) : project?.supervisor_id ? (
             <Button
               title="Открыть чат"
-              onPress={() => navigation.navigate('Chat', { projectId })}
+              onPress={() => {
+                trackTap('ProjectDetail', 'open_chat', { project_id: projectId, status: project?.status });
+                navigation.navigate('Chat', { projectId });
+              }}
               fullWidth
               icon={<Ionicons name="chatbubble-outline" size={18} color={colors.white} />}
             />

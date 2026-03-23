@@ -16,7 +16,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Chip, GlassChip } from '../../components';
+import { ScreenWrapper, Chip, GlassChip, EmptyStateIllustration } from '../../components';
 import { colors, spacing, radius, typography, glass } from '../../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePortfolioStore } from '../../store/portfolioStore';
@@ -394,20 +394,15 @@ export function PortfolioScreen({ navigation }: Props) {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons
-            name={selectedFilter === 'Избранное' ? 'bookmark-outline' : 'camera-outline'}
-            size={56}
-            color={colors.primary}
-            style={{ marginBottom: spacing.lg }}
-          />
-          <Text style={styles.emptyTitle}>
-            {selectedFilter === 'Избранное' ? 'Нет избранных проектов' : 'Скоро здесь появятся проекты'}
-          </Text>
-          <Text style={styles.emptyText}>
-            {selectedFilter === 'Избранное'
-              ? 'Нажмите на закладку, чтобы сохранить проект'
-              : 'Мы работаем над первыми объектами'}
-          </Text>
+          {selectedFilter === 'Избранное' ? (
+            <EmptyStateIllustration
+              variant="no-results"
+              title="Нет избранных проектов"
+              subtitle="Нажмите на закладку, чтобы сохранить проект"
+            />
+          ) : (
+            <EmptyStateIllustration variant="no-portfolio" />
+          )}
         </View>
       )}
     </ScreenWrapper>

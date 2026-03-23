@@ -34,6 +34,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadFile, generateFilePath } from '../../services/storageService';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
+import { trackTap } from '../../services/analyticsService';
 
 const MAX_SUPERVISOR_PHOTOS = 10;
 
@@ -371,6 +372,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         {
           text: 'Принять ✓',
           onPress: async () => {
+            trackTap('StageReview', 'approve', { stage_id: stageId, project_id: projectId });
             setSaving(true);
             try {
               if (!isDev) await supervisorApproveStage(stageId, undefined, JSON.stringify(checklist));
@@ -406,6 +408,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
           text: 'Отклонить ✗',
           style: 'destructive',
           onPress: async () => {
+            trackTap('StageReview', 'reject', { stage_id: stageId, project_id: projectId });
             setSaving(true);
             try {
               if (!isDev) await supervisorRejectStage(stageId, rejectComment.trim());

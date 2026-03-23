@@ -21,6 +21,7 @@ import { useToastStore } from '../../store/toastStore';
 import { useSupervisorStore } from '../../store/supervisorStore';
 import { hapticSuccess } from '../../utils/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trackForm } from '../../services/analyticsService';
 
 export const SUPERVISOR_SETUP_KEY = 'supervisor_setup_complete';
 
@@ -131,6 +132,7 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
         });
       }
 
+      trackForm('SupervisorSetup', 'complete');
       hapticSuccess();
       showToast('Профиль супервайзера настроен', 'success');
       onComplete();
@@ -196,8 +198,9 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
               ))}
             </View>
 
-            <Text style={styles.label}>Адрес (необязательно)</Text>
             <Input
+              label="Адрес (необязательно)"
+              showLabel={true}
               placeholder="Ваш адрес для расчёта расстояний"
               value={address}
               onChangeText={setAddress}
@@ -214,6 +217,8 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
             </Text>
 
             <Input
+              label="О себе"
+              showLabel={true}
               placeholder="Расскажите о своём подходе к работе..."
               value={about}
               onChangeText={setAbout}

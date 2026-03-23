@@ -6,6 +6,7 @@ import { colors, spacing, radius, typography } from '../theme';
 import { useLanguageStore, LANGUAGES, type LanguageInfo } from '../store/languageStore';
 import { hapticSuccess } from '../utils/haptics';
 import type { SupportedLanguage } from '../types';
+import { trackTap } from '../services/analyticsService';
 
 type Props = {
   onComplete?: () => void;
@@ -44,6 +45,7 @@ export function LanguageSelectScreen({ onComplete }: Props) {
   };
 
   const handleConfirm = async () => {
+    trackTap('LanguageSelect', 'continue', { language: selectedLang });
     setLoading(true);
     await setLanguage(selectedLang);
     hapticSuccess();

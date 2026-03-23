@@ -37,6 +37,7 @@ import {
   REPAIR_RATES,
 } from '../../utils/calculator';
 import { getStageCount } from '../../data/stageBreakdown';
+import { trackForm } from '../../services/analyticsService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 
@@ -253,6 +254,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         objectId,
         scope: selectedScopes.length > 0 ? selectedScopes : undefined,
       });
+      trackForm('CreateProject', 'submit', { repair_type: repairType, has_scope: selectedScopes.length > 0 });
       setDialogTitle('Проект создан!');
       setDialogMessage(
         'Мы уже ищем для вас супервайзера. Обычно это занимает до 24 часов. Вы получите уведомление.',

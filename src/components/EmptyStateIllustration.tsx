@@ -11,7 +11,8 @@ type EmptyVariant =
   | 'no-reviews'
   | 'no-notifications'
   | 'no-masters'
-  | 'no-results';
+  | 'no-results'
+  | 'no-portfolio';
 
 const VARIANT_CONFIG: Record<EmptyVariant, {
   icon: keyof typeof Ionicons.glyphMap;
@@ -46,7 +47,7 @@ const VARIANT_CONFIG: Record<EmptyVariant, {
   'no-notifications': {
     icon: 'notifications-outline',
     title: 'Нет уведомлений',
-    subtitle: 'Вы в курсе всех событий',
+    subtitle: 'Мы сообщим о важных событиях по проекту',
   },
   'no-masters': {
     icon: 'people-outline',
@@ -57,6 +58,11 @@ const VARIANT_CONFIG: Record<EmptyVariant, {
     icon: 'search-outline',
     title: 'Ничего не найдено',
     subtitle: 'Попробуйте изменить параметры поиска',
+  },
+  'no-portfolio': {
+    icon: 'images-outline',
+    title: 'Портфолио пока пусто',
+    subtitle: 'Здесь появятся завершённые проекты',
   },
 };
 
