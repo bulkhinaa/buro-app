@@ -147,8 +147,10 @@ export function AddObjectScreen({ navigation }: Props) {
   const [createdObjectId, setCreatedObjectId] = useState<string | null>(null);
 
   // Step 1 — Address & type
+  const isDev = user?.id.startsWith('dev-') ?? false;
   const [address, setAddress] = useState('');
-  const [addressValidated, setAddressValidated] = useState(false);
+  // Dev users bypass DaData validation — allow any text address
+  const [addressValidated, setAddressValidated] = useState(isDev);
   const [addressTouched, setAddressTouched] = useState(false);
   const [area, setArea] = useState('');
   const [areaTouched, setAreaTouched] = useState(false);
@@ -325,7 +327,7 @@ export function AddObjectScreen({ navigation }: Props) {
             setAddress(text);
             if (text.length > 0) setAddressTouched(true);
           }}
-          onValidated={setAddressValidated}
+          onValidated={(v) => { if (!isDev) setAddressValidated(v); }}
           onSuggestionSelected={handleAddressSelected}
           placeholder="Город, улица, дом, квартира"
           error={addressError}
