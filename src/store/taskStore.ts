@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Stage, StageStatus, PhotoReport } from '../types';
-import { fetchMasterStages, updateStageStatus as updateStageStatusApi } from '../services/projectService';
+import { Stage, StageStatus } from '../types';
+import { updateStageStatus as updateStageStatusApi } from '../services/projectService';
 import { supabase } from '../lib/supabase';
 
 // Extended task item with project context
@@ -97,15 +97,53 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         set({ tasks: DEV_MOCK_TASKS, isLoading: false });
       }
     } else {
-      // Real user — fetch from Supabase
+      // Real user — fetch from Supabase with project + object join
       try {
-        const stages = await fetchMasterStages(userId);
-        const taskItems: TaskItem[] = stages.map((s) => ({
-          ...s,
-          // TODO: join with project table for title/address
-          projectTitle: '',
-          address: '',
+        const { data, error } = await supabase
+          .from('stages')
+          .select(`
+            *,
+            projects (
+              id,
+              title,
+              objects (
+                id,
+                address
+              )
+            )
+          `)
+          .eq('master_id', userId)
+          .in('status', ['pending', 'in_progress', 'rejected'])
+          .order('deadline', { ascending: true });
+
+        if (error) throw error;
+
+        type StageRow = Stage & {
+          projects: {
+            id: string;
+            title: string;
+            objects: { id: string; address: string } | null;
+          } | null;
+        };
+
+        const taskItems: TaskItem[] = ((data ?? []) as StageRow[]).map((item) => ({
+          id: item.id,
+          project_id: item.project_id,
+          master_id: item.master_id,
+          template_id: item.template_id,
+          title: item.title,
+          description: item.description,
+          order_index: item.order_index,
+          status: item.status,
+          deadline: item.deadline,
+          started_at: item.started_at,
+          completed_at: item.completed_at,
+          approved_at: item.approved_at,
+          rejection_reason: item.rejection_reason,
+          projectTitle: item.projects?.title ?? '',
+          address: item.projects?.objects?.address ?? '',
         }));
+
         set({ tasks: taskItems, isLoading: false });
       } catch {
         // Fallback to stored tasks

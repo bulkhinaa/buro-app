@@ -169,7 +169,7 @@ export function SupervisorHomeScreen({ navigation }: any) {
       setActiveProjects(active);
       setCompletedProjects(completed);
     } catch {
-      // silently fall back
+      useToastStore.getState().show('Не удалось загрузить данные', 'error');
     }
   }, [user, isDev]);
 

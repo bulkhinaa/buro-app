@@ -25,6 +25,7 @@ import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { MasterMatchScreen } from '../screens/client/MasterMatchScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
 import { colors } from '../theme';
+import { useMasterStore } from '../store/masterStore';
 
 // Wrappers adapt onComplete prop for stack navigation
 function MasterWelcomeWrapper({ navigation }: any) {
@@ -32,9 +33,17 @@ function MasterWelcomeWrapper({ navigation }: any) {
 }
 
 function MasterSetupWrapper() {
-  // completeSetup() inside MasterSetupScreen sets activeView='master' automatically.
-  // RootNavigator re-renders and swaps ClientNavigator → MasterNavigator.
-  return <MasterSetupScreen onComplete={() => {}} />;
+  const setActiveView = useMasterStore((s) => s.setActiveView);
+  // Explicitly switch to master view after setup completes.
+  // completeSetup() already sets activeView in the store, but calling setActiveView
+  // here ensures RootNavigator re-renders synchronously on the same tick.
+  return (
+    <MasterSetupScreen
+      onComplete={() => {
+        setActiveView('master');
+      }}
+    />
+  );
 }
 
 const Stack = createStackNavigator();

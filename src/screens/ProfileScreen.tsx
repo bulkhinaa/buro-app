@@ -12,6 +12,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useLanguageStore, LANGUAGES } from '../store/languageStore';
 
+// Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
+// Set to true once the function is deployed and tested.
+const JUMP_FINANCE_ENABLED = false;
+
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, logout, deleteAccount } = useAuthStore();
@@ -122,31 +126,34 @@ export function ProfileScreen() {
       {/* Master sections — verification, specializations, pricing */}
       {isMasterView && profile && (
         <View style={styles.glassMenuCard}>
-          <CellIndicator
-            variant="card"
-            icon={
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={20}
-                color={
-                  profile.verification_status === 'approved'
-                    ? colors.success
-                    : profile.verification_status === 'pending'
-                      ? colors.warning
-                      : colors.primary
-                }
-              />
-            }
-            name={
-              profile.verification_status === 'approved'
-                ? t('profile.verified')
-                : profile.verification_status === 'pending'
-                  ? t('profile.verificationPending')
-                  : t('profile.startVerification')
-            }
-            showChevron
-            onPress={() => navigation.navigate('JumpFinance')}
-          />
+          {/* Verification cell — hidden until Jump Finance is deployed */}
+          {JUMP_FINANCE_ENABLED && (
+            <CellIndicator
+              variant="card"
+              icon={
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={20}
+                  color={
+                    profile.verification_status === 'approved'
+                      ? colors.success
+                      : profile.verification_status === 'pending'
+                        ? colors.warning
+                        : colors.primary
+                  }
+                />
+              }
+              name={
+                profile.verification_status === 'approved'
+                  ? t('profile.verified')
+                  : profile.verification_status === 'pending'
+                    ? t('profile.verificationPending')
+                    : t('profile.startVerification')
+              }
+              showChevron
+              onPress={() => navigation.navigate('JumpFinance')}
+            />
+          )}
           <CellIndicator
             variant="card"
             icon={<Ionicons name="pricetag-outline" size={20} color={colors.primary} />}

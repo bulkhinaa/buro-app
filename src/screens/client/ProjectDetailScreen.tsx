@@ -63,12 +63,17 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function ProjectDetailScreen({ navigation, route }: Props) {
-  const { projectId, project } = (route.params || {}) as {
+  const { projectId, project: routeProject } = (route.params || {}) as {
     projectId: string;
     project?: Project;
   };
   const { user } = useAuthStore();
-  const { stages, loadStages } = useProjectStore();
+  const { stages, loadStages, projects } = useProjectStore();
+
+  // Prefer store project (has all fields including scope array) over route params
+  // Route params may lose array fields on web due to URL serialization
+  const storeProject = projects.find((p) => p.id === projectId);
+  const project = storeProject ?? routeProject;
   const [supervisorName, setSupervisorName] = useState('Загрузка...');
   const [viewMode, setViewMode] = useState<ViewMode>('accordion');
   const [sectionTab, setSectionTab] = useState<SectionTab>('stages');
@@ -278,7 +283,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
               <View style={styles.supervisorInfo}>
                 <Text style={styles.supervisorLabel}>Ваш супервайзер</Text>
                 <Text style={styles.supervisorName}>{supervisorName}</Text>
-                <LabelMaster level="expert" rating={4.9} reviewCount={87} />
+                <LabelMaster level="expert" />
               </View>
               <Button
                 title="Чат"
@@ -465,21 +470,19 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
               fullWidth
               icon={<Ionicons name="star-outline" size={18} color={colors.white} />}
             />
-          ) : project?.status === 'in_progress' ? (
+          ) : project?.supervisor_id ? (
             <Button
               title="Открыть чат"
               onPress={() => navigation.navigate('Chat', { projectId })}
               fullWidth
               icon={<Ionicons name="chatbubble-outline" size={18} color={colors.white} />}
             />
-          ) : project?.status === 'new' ? (
-            <View style={styles.waitingCard}>
-              <Ionicons name="hourglass-outline" size={24} color={colors.accent} />
-              <Text style={styles.waitingText}>
-                Супервайзер будет назначен в течение 24 часов
-              </Text>
+          ) : (
+            <View style={styles.pendingSupervisorCard}>
+              <Ionicons name="time-outline" size={20} color={colors.textLight} />
+              <Text style={styles.pendingSupervisorText}>Супервайзер будет назначен в ближайшее время</Text>
             </View>
-          ) : null}
+          )}
         </View>
       </ScrollView>
     </ScreenWrapper>
@@ -489,6 +492,24 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 24,
+  },
+
+  // ─── Pending supervisor ───
+  pendingSupervisorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  pendingSupervisorText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textLight,
   },
 
   // ─── Hero ───

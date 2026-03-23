@@ -131,9 +131,9 @@ export function LoginScreen() {
       }
 
       // 1. Call Edge Function to exchange code & create user
-      console.log('[YandexAuth] Step 1: Exchanging code via Edge Function...');
-      console.log('[YandexAuth] redirect_uri:', redirectUri);
-      console.log('[YandexAuth] code (first 10 chars):', code.substring(0, 10));
+      if (__DEV__) { console.log('[YandexAuth] Step 1: Exchanging code via Edge Function...'); }
+      if (__DEV__) { console.log('[YandexAuth] redirect_uri:', redirectUri); }
+      if (__DEV__) { console.log('[YandexAuth] code (first 10 chars):', code.substring(0, 10)); }
 
       let res!: Response;
       const MAX_RETRIES = 3;
@@ -145,28 +145,29 @@ export function LoginScreen() {
             body: JSON.stringify({ code, redirect_uri: redirectUri }),
           });
           break; // success
-        } catch (fetchErr: any) {
-          console.warn(`[YandexAuth] Fetch attempt ${attempt}/${MAX_RETRIES} failed:`, fetchErr.message);
+        } catch (fetchErr: unknown) {
+          const fetchErrMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          if (__DEV__) { console.warn(`[YandexAuth] Fetch attempt ${attempt}/${MAX_RETRIES} failed:`, fetchErrMsg); }
           if (attempt === MAX_RETRIES) {
-            console.error('[YandexAuth] FETCH FAILED after all retries:', fetchErr);
-            throw new Error(`${t('auth.networkError')}: ${fetchErr.message}`);
+            if (__DEV__) { console.error('[YandexAuth] FETCH FAILED after all retries:', fetchErr); }
+            throw new Error(`${t('auth.networkError')}: ${fetchErrMsg}`);
           }
           // Wait before retry (1s, 2s)
           await new Promise((r) => setTimeout(r, attempt * 1000));
         }
       }
 
-      console.log('[YandexAuth] Step 1 done, status:', res.status);
+      if (__DEV__) { console.log('[YandexAuth] Step 1 done, status:', res.status); }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error('[YandexAuth] Edge Function error:', JSON.stringify(err));
+        if (__DEV__) { console.error('[YandexAuth] Edge Function error:', JSON.stringify(err)); }
         throw new Error(err.error || `${t('auth.serverError')} (${res.status})`);
       }
 
       const responseData = await res.json();
       const { email, otp, user_metadata } = responseData;
-      console.log('[YandexAuth] Step 2: Got OTP for:', email);
+      if (__DEV__) { console.log('[YandexAuth] Step 2: Got OTP for:', email); }
 
       // 2. Verify OTP to establish Supabase session
       const { data: sessionData, error: verifyError } =
@@ -177,11 +178,11 @@ export function LoginScreen() {
         });
 
       if (verifyError) {
-        console.error('[YandexAuth] Step 2 FAILED - verifyOtp:', JSON.stringify(verifyError));
+        if (__DEV__) { console.error('[YandexAuth] Step 2 FAILED - verifyOtp:', JSON.stringify(verifyError)); }
         throw new Error(`${t('auth.otpError')}: ${verifyError.message}`);
       }
 
-      console.log('[YandexAuth] Step 3: Session established for:', sessionData.user?.id);
+      if (__DEV__) { console.log('[YandexAuth] Step 3: Session established for:', sessionData.user?.id); }
 
       // 3. Sync profile with Yandex user data
       if (sessionData.user) {
@@ -191,9 +192,9 @@ export function LoginScreen() {
             name: user_metadata?.name || '',
             phone: user_metadata?.phone || undefined,
           });
-          console.log('[YandexAuth] Step 4: Profile synced OK');
-        } catch (profileErr: any) {
-          console.error('[YandexAuth] Step 4 FAILED - syncProfile:', profileErr);
+          if (__DEV__) { console.log('[YandexAuth] Step 4: Profile synced OK'); }
+        } catch (profileErr: unknown) {
+          if (__DEV__) { console.error('[YandexAuth] Step 4 FAILED - syncProfile:', profileErr); }
           // Don't block login if profile sync fails
           showToast(t('auth.profileSyncWarning'), 'warning');
           return;
@@ -201,10 +202,11 @@ export function LoginScreen() {
       }
 
       showToast(t('auth.loginSuccess'), 'success');
-    } catch (e: any) {
-      console.error('[YandexAuth] FINAL ERROR:', e.message, e);
+    } catch (e: unknown) {
+      if (__DEV__) { console.error('[YandexAuth] FINAL ERROR:', e); }
+      const errMsg = e instanceof Error ? e.message : undefined;
       showToast(
-        e.message || t('auth.loginError'),
+        errMsg || t('auth.loginError'),
         'error',
       );
     } finally {
@@ -248,10 +250,11 @@ export function LoginScreen() {
           await handleYandexCode(code);
         }
       }
-    } catch (e: any) {
-      console.error('[YandexAuth] Sign in error:', e);
+    } catch (e: unknown) {
+      if (__DEV__) { console.error('[YandexAuth] Sign in error:', e); }
+      const signInErrMsg = e instanceof Error ? e.message : undefined;
       showToast(
-        e.message || t('auth.loginError'),
+        signInErrMsg || t('auth.loginError'),
         'error',
       );
     } finally {

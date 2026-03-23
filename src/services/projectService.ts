@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Project, Stage, StageTemplate, RepairType, PropertyObject, PhotoReport } from '../types';
+import { Project, Stage, StageTemplate, RepairType, RenovationScope, PropertyObject, PhotoReport } from '../types';
 import { estimateTimelineDays } from '../utils/calculator';
 
 // ---------- PROFILE ----------
@@ -157,26 +157,22 @@ export async function createProject(params: {
   budgetMin: number;
   budgetMax: number;
   objectId?: string;
-  scope?: string[];
+  scope?: RenovationScope[];
 }): Promise<Project> {
-  const insertData: Record<string, any> = {
-    client_id: params.clientId,
-    title: params.title,
-    address: params.address,
-    area_sqm: params.areaSqm,
-    repair_type: params.repairType,
-    budget_min: params.budgetMin,
-    budget_max: params.budgetMax,
-    object_id: params.objectId || null,
-    status: 'new',
-  };
-  // Only include scope if the column exists in DB
-  if (params.scope && params.scope.length > 0) {
-    insertData.scope = params.scope;
-  }
   const { data, error } = await supabase
     .from('projects')
-    .insert(insertData)
+    .insert({
+      client_id: params.clientId,
+      title: params.title,
+      address: params.address,
+      area_sqm: params.areaSqm,
+      repair_type: params.repairType,
+      budget_min: params.budgetMin,
+      budget_max: params.budgetMax,
+      object_id: params.objectId || null,
+      scope: params.scope ?? [],
+      status: 'new',
+    })
     .select()
     .single();
 
@@ -602,28 +598,39 @@ export async function fetchAdminStats(): Promise<{
   totalClients: number;
   totalLeads: number;
 }> {
-  // Fetch counts in parallel
-  const [projectsRes, mastersRes, supervisorsRes, clientsRes, leadsRes] =
-    await Promise.all([
-      supabase.from('projects').select('id, status'),
-      supabase.from('profiles').select('id').eq('role', 'master'),
-      supabase.from('profiles').select('id').eq('role', 'supervisor'),
-      supabase.from('profiles').select('id').eq('role', 'client'),
-      supabase.from('leads').select('id'),
-    ]);
+  // Fetch counts in parallel using server-side count where possible
+  const [
+    projectsRes,
+    newProjectsRes,
+    activeProjectsRes,
+    completedProjectsRes,
+    mastersRes,
+    supervisorsRes,
+    clientsRes,
+    leadsRes,
+  ] = await Promise.all([
+    supabase.from('projects').select('id', { count: 'exact', head: true }),
+    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+    supabase
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['planning', 'in_progress']),
+    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'master'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'supervisor'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'client'),
+    supabase.from('leads').select('id', { count: 'exact', head: true }),
+  ]);
 
-  const projects = projectsRes.data || [];
   return {
-    totalProjects: projects.length,
-    newProjects: projects.filter((p) => p.status === 'new').length,
-    activeProjects: projects.filter(
-      (p) => p.status === 'planning' || p.status === 'in_progress',
-    ).length,
-    completedProjects: projects.filter((p) => p.status === 'completed').length,
-    totalMasters: mastersRes.data?.length || 0,
-    totalSupervisors: supervisorsRes.data?.length || 0,
-    totalClients: clientsRes.data?.length || 0,
-    totalLeads: leadsRes.data?.length || 0,
+    totalProjects: projectsRes.count ?? 0,
+    newProjects: newProjectsRes.count ?? 0,
+    activeProjects: activeProjectsRes.count ?? 0,
+    completedProjects: completedProjectsRes.count ?? 0,
+    totalMasters: mastersRes.count ?? 0,
+    totalSupervisors: supervisorsRes.count ?? 0,
+    totalClients: clientsRes.count ?? 0,
+    totalLeads: leadsRes.count ?? 0,
   };
 }
 

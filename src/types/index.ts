@@ -65,6 +65,7 @@ export interface Stage {
   started_at?: string;
   completed_at?: string;
   approved_at?: string;
+  rejection_reason?: string;
 }
 
 export type StageStatus =
@@ -293,6 +294,26 @@ export interface MasterVacation {
   date_to: string;
   reason?: string;
   created_at: string;
+}
+
+export interface SupervisorProfile {
+  id: string;
+  experience: string;
+  specializations: string[];
+  regions: string[];
+  address: string;
+  about: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupervisorSetupData {
+  experience: string;
+  specializations: string[];
+  regions: string[];
+  address: string;
+  about: string;
 }
 
 export interface MasterSetupData {

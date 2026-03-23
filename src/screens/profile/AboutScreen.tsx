@@ -86,7 +86,7 @@ export function AboutScreen() {
           {'\u00A9'} 2026 Бюро ремонтов. Все права защищены.
         </Text>
         <Text style={styles.legalText}>ИП Бульхин Артём Викторович</Text>
-        <Text style={styles.legalText}>ИНН: 000000000000</Text>
+        <Text style={styles.legalText}>ИНН: в процессе регистрации</Text>
 
         <View style={{ height: 100 }} />
       </ScrollView>

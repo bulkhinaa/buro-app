@@ -23,7 +23,7 @@ export const colors = {
   bgGradientEnd: '#F8F5F2',
 
   text: '#4A4440',
-  textLight: '#8A837D',
+  textLight: '#7A7470',
   textBright: '#1A1A1A',
   heading: '#1A1A1A',
 

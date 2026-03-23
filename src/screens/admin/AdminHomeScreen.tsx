@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SharedHeader } from '../../components';
 import { hapticLight } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
-import { useAdminStore, MOCK_STATS, MOCK_PROJECTS, MOCK_LEADS, MOCK_USERS, type AdminStats } from '../../store/adminStore';
+import { useAdminStore, MOCK_STATS, MOCK_PROJECTS, MOCK_LEADS, MOCK_USERS } from '../../store/adminStore';
 import { fetchAdminStats } from '../../services/projectService';
 
 interface QuickAction {
@@ -32,8 +32,10 @@ export function AdminHomeScreen({ navigation }: any) {
   const setProjects = useAdminStore((s) => s.setProjects);
   const setLeads = useAdminStore((s) => s.setLeads);
   const setUsers = useAdminStore((s) => s.setUsers);
+  const [loading, setLoading] = useState(true);
 
   const loadStats = useCallback(async () => {
+    setLoading(true);
     try {
       if (isDev) {
         setStats(MOCK_STATS);
@@ -46,6 +48,8 @@ export function AdminHomeScreen({ navigation }: any) {
       }
     } catch {
       setStats(MOCK_STATS);
+    } finally {
+      setLoading(false);
     }
   }, [isDev, setStats, setProjects, setLeads, setUsers]);
 
@@ -65,32 +69,38 @@ export function AdminHomeScreen({ navigation }: any) {
         />
 
         {/* Stats grid */}
-        <View style={styles.statsGrid}>
-          <StatCard
-            number={stats.newProjects}
-            label="Новых заявок"
-            color={colors.primary}
-            onPress={() => navigation.navigate('AdminRequests')}
-          />
-          <StatCard
-            number={stats.activeProjects}
-            label="Активных"
-            color={colors.gold}
-            onPress={() => navigation.navigate('AdminRequests')}
-          />
-          <StatCard
-            number={stats.totalMasters}
-            label="Мастеров"
-            color={colors.success}
-            onPress={() => navigation.navigate('AdminUsers')}
-          />
-          <StatCard
-            number={stats.totalSupervisors}
-            label="Супервайзеров"
-            color="#8B5CF6"
-            onPress={() => navigation.navigate('AdminUsers')}
-          />
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <View style={styles.statsGrid}>
+            <StatCard
+              number={stats.newProjects}
+              label="Новых заявок"
+              color={colors.primary}
+              onPress={() => navigation.navigate('AdminRequests')}
+            />
+            <StatCard
+              number={stats.activeProjects}
+              label="Активных"
+              color={colors.gold}
+              onPress={() => navigation.navigate('AdminRequests')}
+            />
+            <StatCard
+              number={stats.totalMasters}
+              label="Мастеров"
+              color={colors.success}
+              onPress={() => navigation.navigate('AdminUsers')}
+            />
+            <StatCard
+              number={stats.totalSupervisors}
+              label="Супервайзеров"
+              color="#8B5CF6"
+              onPress={() => navigation.navigate('AdminUsers')}
+            />
+          </View>
+        )}
 
         {/* Quick actions */}
         <Text style={styles.sectionTitle}>Управление</Text>
@@ -169,6 +179,12 @@ function SummaryRow({ label, value }: { label: string; value: number }) {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 24,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl,
+    marginBottom: spacing.xxl,
   },
   statsGrid: {
     flexDirection: 'row',

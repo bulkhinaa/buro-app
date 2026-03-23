@@ -9,6 +9,10 @@ import { useTaskStore, type TaskItem } from '../../store/taskStore';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useTranslation } from 'react-i18next';
 
+// Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
+// Set to true once the function is deployed and tested.
+const JUMP_FINANCE_ENABLED = false;
+
 export function MasterHomeScreen({ navigation }: any) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
@@ -72,8 +76,8 @@ export function MasterHomeScreen({ navigation }: any) {
         onNotificationPress={() => navigation?.navigate('NotificationsStack')}
       />
 
-      {/* Verification banner */}
-      {!isVerified && (
+      {/* Verification banner — hidden until Jump Finance is deployed */}
+      {JUMP_FINANCE_ENABLED && !isVerified && (
         <Pressable style={styles.verificationBanner} onPress={() => navigation?.navigate('JumpFinance')}>
           <View style={styles.verificationIcon}>
             <Ionicons name="shield-outline" size={24} color={colors.warning} />

@@ -18,6 +18,7 @@ import {
 import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
+import { useSupervisorStore } from '../../store/supervisorStore';
 import { hapticSuccess } from '../../utils/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -55,6 +56,7 @@ type Props = {
 export function SupervisorSetupScreen({ onComplete }: Props) {
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
+  const saveSetupData = useSupervisorStore((s) => s.saveSetupData);
   const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState(1);
@@ -112,15 +114,28 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
   };
 
   const handleComplete = async () => {
+    if (!user) return;
     setLoading(true);
     try {
+      // Always persist locally as cache
       await AsyncStorage.setItem(SUPERVISOR_SETUP_KEY, 'true');
-      // TODO: save supervisor profile data to Supabase for real users
+
+      // Save to Supabase for real users (dev-* users skip this)
+      if (!user.id.startsWith('dev-')) {
+        await saveSetupData(user.id, {
+          experience,
+          specializations: selectedSpecs,
+          regions: selectedRegions,
+          address,
+          about,
+        });
+      }
+
       hapticSuccess();
       showToast('Профиль супервайзера настроен', 'success');
       onComplete();
     } catch {
-      showToast('Ошибка сохранения', 'error');
+      showToast('Ошибка сохранения профиля. Попробуйте ещё раз', 'error');
     } finally {
       setLoading(false);
     }

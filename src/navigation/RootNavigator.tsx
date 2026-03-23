@@ -285,6 +285,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
-    backgroundColor: '#120810',
+    backgroundColor: colors.bgGradientStart,
   },
 });

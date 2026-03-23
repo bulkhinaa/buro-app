@@ -40,6 +40,7 @@ export function SharedHeader({
           onPress={onNotificationPress}
           style={styles.iconButton}
           hitSlop={8}
+          accessibilityLabel="Уведомления"
         >
           <Ionicons name="notifications-outline" size={22} color={colors.heading} />
           {notificationCount > 0 && (
@@ -55,6 +56,7 @@ export function SharedHeader({
           onPress={onAvatarPress}
           style={styles.avatarButton}
           hitSlop={4}
+          accessibilityLabel="Профиль"
         >
           <View style={styles.avatar}>
             <Ionicons name="person" size={18} color={colors.primary} />

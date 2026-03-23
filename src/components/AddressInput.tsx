@@ -187,14 +187,15 @@ export function AddressInput({
 
   const handleBlur = () => {
     setFocused(false);
-    // On web, onMouseDown on a suggestion sets isPressingDropdown=true before blur fires.
-    // Give the onPress handler time to run before hiding the dropdown.
+    // On web, onMouseDown preventDefault prevents blur in most cases.
+    // As a fallback, use a longer delay on web to let onPress fire first.
+    const delay = Platform.OS === 'web' ? 300 : 150;
     setTimeout(() => {
       if (!isPressingDropdown.current) {
         setShowDropdown(false);
       }
       isPressingDropdown.current = false;
-    }, 250);
+    }, delay);
   };
 
   return (

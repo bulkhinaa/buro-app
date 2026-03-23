@@ -21,8 +21,21 @@ interface AuthState {
   deleteAccount: () => Promise<void>;
 }
 
+interface ProfileRow {
+  id: string;
+  phone?: string | null;
+  name?: string | null;
+  role?: string | null;
+  email?: string | null;
+  city?: string | null;
+  preferred_language?: string | null;
+  avatar_url?: string | null;
+  created_at?: string | null;
+  is_active?: boolean | null;
+}
+
 /** Build a User object from a Supabase profile row */
-function profileToUser(profile: any): User {
+function profileToUser(profile: ProfileRow): User {
   return {
     id: profile.id,
     phone: profile.phone || '',
@@ -79,14 +92,31 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       // Read role chosen during onboarding (defaults to 'client')
       let chosenRole: UserRole = 'client';
+      let roleFromStorage = false;
       try {
         const saved = await AsyncStorage.getItem(SELECTED_ROLE_KEY);
         if (saved === 'master' || saved === 'supervisor') {
           chosenRole = saved;
+          roleFromStorage = true;
         }
       } catch { /* ignore */ }
 
-      const extra: Record<string, any> = {};
+      // If no explicit role was found in AsyncStorage (returning user on new device / reinstall),
+      // fetch the existing role from Supabase to avoid overwriting it with the default 'client'.
+      if (!roleFromStorage && !id.startsWith('dev-')) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', id)
+            .single();
+          if (data?.role && (data.role === 'master' || data.role === 'supervisor' || data.role === 'admin')) {
+            chosenRole = data.role as UserRole;
+          }
+        } catch { /* ignore — new user or network error, keep default */ }
+      }
+
+      const extra: Record<string, string> = {};
       if (consent_version) {
         extra.consent_given_at = new Date().toISOString();
         extra.consent_version = consent_version;
