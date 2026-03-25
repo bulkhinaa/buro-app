@@ -20,7 +20,8 @@ import {
   MasterSelectModal,
 } from '../../components';
 import type { DialogButton, MasterCandidate } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { Stage, PhotoReport } from '../../types';
 import {
@@ -128,6 +129,7 @@ function formatDateTime(iso: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorStageDetailScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -1117,7 +1119,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255,149,0,0.08)',
+    backgroundColor: 'rgba(255, 149, 0, 0.08)',
     borderRadius: radius.md,
     padding: spacing.md,
   },
@@ -1239,10 +1241,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     gap: spacing.sm,
-    backgroundColor: 'rgba(52,199,89,0.06)',
+    backgroundColor: colors.successLight,
   },
   decidedCardRejected: {
-    backgroundColor: 'rgba(255,59,48,0.06)',
+    backgroundColor: colors.dangerLight,
   },
   decidedTitle: {
     ...typography.bodyBold,
@@ -1303,7 +1305,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: glass.fill.light,
     borderRadius: 12,
   },
   uploadRow: {
@@ -1315,10 +1317,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.lg,
   },

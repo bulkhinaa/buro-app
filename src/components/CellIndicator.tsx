@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface CellIndicatorRowProps {
   variant: 'row';
@@ -18,34 +19,40 @@ interface CellIndicatorCardProps {
   valueColor?: string;
   showChevron?: boolean;
   onPress?: () => void;
+  rightElement?: React.ReactNode;
 }
 
 type CellIndicatorProps = CellIndicatorRowProps | CellIndicatorCardProps;
 
 export function CellIndicator(props: CellIndicatorProps) {
+  const { isDark, colors } = useTheme();
+
   if (props.variant === 'row') {
     return (
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>{props.label}</Text>
-        <Text style={[styles.rowValue, props.valueColor ? { color: props.valueColor } : undefined]}>
+      <View style={[styles.row, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.rowLabel, { color: colors.text }]}>{props.label}</Text>
+        <Text style={[styles.rowValue, { color: colors.heading }, props.valueColor ? { color: props.valueColor } : undefined]}>
           {props.value}
         </Text>
       </View>
     );
   }
 
+  const cardBg = isDark ? colors.bgCard : colors.white;
+
   const content = (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: cardBg }]}>
       {props.icon && <View style={styles.cardIcon}>{props.icon}</View>}
-      <Text style={styles.cardName} numberOfLines={1}>{props.name}</Text>
+      <Text style={[styles.cardName, { color: colors.heading }]} numberOfLines={1}>{props.name}</Text>
       {props.value && (
         <Text
-          style={[styles.cardValue, props.valueColor ? { color: props.valueColor } : undefined]}
+          style={[styles.cardValue, { color: colors.heading }, props.valueColor ? { color: props.valueColor } : undefined]}
           numberOfLines={1}
         >
           {props.value}
         </Text>
       )}
+      {props.rightElement}
       {props.showChevron && (
         <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
       )}
@@ -73,20 +80,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   rowLabel: {
     ...typography.body,
-    color: colors.text,
   },
   rowValue: {
     ...typography.bodyBold,
-    color: colors.heading,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.sm,
@@ -96,12 +99,10 @@ const styles = StyleSheet.create({
   },
   cardName: {
     ...typography.body,
-    color: colors.heading,
     flex: 1,
   },
   cardValue: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginRight: spacing.sm,
   },
   cardPressed: {

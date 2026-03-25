@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Button, TextArea, Card, SystemButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useReviewStore } from '../../store/reviewStore';
 import { useAuthStore } from '../../store/authStore';
@@ -48,6 +49,7 @@ interface MasterItem {
 }
 
 export function ReviewScreen({ navigation, route }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const params = route.params || {};
   const projectId: string = params.projectId || '';
   const supervisorId: string = params.supervisorId || '';
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: 11,
   },
   photoButton: {

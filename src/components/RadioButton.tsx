@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '../theme';
+import { spacing, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface RadioButtonProps {
   selected: boolean;
@@ -19,6 +20,8 @@ export function RadioButton({
   error = false,
   size = 24,
 }: RadioButtonProps) {
+  const { colors } = useTheme();
+
   const borderColor = error
     ? colors.danger
     : selected
@@ -59,7 +62,17 @@ export function RadioButton({
           />
         )}
       </View>
-      {label && <Text style={[styles.label, disabled && styles.labelDisabled]}>{label}</Text>}
+      {label && (
+        <Text
+          style={[
+            styles.label,
+            { color: colors.heading },
+            disabled && { color: colors.textLight },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -80,10 +93,6 @@ const styles = StyleSheet.create({
   inner: {},
   label: {
     ...typography.body,
-    color: colors.heading,
     marginLeft: spacing.sm,
-  },
-  labelDisabled: {
-    color: colors.textLight,
   },
 });

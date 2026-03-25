@@ -10,7 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 // Reset web outline on focused inputs
 const webInputReset = Platform.OS === 'web'
@@ -68,6 +69,7 @@ export function AddressInput({
   level = 'flat',
   error,
 }: AddressInputProps) {
+  const { colors, isDark } = useTheme();
   const [focused, setFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<DaDataSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -200,14 +202,20 @@ export function AddressInput({
 
   return (
     <View style={styles.container}>
-      {label && showLabel && <Text style={styles.label}>{label}</Text>}
+      {label && showLabel && (
+        <Text style={[styles.label, { color: colors.heading }]}>{label}</Text>
+      )}
       <View>
         <TextInput
           style={[
             styles.input,
             webInputReset,
+            {
+              backgroundColor: colors.bgInput,
+              color: colors.heading,
+            },
             focused && styles.inputFocused,
-            error && styles.inputError,
+            error && { borderWidth: 1.5, borderColor: colors.danger },
           ]}
           placeholder={placeholder}
           placeholderTextColor={colors.textLight}
@@ -227,7 +235,16 @@ export function AddressInput({
       </View>
 
       {showDropdown && suggestions.length > 0 && (
-        <View style={styles.dropdown}>
+        <View
+          style={[
+            styles.dropdown,
+            {
+              backgroundColor: isDark ? colors.bgElevated : colors.white,
+              borderColor: colors.border,
+              shadowColor: isDark ? 'rgba(0,0,0,0.4)' : '#000',
+            },
+          ]}
+        >
           <FlatList
             data={suggestions}
             keyExtractor={(_, i) => String(i)}
@@ -237,7 +254,8 @@ export function AddressInput({
               <Pressable
                 style={({ pressed }) => [
                   styles.suggestion,
-                  pressed && styles.suggestionPressed,
+                  { borderBottomColor: colors.border },
+                  pressed && { backgroundColor: colors.bgCard },
                 ]}
                 onPress={() => handleSelect(item)}
                 // On web, prevent blur from closing dropdown before onPress fires
@@ -254,7 +272,7 @@ export function AddressInput({
                   color={colors.primary}
                   style={styles.suggestionIcon}
                 />
-                <Text style={styles.suggestionText} numberOfLines={2}>
+                <Text style={[styles.suggestionText, { color: colors.heading }]} numberOfLines={2}>
                   {item.value}
                 </Text>
               </Pressable>
@@ -263,7 +281,7 @@ export function AddressInput({
         </View>
       )}
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
     </View>
   );
 }
@@ -288,24 +306,17 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.smallBold,
-    color: colors.heading,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: colors.bgInput,
     borderRadius: radius.lg,
     borderWidth: 0,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
-    color: colors.heading,
     ...typography.body,
   },
   inputFocused: {
     // No border on focus — clean look
-  },
-  inputError: {
-    borderWidth: 1.5,
-    borderColor: colors.danger,
   },
   loadingIndicator: {
     position: 'absolute',
@@ -319,14 +330,11 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.lg,
     marginTop: 4,
     maxHeight: 260,
     overflow: 'hidden',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -338,22 +346,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  suggestionPressed: {
-    backgroundColor: colors.bgCard,
   },
   suggestionIcon: {
     marginRight: spacing.sm,
   },
   suggestionText: {
     ...typography.body,
-    color: colors.heading,
     flex: 1,
   },
   error: {
     ...typography.small,
-    color: colors.danger,
     marginTop: spacing.xs,
   },
 });

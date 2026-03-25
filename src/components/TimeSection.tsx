@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { TimeCell } from './TimeCell';
 
 interface TimeSectionProps {
@@ -18,6 +19,7 @@ export function TimeSection({
   onSelectTime,
   columns = 4,
 }: TimeSectionProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   return (
     <View style={styles.container}>
       {title && <Text style={styles.title}>{title}</Text>}

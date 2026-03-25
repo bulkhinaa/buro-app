@@ -23,12 +23,14 @@ import {
 } from '../../store/scheduleStore';
 import type { ScheduleSlotStatus } from '../../types';
 
+import { useTheme } from '../../theme/ThemeContext';
 const MONTH_NAMES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
 ];
 
 export function MasterScheduleScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const {
@@ -203,7 +205,7 @@ export function MasterScheduleScreen() {
         {/* Legend */}
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: 'rgba(123,45,62,0.08)' }]} />
+            <View style={[styles.legendDot, { backgroundColor: colors.primaryLight }]} />
             <Text style={styles.legendText}>Свободен</Text>
           </View>
           <View style={styles.legendItem}>
@@ -328,7 +330,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   monthWeekTextActive: {
-    color: '#FFFFFF',
+    color: colors.textBright,
   },
   legend: {
     flexDirection: 'row',

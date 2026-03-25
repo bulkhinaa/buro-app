@@ -4,6 +4,7 @@ import { NavigationContainer, NavigationState, createNavigationContainerRef } fr
 import { useAuthStore } from '../store/authStore';
 import { useMasterStore } from '../store/masterStore';
 import { useLanguageStore } from '../store/languageStore';
+import { useThemeStore } from '../store/themeStore';
 import { trackScreen } from '../services/analyticsService';
 import { AuthNavigator } from './AuthNavigator';
 import { ClientNavigator } from './ClientNavigator';
@@ -19,32 +20,39 @@ import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { SupervisorWelcomeScreen } from '../screens/supervisor/SupervisorWelcomeScreen';
 import { SupervisorSetupScreen, SUPERVISOR_SETUP_KEY } from '../screens/supervisor/SupervisorSetupScreen';
 import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const navTheme = {
-  dark: false,
-  colors: {
-    primary: colors.primary,
-    background: colors.bg,
-    card: colors.bg,
-    text: colors.heading,
-    border: colors.border,
-    notification: colors.danger,
-  },
-  fonts: {
-    regular: { fontFamily: 'System', fontWeight: '400' as const },
-    medium: { fontFamily: 'System', fontWeight: '500' as const },
-    bold: { fontFamily: 'System', fontWeight: '700' as const },
-    heavy: { fontFamily: 'System', fontWeight: '800' as const },
-  },
-};
+function useNavTheme() {
+  const { isDark, colors: c } = useTheme();
+  return {
+    dark: isDark,
+    colors: {
+      primary: c.primary,
+      background: c.bg,
+      card: c.bg,
+      text: c.heading,
+      border: c.border,
+      notification: c.danger,
+    },
+    fonts: {
+      regular: { fontFamily: 'System', fontWeight: '400' as const },
+      medium: { fontFamily: 'System', fontWeight: '500' as const },
+      bold: { fontFamily: 'System', fontWeight: '700' as const },
+      heavy: { fontFamily: 'System', fontWeight: '800' as const },
+    },
+  };
+}
 
 export const navigationRef = createNavigationContainerRef();
 
 export function RootNavigator() {
+  const navTheme = useNavTheme();
+  const { colors: themeColors } = useTheme();
   const { isAuthenticated, user, isLoading, initAuth } = useAuthStore();
   const { welcomeSeen, setupComplete, activeView, init: initMaster } = useMasterStore();
   const { hasChosenLanguage, isLoaded: langLoaded, init: initLanguage } = useLanguageStore();
+  const initTheme = useThemeStore((s) => s.init);
   const [showSplash, setShowSplash] = useState(true);
   const [animationDone, setAnimationDone] = useState(false);
   const [authDone, setAuthDone] = useState(false);
@@ -60,6 +68,7 @@ export function RootNavigator() {
   useEffect(() => {
     initAuth();
     initLanguage();
+    initTheme();
     checkOnboarding();
     checkRoleSelect();
   }, []);
@@ -285,6 +294,6 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
-    backgroundColor: colors.bgGradientStart,
+    backgroundColor: colors.bgGradientStart, // Fallback; actual bg set inline for theme reactivity
   },
 });

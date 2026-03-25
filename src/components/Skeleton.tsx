@@ -8,6 +8,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { colors, radius } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface SkeletonProps {
   width: number | string;
@@ -22,6 +23,7 @@ export function Skeleton({
   borderRadius = radius.md,
   style,
 }: SkeletonProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const opacity = useSharedValue(0.4);
 
   useEffect(() => {

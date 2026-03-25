@@ -24,7 +24,8 @@ import {
   LabelMaster,
   SystemButton,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useToastStore } from '../../store/toastStore';
 
@@ -292,6 +293,7 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
 const DEFAULT_CASE = MOCK_CASES_DETAIL['1'];
 
 export function CaseDetailScreen({ navigation, route }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const caseId: string = route.params?.caseId || '1';
   const caseData = MOCK_CASES_DETAIL[caseId] || DEFAULT_CASE;
 
@@ -556,10 +558,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: glass.fill.regular,
   },
   photoDotActive: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     width: 24,
   },
   content: {
@@ -647,13 +649,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   teamAvatarMaster: {
-    backgroundColor: 'rgba(197, 165, 90, 0.1)',
+    backgroundColor: colors.accentLight,
   },
   teamInfo: {
     flex: 1,

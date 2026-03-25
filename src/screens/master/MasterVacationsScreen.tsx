@@ -20,6 +20,7 @@ import { useScheduleStore } from '../../store/scheduleStore';
 import { useToastStore } from '../../store/toastStore';
 import type { MasterVacation } from '../../types';
 
+import { useTheme } from '../../theme/ThemeContext';
 const MONTH_NAMES = [
   'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
@@ -119,6 +120,7 @@ function SwipeableVacationCard({
 }
 
 export function MasterVacationsScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation();
   const { user } = useAuthStore();
   const { vacations, fetchVacations, addVacation, removeVacation } = useScheduleStore();
@@ -411,7 +413,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   dialog: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     padding: spacing.xl,
     width: '100%',
@@ -429,7 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    backgroundColor: colors.primaryLight,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,

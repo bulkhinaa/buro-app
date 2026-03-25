@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface CellPaymentProps {
   icon: React.ReactNode;
@@ -19,6 +20,7 @@ export function CellPayment({
   amountType = 'neutral',
   onPress,
 }: CellPaymentProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const amountColor = amountType === 'positive' ? colors.success : colors.heading;
 
   const content = (

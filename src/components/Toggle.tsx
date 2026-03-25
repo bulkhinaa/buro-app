@@ -5,7 +5,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, spacing, typography } from '../theme';
+import { spacing, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const TRACK_WIDTH = 51;
 const TRACK_HEIGHT = 31;
@@ -25,6 +26,7 @@ export function Toggle({
   disabled = false,
   label,
 }: ToggleProps) {
+  const { colors, isDark } = useTheme();
   const translateX = useSharedValue(value ? TRACK_WIDTH - THUMB_SIZE - THUMB_MARGIN * 2 : 0);
 
   React.useEffect(() => {
@@ -38,17 +40,19 @@ export function Toggle({
     transform: [{ translateX: translateX.value }],
   }));
 
+  const offTrackColor = isDark ? '#3A3A4A' : '#E5E5E5';
+
   return (
     <Pressable
       onPress={() => !disabled && onValueChange(!value)}
       style={[styles.container, disabled && styles.disabled]}
       hitSlop={8}
     >
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.heading }]}>{label}</Text>}
       <View
         style={[
           styles.track,
-          { backgroundColor: value ? colors.primary : '#E5E5E5' },
+          { backgroundColor: value ? colors.primary : offTrackColor },
         ]}
       >
         <Animated.View style={[styles.thumb, thumbStyle]} />
@@ -67,7 +71,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.body,
-    color: colors.heading,
     marginRight: spacing.sm,
   },
   track: {
@@ -81,7 +84,7 @@ const styles = StyleSheet.create({
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

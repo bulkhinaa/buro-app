@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Card, AppDialog, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 
@@ -32,6 +33,7 @@ const CARD_PADDING = spacing.xl;
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 export function MasterPortfolioScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const profile = useMasterStore((s) => s.profile);
   const removePortfolioProject = useMasterStore((s) => s.removePortfolioProject);
   const showToast = useToastStore((s) => s.show);
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: glass.fill.light,
     borderRadius: 12,
   },
   emptyState: {

@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Input } from './Input';
-import { colors, typography } from '../theme';
+import { typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface PhoneInputProps {
   label?: string;
@@ -31,6 +32,7 @@ export function PhoneInput({
   error,
   placeholder = '999 999-99-99',
 }: PhoneInputProps) {
+  const { colors } = useTheme();
   const formatted = formatPhone(value);
 
   const handleChange = useCallback(
@@ -45,7 +47,7 @@ export function PhoneInput({
     onChangeText('');
   }, [onChangeText]);
 
-  const prefix = <Text style={styles.prefix}>+7</Text>;
+  const prefix = <Text style={[styles.prefix, { color: colors.heading }]}>+7</Text>;
 
   return (
     <Input
@@ -65,7 +67,6 @@ export function PhoneInput({
 const styles = StyleSheet.create({
   prefix: {
     ...typography.body,
-    color: colors.heading,
     fontWeight: '500',
   },
 });

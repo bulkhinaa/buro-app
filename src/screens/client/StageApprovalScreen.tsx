@@ -19,6 +19,7 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTaskStore } from '../../store/taskStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -39,6 +40,7 @@ type Props = {
 };
 
 export function StageApprovalScreen({ navigation, route }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const {
     stageId,
     stageTitle = 'Штукатурка стен',

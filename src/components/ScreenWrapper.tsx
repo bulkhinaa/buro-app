@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, ViewStyle, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing } from '../theme';
+import { spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 // On web (iOS PWA), flex:1 doesn't extend behind the home indicator.
 // Using 100dvh forces the gradient to cover the full viewport including safe areas.
@@ -21,7 +22,7 @@ interface ScreenWrapperProps {
   scroll?: boolean;
   style?: ViewStyle;
   padded?: boolean;
-  /** Use plain white bg instead of gradient (for modals, etc.) */
+  /** Use plain bg instead of gradient (for modals, etc.) */
   plain?: boolean;
   /** SafeAreaView edges override. Default: ['top']. Pass [] when React Navigation header already handles safe area. */
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
@@ -35,6 +36,8 @@ export function ScreenWrapper({
   plain = false,
   edges = ['top'],
 }: ScreenWrapperProps) {
+  const { colors } = useTheme();
+
   const content = (
     <View style={[scroll ? styles.innerScroll : styles.inner, padded && styles.padded, style]}>
       {children}
@@ -56,7 +59,10 @@ export function ScreenWrapper({
 
   if (plain) {
     return (
-      <SafeAreaView style={[styles.plainContainer, webFullHeight, webAbsoluteFill]} edges={edges}>
+      <SafeAreaView
+        style={[styles.plainContainer, { backgroundColor: colors.bg }, webFullHeight, webAbsoluteFill]}
+        edges={edges}
+      >
         {scrollable}
       </SafeAreaView>
     );
@@ -88,7 +94,6 @@ const styles = StyleSheet.create({
   },
   plainContainer: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   scroll: {
     flex: 1,

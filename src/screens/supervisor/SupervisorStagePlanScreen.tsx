@@ -15,7 +15,8 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { RepairType, Stage } from '../../types';
@@ -89,9 +90,9 @@ function DatePickerRow({
             fontSize: 15,
             padding: '8px 12px',
             borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.8)',
-            backgroundColor: 'rgba(255,255,255,0.65)',
-            color: '#1a1a2e',
+            border: '1px solid ' + glass.border.light,
+            backgroundColor: glass.fill.regular,
+            color: colors.heading,
             fontFamily: 'inherit',
             outline: 'none',
           }}
@@ -151,12 +152,12 @@ const dateStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: glass.border.light,
   },
   dateText: {
     ...typography.body,
@@ -255,6 +256,7 @@ function calculateStagePlan(
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export function SupervisorStagePlanScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -561,7 +563,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: colors.border,
   },
   endDateText: {
     ...typography.body,
@@ -591,7 +593,7 @@ const styles = StyleSheet.create({
   timelineLineTop: {
     width: 2,
     flex: 1,
-    backgroundColor: 'rgba(123,45,62,0.15)',
+    backgroundColor: colors.primaryLight,
     marginBottom: -1,
   },
   timelineDot: {
@@ -615,20 +617,20 @@ const styles = StyleSheet.create({
   timelineLineBottom: {
     width: 2,
     flex: 1,
-    backgroundColor: 'rgba(123,45,62,0.15)',
+    backgroundColor: colors.primaryLight,
     marginTop: -1,
   },
 
   // Stage card
   stageCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
     padding: spacing.md,
     gap: spacing.xs + 2,
-    shadowColor: 'rgba(123,45,62,0.05)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -636,8 +638,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   stageCardParallel: {
-    borderColor: 'rgba(197,165,90,0.3)',
-    backgroundColor: 'rgba(197,165,90,0.05)',
+    borderColor: colors.accent,
+    backgroundColor: colors.accentLight,
   },
   stageHeader: {
     flexDirection: 'row',
@@ -651,7 +653,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   daysBadge: {
-    backgroundColor: 'rgba(123,45,62,0.1)',
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -689,7 +691,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(197,165,90,0.12)',
+    backgroundColor: colors.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -714,8 +716,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
-    backgroundColor: 'rgba(243,237,232,0.95)',
+    backgroundColor: colors.bgElevated,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.8)',
+    borderTopColor: colors.border,
   },
 });

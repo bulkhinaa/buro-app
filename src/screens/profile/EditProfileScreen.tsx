@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, CityPicker } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function EditProfileScreen({ navigation }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user, saveProfile } = useAuthStore();
 
   const [name, setName] = useState(user?.name || '');
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
   },
   avatarText: {
     fontSize: 36,

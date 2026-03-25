@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface CellFaqProps {
   question: string;
@@ -19,6 +20,7 @@ export function CellFaq({
   answer,
   defaultOpen = false,
 }: CellFaqProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [open, setOpen] = useState(defaultOpen);
   const rotation = useSharedValue(defaultOpen ? 180 : 0);
 
@@ -49,7 +51,7 @@ export function CellFaq({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     padding: spacing.xl,
     marginBottom: spacing.md,

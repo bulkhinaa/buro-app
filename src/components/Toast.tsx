@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass} from '../theme';
 import { useToastStore, ToastType } from '../store/toastStore';
 
 const ICONS: Record<ToastType, keyof typeof Ionicons.glyphMap> = {

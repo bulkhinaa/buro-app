@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { glass } from '../theme/glass';
+import { useTheme } from '../theme/ThemeContext';
 import { radius } from '../theme/spacing';
 
 type GlassIntensity = 'light' | 'regular' | 'subtle';
@@ -15,58 +15,63 @@ interface GlassViewProps {
   tint?: 'light' | 'dark' | 'default';
 }
 
-const BLUR_MAP: Record<GlassIntensity, number> = {
-  light: glass.blur.light,
-  regular: glass.blur.medium,
-  subtle: glass.blur.heavy,
-};
-
-const FILL_MAP: Record<GlassIntensity, string> = {
-  light: glass.fill.light,
-  regular: glass.fill.regular,
-  subtle: glass.fill.subtle,
-};
-
-const BORDER_MAP: Record<GlassIntensity, string> = {
-  light: glass.border.light,
-  regular: glass.border.regular,
-  subtle: glass.border.subtle,
-};
-
 /**
  * GlassView — Apple Liquid Glass container
  * Uses expo-blur on iOS, semi-transparent fallback on Android
+ * Now theme-aware — reads glass tokens from ThemeContext
  */
 export function GlassView({
   children,
   style,
   intensity = 'regular',
-  borderRadius = radius.lg,
+  borderRadius: br = radius.lg,
   noBorder = false,
-  tint = 'light',
+  tint,
 }: GlassViewProps) {
+  const { glass, isDark } = useTheme();
+
+  const blurMap: Record<GlassIntensity, number> = {
+    light: glass.blur.light,
+    regular: glass.blur.medium,
+    subtle: glass.blur.heavy,
+  };
+
+  const fillMap: Record<GlassIntensity, string> = {
+    light: glass.fill.light,
+    regular: glass.fill.regular,
+    subtle: glass.fill.subtle,
+  };
+
+  const borderMap: Record<GlassIntensity, string> = {
+    light: glass.border.light,
+    regular: glass.border.regular,
+    subtle: glass.border.subtle,
+  };
+
   const borderStyle = noBorder
     ? {}
-    : { borderWidth: 1, borderColor: BORDER_MAP[intensity] };
+    : { borderWidth: 1, borderColor: borderMap[intensity] };
+
+  const resolvedTint = tint ?? (isDark ? 'dark' : 'light');
 
   if (Platform.OS === 'ios') {
     return (
       <View
         style={[
-          { borderRadius, overflow: 'hidden' as const },
+          { borderRadius: br, overflow: 'hidden' as const },
           glass.shadow,
           style,
         ]}
       >
         <BlurView
-          intensity={BLUR_MAP[intensity]}
-          tint={tint}
-          style={[styles.fill, { borderRadius }]}
+          intensity={blurMap[intensity]}
+          tint={resolvedTint}
+          style={[styles.fill, { borderRadius: br }]}
         >
           <View
             style={[
               styles.innerOverlay,
-              { backgroundColor: FILL_MAP[intensity], borderRadius },
+              { backgroundColor: fillMap[intensity], borderRadius: br },
               borderStyle,
             ]}
           >
@@ -82,8 +87,8 @@ export function GlassView({
     <View
       style={[
         {
-          borderRadius,
-          backgroundColor: FILL_MAP[intensity],
+          borderRadius: br,
+          backgroundColor: fillMap[intensity],
           overflow: 'hidden' as const,
         },
         glass.shadow,

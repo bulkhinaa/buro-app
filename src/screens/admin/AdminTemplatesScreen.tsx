@@ -6,6 +6,7 @@ import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
 import { colors, spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import {
   fetchStageTemplates,
   createStageTemplate,
@@ -35,6 +36,7 @@ const DEFAULT_TEMPLATES: StageTemplate[] = [
 const webInputStyle = Platform.OS === 'web' ? { outlineStyle: 'none' as any, outlineWidth: 0 } : {};
 
 export function AdminTemplatesScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [templates, setTemplates] = useState<StageTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);

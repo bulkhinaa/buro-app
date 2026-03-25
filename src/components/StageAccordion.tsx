@@ -6,7 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { StatusBadge } from './StatusBadge';
 import { Button } from './Button';
 import { StageStatus } from '../types';
@@ -41,6 +42,7 @@ export function StageAccordion({
   defaultOpen = false,
   onApprove,
 }: StageAccordionProps) {
+  const { colors, glass, isDark } = useTheme();
   const [open, setOpen] = useState(defaultOpen);
   const rotation = useSharedValue(defaultOpen ? 180 : 0);
 
@@ -58,26 +60,48 @@ export function StageAccordion({
   const isActive = status === 'in_progress';
 
   return (
-    <View style={[styles.card, isDone && styles.cardDone, isActive && styles.cardActive]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.65)',
+          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+          shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
+        },
+        isDone && {
+          opacity: 0.7,
+          backgroundColor: isDark ? 'rgba(62, 220, 132, 0.06)' : 'rgba(52, 199, 89, 0.05)',
+        },
+        isActive && {
+          borderColor: isDark ? colors.borderHover : 'rgba(123, 45, 62, 0.15)',
+          backgroundColor: isDark ? colors.primaryLight : 'rgba(123, 45, 62, 0.04)',
+        },
+      ]}
+    >
       <Pressable onPress={toggleOpen} style={styles.header}>
         {/* Left: number circle + title */}
         <View style={styles.headerLeft}>
           <View
             style={[
               styles.numberCircle,
-              isDone && styles.numberCircleDone,
-              isActive && styles.numberCircleActive,
+              { backgroundColor: colors.primaryLight },
+              isDone && { backgroundColor: colors.success },
+              isActive && { backgroundColor: colors.primary },
             ]}
           >
             {isDone ? (
               <Ionicons name="checkmark" size={14} color={colors.white} />
             ) : (
-              <Text style={styles.numberText}>{index}</Text>
+              <Text style={[styles.numberText, { color: colors.primary }]}>{index}</Text>
             )}
           </View>
           <View style={styles.titleBlock}>
             <Text
-              style={[styles.title, isDone && styles.titleDone]}
+              style={[
+                styles.title,
+                { color: colors.heading },
+                isDone && { color: colors.textLight, textDecorationLine: 'line-through' },
+              ]}
               numberOfLines={1}
             >
               {title}
@@ -85,14 +109,23 @@ export function StageAccordion({
             {/* Meta row: cost + days + status */}
             <View style={styles.metaRow}>
               {costMin != null && costMax != null && (
-                <Text style={styles.costText}>
+                <Text style={[styles.costText, { color: colors.textLight }]}>
                   {formatRubles(costMin)} – {formatRubles(costMax)}
                 </Text>
               )}
               {days != null && (
-                <View style={styles.daysBadge}>
+                <View
+                  style={[
+                    styles.daysBadge,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(240, 201, 93, 0.1)'
+                        : 'rgba(197, 165, 90, 0.1)',
+                    },
+                  ]}
+                >
                   <Ionicons name="time-outline" size={12} color={colors.textLight} />
-                  <Text style={styles.daysText}>~{days} дн.</Text>
+                  <Text style={[styles.daysText, { color: colors.accent }]}>~{days} дн.</Text>
                 </View>
               )}
             </View>
@@ -112,11 +145,11 @@ export function StageAccordion({
       {open && (
         <View style={styles.content}>
           {/* Divider */}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {/* Description */}
           {description && (
-            <Text style={styles.description}>{description}</Text>
+            <Text style={[styles.description, { color: colors.text }]}>{description}</Text>
           )}
 
           {/* Checklist */}
@@ -130,7 +163,11 @@ export function StageAccordion({
                     color={isDone ? colors.success : colors.textLight}
                   />
                   <Text
-                    style={[styles.checkText, isDone && styles.checkTextDone]}
+                    style={[
+                      styles.checkText,
+                      { color: colors.heading },
+                      isDone && { color: colors.textLight, textDecorationLine: 'line-through' },
+                    ]}
                   >
                     {item}
                   </Text>
@@ -140,17 +177,26 @@ export function StageAccordion({
           )}
 
           {/* Footer info */}
-          <View style={styles.footer}>
+          <View
+            style={[
+              styles.footer,
+              {
+                backgroundColor: isDark
+                  ? glass.fill.subtle
+                  : 'rgba(249, 247, 244, 0.8)',
+              },
+            ]}
+          >
             <View style={styles.footerRow}>
               <Ionicons name="person-outline" size={14} color={colors.textLight} />
-              <Text style={styles.footerText}>
+              <Text style={[styles.footerText, { color: colors.textLight }]}>
                 {masterName || 'Мастер: не назначен'}
               </Text>
             </View>
             {deadline && (
               <View style={styles.footerRow}>
                 <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
-                <Text style={styles.footerText}>
+                <Text style={[styles.footerText, { color: colors.textLight }]}>
                   до {new Date(deadline).toLocaleDateString('ru-RU')}
                 </Text>
               </View>
@@ -158,7 +204,7 @@ export function StageAccordion({
             {!deadline && (
               <View style={styles.footerRow}>
                 <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
-                <Text style={styles.footerText}>
+                <Text style={[styles.footerText, { color: colors.textLight }]}>
                   После назначения супервайзера
                 </Text>
               </View>
@@ -182,26 +228,14 @@ export function StageAccordion({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     marginBottom: spacing.sm,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 2,
-  },
-  cardDone: {
-    opacity: 0.7,
-    backgroundColor: 'rgba(52, 199, 89, 0.05)',
-  },
-  cardActive: {
-    borderColor: 'rgba(123, 45, 62, 0.15)',
-    backgroundColor: 'rgba(123, 45, 62, 0.04)',
   },
   header: {
     flexDirection: 'row',
@@ -218,21 +252,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
     marginTop: 2,
   },
-  numberCircleDone: {
-    backgroundColor: colors.success,
-  },
-  numberCircleActive: {
-    backgroundColor: colors.primary,
-  },
   numberText: {
     ...typography.smallBold,
-    color: colors.primary,
     fontSize: 12,
   },
   titleBlock: {
@@ -240,12 +266,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginBottom: 4,
-  },
-  titleDone: {
-    color: colors.textLight,
-    textDecorationLine: 'line-through',
   },
   metaRow: {
     flexDirection: 'row',
@@ -255,20 +276,17 @@ const styles = StyleSheet.create({
   },
   costText: {
     ...typography.small,
-    color: colors.textLight,
   },
   daysBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(197, 165, 90, 0.1)',
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
   daysText: {
     ...typography.caption,
-    color: colors.accent,
     fontWeight: '600',
   },
   headerRight: {
@@ -284,12 +302,10 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
     marginBottom: spacing.md,
   },
   description: {
     ...typography.body,
-    color: colors.text,
     lineHeight: 22,
     marginBottom: spacing.md,
   },
@@ -304,15 +320,9 @@ const styles = StyleSheet.create({
   },
   checkText: {
     ...typography.body,
-    color: colors.heading,
     flex: 1,
   },
-  checkTextDone: {
-    color: colors.textLight,
-    textDecorationLine: 'line-through',
-  },
   footer: {
-    backgroundColor: 'rgba(249, 247, 244, 0.8)',
     borderRadius: radius.md,
     padding: spacing.md,
     gap: spacing.xs,
@@ -324,6 +334,5 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...typography.small,
-    color: colors.textLight,
   },
 });

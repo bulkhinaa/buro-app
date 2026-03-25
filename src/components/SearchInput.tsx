@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from './Input';
-import { colors, spacing } from '../theme';
+import { spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface SearchInputProps {
   value: string;
@@ -19,6 +20,8 @@ export function SearchInput({
   onFilter,
   filterActive = false,
 }: SearchInputProps) {
+  const { colors } = useTheme();
+
   const searchIcon = (
     <Ionicons name="search-outline" size={18} color={colors.textLight} />
   );
@@ -27,7 +30,9 @@ export function SearchInput({
     <Pressable onPress={onFilter} style={styles.filterButton} hitSlop={8}>
       <View style={styles.filterIconContainer}>
         <Ionicons name="options-outline" size={20} color={colors.textLight} />
-        {filterActive && <View style={styles.filterDot} />}
+        {filterActive && (
+          <View style={[styles.filterDot, { backgroundColor: colors.primary }]} />
+        )}
       </View>
     </Pressable>
   ) : (
@@ -61,6 +66,5 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
   },
 });

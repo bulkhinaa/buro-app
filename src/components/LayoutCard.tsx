@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface LayoutCardProps {
   svg?: string;
@@ -25,23 +26,33 @@ export function LayoutCard({
   isCustom = false,
   badge,
 }: LayoutCardProps) {
+  const { colors, glass, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        selected && styles.cardSelected,
+        {
+          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.6)',
+          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+          shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
+        },
+        selected && {
+          borderColor: colors.primary,
+          backgroundColor: colors.primaryLight,
+        },
         pressed && styles.cardPressed,
       ]}
     >
       {badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge}</Text>
+        <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+          <Text style={[styles.badgeText, { color: colors.white }]}>{badge}</Text>
         </View>
       )}
 
       {isCustom ? (
-        <View style={styles.customIcon}>
+        <View style={[styles.customIcon, { borderColor: colors.border }]}>
           <Ionicons name="camera-outline" size={36} color={colors.textLight} />
         </View>
       ) : svg ? (
@@ -51,20 +62,20 @@ export function LayoutCard({
       ) : null}
 
       <Text
-        style={[styles.name, selected && styles.nameSelected]}
+        style={[styles.name, { color: colors.heading }, selected && { color: colors.primary }]}
         numberOfLines={1}
       >
         {name}
       </Text>
 
       {description && (
-        <Text style={styles.description} numberOfLines={1}>
+        <Text style={[styles.description, { color: colors.textLight }]} numberOfLines={1}>
           {description}
         </Text>
       )}
 
       {areaRange && (
-        <Text style={styles.area}>{areaRange}</Text>
+        <Text style={[styles.area, { color: colors.textLight }]}>{areaRange}</Text>
       )}
 
       {selected && (
@@ -88,15 +99,25 @@ export function LayoutCardMini({
   name?: string;
   onPress?: () => void;
 }) {
+  const { colors, glass, isDark } = useTheme();
+
   const content = (
-    <View style={styles.miniCard}>
+    <View
+      style={[
+        styles.miniCard,
+        {
+          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.5)',
+          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+        },
+      ]}
+    >
       {svg ? (
         <SvgXml xml={svg} width={70} height={70} />
       ) : (
         <Ionicons name="home-outline" size={32} color={colors.textLight} />
       )}
       {name && (
-        <Text style={styles.miniName} numberOfLines={1}>
+        <Text style={[styles.miniName, { color: colors.textLight }]} numberOfLines={1}>
           {name}
         </Text>
       )}
@@ -111,22 +132,14 @@ export function LayoutCardMini({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.md,
     alignItems: 'center',
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 2,
-  },
-  cardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
   },
   cardPressed: {
     opacity: 0.85,
@@ -141,7 +154,6 @@ const styles = StyleSheet.create({
     height: 130,
     borderRadius: radius.lg,
     borderWidth: 2,
-    borderColor: colors.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -149,21 +161,15 @@ const styles = StyleSheet.create({
   },
   name: {
     ...typography.bodyBold,
-    color: colors.heading,
     textAlign: 'center',
-  },
-  nameSelected: {
-    color: colors.primary,
   },
   description: {
     ...typography.small,
-    color: colors.textLight,
     textAlign: 'center',
     marginTop: 2,
   },
   area: {
     ...typography.caption,
-    color: colors.textLight,
     marginTop: 2,
   },
   checkmark: {
@@ -175,7 +181,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: colors.accent,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -183,7 +188,6 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     ...typography.caption,
-    color: colors.white,
     fontWeight: '600',
     fontSize: 10,
   },
@@ -193,15 +197,12 @@ const styles = StyleSheet.create({
     height: 95,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.xs,
   },
   miniName: {
     ...typography.caption,
-    color: colors.textLight,
     textAlign: 'center',
     marginTop: 2,
   },

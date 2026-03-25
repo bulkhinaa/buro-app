@@ -18,7 +18,8 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { Project, Stage, REPAIR_TYPE_LABELS, STAGE_STATUS_LABELS } from '../../types';
 import {
@@ -179,6 +180,7 @@ function getStageStatusIcon(status: Stage['status']): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorProjectDetailScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
 
@@ -570,12 +572,12 @@ const styles = StyleSheet.create({
   // Tabs
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: 4,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
   },
   tabItem: {
     flex: 1,
@@ -587,8 +589,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   tabItemActive: {
-    backgroundColor: colors.white,
-    shadowColor: 'rgba(123,45,62,0.1)',
+    backgroundColor: colors.bgCard,
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -637,7 +639,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(197,165,90,0.12)',
+    backgroundColor: colors.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.full,
@@ -682,11 +684,11 @@ const styles = StyleSheet.create({
   // Stage list
   stageSummaryRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
   },
   stageSummaryItem: {
     flex: 1,
@@ -706,13 +708,13 @@ const styles = StyleSheet.create({
   stageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
     gap: spacing.md,
-    shadowColor: 'rgba(123,45,62,0.05)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -720,11 +722,11 @@ const styles = StyleSheet.create({
   },
   stageCardDone: {
     opacity: 0.65,
-    backgroundColor: 'rgba(52,199,89,0.04)',
+    backgroundColor: colors.successLight,
   },
   stageCardReview: {
-    borderColor: 'rgba(197,165,90,0.3)',
-    backgroundColor: 'rgba(197,165,90,0.06)',
+    borderColor: colors.accent,
+    backgroundColor: colors.accentLight,
   },
   stageNumber: {
     width: 30,
@@ -770,7 +772,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: 'rgba(197,165,90,0.15)',
+    backgroundColor: colors.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.full,

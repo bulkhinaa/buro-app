@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 
 interface UserReview {
   id: string;
@@ -49,6 +50,7 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export function MyReviewsScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [reviews] = useState<UserReview[]>(MOCK_REVIEWS);
 
   const renderReview = ({ item }: { item: UserReview }) => (
@@ -106,14 +108,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   reviewCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,

@@ -22,7 +22,8 @@ import {
   TextArea,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useToastStore } from '../../store/toastStore';
 import { useTaskStore } from '../../store/taskStore';
 import { useAuthStore } from '../../store/authStore';
@@ -41,6 +42,7 @@ type Props = {
 };
 
 export function MasterTaskDetailScreen({ navigation, route }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const task = route.params?.task;
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
@@ -354,7 +356,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: glass.fill.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -430,7 +432,7 @@ const styles = StyleSheet.create({
   photoSection: {
     marginTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: colors.border,
     paddingTop: spacing.lg,
   },
   photoHeader: {
@@ -460,7 +462,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 2,
     right: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: glass.fill.light,
     borderRadius: 11,
   },
   photoAdd: {
@@ -468,11 +470,11 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.2)',
+    borderColor: colors.borderHover,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(123, 45, 62, 0.03)',
+    backgroundColor: colors.primaryLight,
   },
   photoAddText: {
     ...typography.caption,
@@ -482,10 +484,10 @@ const styles = StyleSheet.create({
   chatButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.lg,
     gap: spacing.sm,
     marginTop: spacing.md,
@@ -498,7 +500,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    backgroundColor: 'rgba(248, 245, 242, 0.95)',
+    backgroundColor: colors.bgElevated,
   },
   waitingBanner: {
     flexDirection: 'row',

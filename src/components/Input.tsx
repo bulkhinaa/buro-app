@@ -9,7 +9,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 // Reset web outline on focused inputs
 const webInputReset = Platform.OS === 'web'
@@ -39,6 +40,7 @@ export function Input({
   onChangeText,
   ...props
 }: InputProps) {
+  const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
 
   const showClear = clearable && value && value.length > 0;
@@ -53,12 +55,19 @@ export function Input({
 
   return (
     <View style={styles.container}>
-      {label && showLabel && <Text style={styles.label}>{label}</Text>}
+      {label && showLabel && (
+        <Text style={[styles.label, { color: colors.heading }]}>{label}</Text>
+      )}
       <View
         style={[
           styles.inputRow,
-          focused && styles.inputRowFocused,
-          error ? styles.inputRowError : undefined,
+          { backgroundColor: colors.bgInput },
+          focused && {
+            borderWidth: 1.5,
+            borderColor: colors.primary,
+            backgroundColor: colors.bgCard,
+          },
+          error ? { borderWidth: 1.5, borderColor: colors.danger } : undefined,
         ]}
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
@@ -66,6 +75,7 @@ export function Input({
           style={[
             styles.input,
             webInputReset,
+            { color: colors.heading },
             leftIcon ? styles.inputWithLeftIcon : undefined,
             (showClear || rightIcon) ? styles.inputWithRightContent : undefined,
             style,
@@ -88,7 +98,7 @@ export function Input({
         )}
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
     </View>
   );
 }
@@ -99,30 +109,18 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.smallBold,
-    color: colors.heading,
     marginBottom: spacing.xs,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgInput,
     borderRadius: radius.lg,
     borderWidth: 0,
-  },
-  inputRowFocused: {
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.white,
-  },
-  inputRowError: {
-    borderWidth: 1.5,
-    borderColor: colors.danger,
   },
   input: {
     flex: 1,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
-    color: colors.heading,
     ...typography.body,
   },
   inputWithLeftIcon: {
@@ -146,7 +144,6 @@ const styles = StyleSheet.create({
   },
   error: {
     ...typography.small,
-    color: colors.danger,
     marginTop: spacing.xs,
   },
 });

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors, spacing, radius, typography } from '../theme';
-import { glass } from '../theme/glass';
+import { spacing, radius, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface GlassChipProps {
   label: string;
@@ -23,6 +23,7 @@ export function GlassChip({
   size = 'md',
   active = false,
 }: GlassChipProps) {
+  const { colors, glass } = useTheme();
   const isLight = variant === 'light';
   const isSmall = size === 'sm';
 

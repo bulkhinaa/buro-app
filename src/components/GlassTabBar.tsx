@@ -3,19 +3,21 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { colors, spacing, radius } from '../theme';
-import { glass } from '../theme/glass';
+import { spacing, radius, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { hapticLight } from '../utils/haptics';
 
 /**
  * GlassTabBar — Apple Liquid Glass floating tab bar
  * Rounded floating pill with blur on iOS, translucent on Android
+ * Now theme-aware — adapts to dark mode
  */
 export function GlassTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
+  const { colors, glass, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 12);
 
@@ -70,11 +72,22 @@ export function GlassTabBar({
             style={styles.tab}
           >
             {/* Active pill background */}
-            {isFocused && <View style={styles.activePill} />}
+            {isFocused && (
+              <View
+                style={[
+                  styles.activePill,
+                  {
+                    backgroundColor: isDark
+                      ? glass.fill.tinted
+                      : 'rgba(123, 45, 62, 0.08)',
+                  },
+                ]}
+              />
+            )}
             <View>
               {icon}
               {badge != null && (
-                <View style={styles.badge}>
+                <View style={[styles.badge, { backgroundColor: colors.danger }]}>
                   <Text style={styles.badgeText}>
                     {typeof badge === 'number' && badge > 9 ? '9+' : badge}
                   </Text>
@@ -99,9 +112,19 @@ export function GlassTabBar({
   if (Platform.OS === 'ios') {
     return (
       <View style={[styles.container, { paddingBottom: bottomPadding }]}>
-        <View style={styles.glassWrapper}>
-          <BlurView intensity={glass.blur.heavy} tint="light" style={styles.blur}>
-            <View style={styles.overlay}>{content}</View>
+        <View style={[styles.glassWrapper, { shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)' }]}>
+          <BlurView intensity={glass.blur.heavy} tint={isDark ? 'dark' : 'light'} style={styles.blur}>
+            <View
+              style={[
+                styles.overlay,
+                {
+                  backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.45)',
+                  borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.7)',
+                },
+              ]}
+            >
+              {content}
+            </View>
           </BlurView>
         </View>
       </View>
@@ -111,7 +134,16 @@ export function GlassTabBar({
   // Android fallback
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
-      <View style={[styles.glassWrapper, styles.androidGlass]}>
+      <View
+        style={[
+          styles.glassWrapper,
+          {
+            backgroundColor: isDark ? colors.bgElevated : 'rgba(255, 255, 255, 0.95)',
+            borderWidth: 1,
+            borderColor: isDark ? colors.border : 'rgba(255, 255, 255, 0.98)',
+          },
+        ]}
+      >
         {content}
       </View>
     </View>
@@ -129,8 +161,6 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: radius.xl,
     overflow: 'hidden',
-    // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.12)',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 1,
     shadowRadius: 20,
@@ -141,15 +171,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   overlay: {
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: radius.xl,
-  },
-  androidGlass: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.98)',
   },
   inner: {
     flexDirection: 'row',
@@ -165,7 +188,6 @@ const styles = StyleSheet.create({
   },
   activePill: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     borderRadius: radius.lg,
     margin: 4,
   },
@@ -183,7 +205,6 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,

@@ -5,6 +5,7 @@ import { ScreenWrapper, Card, Button, AppDialog, SystemButton, Toggle } from '..
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { UserRole } from '../../types';
 import { useAdminStore, MOCK_USERS, type AdminUser } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
@@ -30,6 +31,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export function AdminUserDetailScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { userId } = route.params;
   const currentUser = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);

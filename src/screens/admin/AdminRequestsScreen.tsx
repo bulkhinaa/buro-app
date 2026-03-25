@@ -5,6 +5,7 @@ import { ScreenWrapper, Card, StatusBadge, SearchInput, GlassChip, Button, AppDi
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticLight } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
 import { useAdminStore, MOCK_PROJECTS, type ProjectFilter } from '../../store/adminStore';
 import { fetchAllProjects, assignSupervisor, updateProjectStatus, fetchUsersByRole } from '../../services/projectService';
@@ -21,6 +22,7 @@ const FILTER_OPTIONS: { key: ProjectFilter; label: string }[] = [
 ];
 
 export function AdminRequestsScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');

@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass} from '../theme';
 import { Button } from './Button';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -252,9 +252,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.xl,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: glass.fill.light,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
   },
   filterChipActive: {
     backgroundColor: colors.primary,
@@ -278,22 +278,22 @@ const styles = StyleSheet.create({
   masterCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: glass.border.light,
     padding: spacing.md,
     gap: spacing.md,
   },
   masterCardSelected: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(123,45,62,0.05)',
+    backgroundColor: colors.primaryLight,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(123,45,62,0.1)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },

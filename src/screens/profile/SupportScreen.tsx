@@ -17,7 +17,8 @@ import {
   CellIndicator,
   CellFaq,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 
 const FAQ_DATA = [
   {
@@ -48,6 +49,7 @@ const FAQ_DATA = [
 ];
 
 export function SupportScreen() {
+  const { colors, glass, isDark } = useTheme();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -88,8 +90,12 @@ export function SupportScreen() {
           contentContainerStyle={styles.content}
         >
           {/* Contact options */}
-          <Text style={styles.sectionTitle}>Связаться с нами</Text>
-          <View style={styles.contactCard}>
+          <Text style={[styles.sectionTitle, { color: colors.heading }]}>Связаться с нами</Text>
+          <View style={[styles.contactCard, {
+            backgroundColor: glass.fill.regular,
+            borderColor: glass.border.light,
+            shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
+          }]}>
             <CellIndicator
               variant="card"
               icon={<Ionicons name="call-outline" size={20} color={colors.primary} />}
@@ -102,14 +108,14 @@ export function SupportScreen() {
               variant="card"
               icon={<Ionicons name="mail-outline" size={20} color={colors.primary} />}
               name="Email"
-              value="support@br.ru"
+              value="support@buroremontov.ru"
               showChevron
               onPress={handleEmailSupport}
             />
           </View>
 
           {/* Write to support */}
-          <Text style={styles.sectionTitle}>Написать в поддержку</Text>
+          <Text style={[styles.sectionTitle, { color: colors.heading }]}>Написать в поддержку</Text>
           <TextArea
             placeholder="Опишите ваш вопрос или проблему..."
             value={message}
@@ -125,7 +131,7 @@ export function SupportScreen() {
           />
 
           {/* FAQ */}
-          <Text style={[styles.sectionTitle, { marginTop: spacing.xxxl }]}>
+          <Text style={[styles.sectionTitle, { marginTop: spacing.xxxl, color: colors.heading }]}>
             Частые вопросы
           </Text>
           {FAQ_DATA.map((faq, i) => (
@@ -152,14 +158,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   contactCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.xs,
     marginBottom: spacing.xxl,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,

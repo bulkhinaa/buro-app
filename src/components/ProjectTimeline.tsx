@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { Stage, StageStatus, STAGE_STATUS_LABELS } from '../types';
 
 interface ProjectTimelineProps {
@@ -26,6 +27,7 @@ const STATUS_ICONS: Record<StageStatus, string> = {
 };
 
 export function ProjectTimeline({ stages, onStagePress }: ProjectTimelineProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   return (
     <View style={styles.container}>
       {stages.map((stage, idx) => {
@@ -189,13 +191,13 @@ const styles = StyleSheet.create({
     paddingRight: spacing.xs,
   },
   contentActive: {
-    backgroundColor: 'rgba(123, 45, 62, 0.04)',
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.xs,
   },
   contentRejected: {
-    backgroundColor: 'rgba(255, 59, 48, 0.04)',
+    backgroundColor: colors.dangerLight,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.xs,

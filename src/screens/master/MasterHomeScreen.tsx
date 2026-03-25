@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, EmptyStateIllustration, AnimatedEntry, SharedHeader } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
@@ -15,6 +16,7 @@ import { trackTap } from '../../services/analyticsService';
 const JUMP_FINANCE_ENABLED = false;
 
 export function MasterHomeScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 149, 0, 0.08)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.2)',
+    borderColor: colors.warning,
     padding: spacing.lg,
     marginBottom: spacing.xl,
     gap: spacing.md,
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -212,12 +214,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
   },
   statNumber: {
     ...typography.h2,

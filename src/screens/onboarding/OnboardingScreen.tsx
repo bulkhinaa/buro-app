@@ -17,15 +17,13 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
-import { colors, spacing } from '../../theme';
+import { spacing } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
-
-/** Warm cream background matching the 3D illustration style */
-const BG_CREAM = '#F5EFE9';
 
 /**
  * Illustration occupies the top ~62% of the screen, stretching edge-to-edge.
@@ -71,10 +69,14 @@ type Props = {
 };
 
 export function OnboardingScreen({ onComplete }: Props) {
+  const { colors, isDark } = useTheme();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const isScrolling = useRef(false);
   const { t } = useTranslation();
+
+  /** Background color — cream for light, dark bg for dark theme */
+  const bgColor = isDark ? colors.bg : '#F5EFE9';
 
   // Fix: RN Web Image sets internal opacity:0 for its loading fade-in.
   useEffect(() => {
@@ -94,7 +96,6 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const isLast = activeIndex === SLIDE_CONFIGS.length - 1;
 
-  // Track active slide from scroll position (works on web and native)
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = e.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / width);
@@ -110,20 +111,17 @@ export function OnboardingScreen({ onComplete }: Props) {
     const targetX = index * width;
 
     if (Platform.OS === 'web') {
-      // Web: use DOM scrollTo which is more reliable than RN scrollTo
       const scrollNode = (scrollRef.current as any)?.getScrollableNode?.() ||
         (scrollRef.current as any)?._nativeRef?.current;
       if (scrollNode) {
         scrollNode.scrollTo({ left: targetX, behavior: 'smooth' });
       } else {
-        // Fallback: try RN scrollTo
         scrollRef.current?.scrollTo({ x: targetX, animated: true });
       }
     } else {
       scrollRef.current?.scrollTo({ x: targetX, animated: true });
     }
 
-    // Update index immediately for responsive UI
     setActiveIndex(index);
 
     setTimeout(() => {
@@ -146,7 +144,7 @@ export function OnboardingScreen({ onComplete }: Props) {
   };
 
   const renderSlide = (item: SlideConfig) => (
-    <View style={styles.slide}>
+    <View style={[styles.slide, { backgroundColor: bgColor }]}>
       {/* 3D illustration — fills upper portion, edge to edge */}
       <Image
         source={item.image}
@@ -156,26 +154,26 @@ export function OnboardingScreen({ onComplete }: Props) {
 
       {/* Text content — anchored at bottom, gradient fade over illustration */}
       <LinearGradient
-        colors={['transparent', BG_CREAM, BG_CREAM]}
+        colors={['transparent', bgColor, bgColor]}
         locations={[0, 0.25, 1]}
         style={styles.slideContent}
       >
-        <View style={styles.iconPill}>
+        <View style={[styles.iconPill, { backgroundColor: colors.primary }]}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
         </View>
-        <Text style={styles.title}>{t(item.titleKey)}</Text>
-        <Text style={styles.subtitle}>{t(item.subtitleKey)}</Text>
+        <Text style={[styles.title, { color: colors.heading }]}>{t(item.titleKey)}</Text>
+        <Text style={[styles.subtitle, { color: colors.textLight }]}>{t(item.subtitleKey)}</Text>
       </LinearGradient>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
       {/* Skip button — top right */}
       {!isLast && (
         <SafeAreaView style={styles.skipSafe} edges={['top']} pointerEvents="box-none">
           <Pressable style={styles.skipButton} onPress={handleSkip}>
-            <Text style={styles.skipText}>{t('onboarding.skip', 'Пропустить')}</Text>
+            <Text style={[styles.skipText, { color: colors.textLight }]}>{t('onboarding.skip', 'Пропустить')}</Text>
           </Pressable>
         </SafeAreaView>
       )}
@@ -208,7 +206,11 @@ export function OnboardingScreen({ onComplete }: Props) {
                 hitSlop={8}
               >
                 <View
-                  style={[styles.dot, i === activeIndex && styles.dotActive]}
+                  style={[
+                    styles.dot,
+                    { backgroundColor: isDark ? 'rgba(232,87,122,0.2)' : 'rgba(123, 45, 62, 0.2)' },
+                    i === activeIndex && [styles.dotActive, { backgroundColor: colors.primary }],
+                  ]}
                 />
               </Pressable>
             ))}
@@ -231,7 +233,6 @@ export { ONBOARDING_KEY };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG_CREAM,
   },
   skipSafe: {
     position: 'absolute',
@@ -246,12 +247,10 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.textLight,
   },
   slide: {
     width,
     height,
-    backgroundColor: BG_CREAM,
   },
   illustration: {
     position: 'absolute',
@@ -272,7 +271,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -280,14 +278,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: colors.heading,
     marginBottom: spacing.sm,
     lineHeight: 38,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
-    color: colors.textLight,
     lineHeight: 24,
   },
   footerSafe: {
@@ -309,10 +305,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(123, 45, 62, 0.2)',
   },
   dotActive: {
-    backgroundColor: colors.primary,
     width: 24,
   },
 });

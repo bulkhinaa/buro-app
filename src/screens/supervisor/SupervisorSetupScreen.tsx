@@ -16,6 +16,7 @@ import {
   ProgressBar,
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useSupervisorStore } from '../../store/supervisorStore';
@@ -55,6 +56,7 @@ type Props = {
 };
 
 export function SupervisorSetupScreen({ onComplete }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const saveSetupData = useSupervisorStore((s) => s.saveSetupData);

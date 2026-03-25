@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SharedHeader } from '../../components';
 import { hapticLight } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useAdminStore, MOCK_STATS, MOCK_PROJECTS, MOCK_LEADS, MOCK_USERS } from '../../store/adminStore';
@@ -24,6 +25,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 export function AdminHomeScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const isDev = user?.id.startsWith('dev-');
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
@@ -194,13 +196,13 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '47%',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: glass.fill.regular,
     borderRadius: 20,
     padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: 'rgba(123, 45, 62, 0.05)',
+    borderColor: glass.border.light,
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -229,13 +231,13 @@ const styles = StyleSheet.create({
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: glass.border.light,
     gap: spacing.md,
-    shadowColor: 'rgba(123, 45, 62, 0.05)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
+    borderBottomColor: colors.border,
   },
   summaryLabel: {
     ...typography.body,

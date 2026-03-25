@@ -12,7 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Input, TextArea, Button } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
@@ -21,6 +22,7 @@ import type { PortfolioProject } from '../../types';
 const MAX_PHOTOS = 5;
 
 export function MasterPortfolioEditScreen({ navigation, route }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const projectId = route?.params?.projectId as string | undefined;
   const profile = useMasterStore((s) => s.profile);
   const addPortfolioProject = useMasterStore((s) => s.addPortfolioProject);
@@ -216,7 +218,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: glass.fill.light,
     borderRadius: 10,
   },
   addPhotoButton: {
@@ -224,9 +226,9 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.15)',
+    borderColor: colors.borderHover,
     borderStyle: 'dashed',
-    backgroundColor: 'rgba(123, 45, 62, 0.04)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
@@ -238,6 +240,6 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.5)',
+    borderTopColor: colors.border,
   },
 });

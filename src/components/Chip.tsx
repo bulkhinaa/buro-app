@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ChipProps {
   label: string;
@@ -19,14 +20,22 @@ export function Chip({
   onPress,
   size = 'md',
 }: ChipProps) {
+  const { colors, glass, isDark } = useTheme();
   const isSmall = size === 'sm';
 
   const content = (
     <View
       style={[
         styles.chip,
+        {
+          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.7)',
+          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+        },
         isSmall && styles.chipSmall,
-        selected && styles.chipSelected,
+        selected && {
+          backgroundColor: colors.primaryLight,
+          borderColor: isDark ? colors.borderHover : 'rgba(123, 45, 62, 0.15)',
+        },
       ]}
     >
       {emoji && <Text style={styles.emoji}>{emoji}</Text>}
@@ -36,8 +45,9 @@ export function Chip({
       <Text
         style={[
           styles.label,
+          { color: colors.primary },
           isSmall && styles.labelSmall,
-          selected && styles.labelSelected,
+          selected && { color: colors.primary, fontWeight: '600' },
         ]}
       >
         {label}
@@ -60,21 +70,15 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: radius.full,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
   },
   chipSmall: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
-  },
-  chipSelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: 'rgba(123, 45, 62, 0.15)',
   },
   emoji: {
     fontSize: 16,
@@ -88,13 +92,8 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.body,
-    color: colors.primary,
   },
   labelSmall: {
     ...typography.small,
-  },
-  labelSelected: {
-    color: colors.primary,
-    fontWeight: '600',
   },
 });

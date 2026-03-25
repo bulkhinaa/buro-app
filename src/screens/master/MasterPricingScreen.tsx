@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Chip } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
@@ -27,6 +28,7 @@ const PRICE_TYPES: { value: PriceType; label: string }[] = [
 ];
 
 export function MasterPricingScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const profile = useMasterStore((s) => s.profile);
   const updatePricing = useMasterStore((s) => s.updatePricing);
   const showToast = useToastStore((s) => s.show);
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
@@ -178,10 +180,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pricingRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -229,6 +231,6 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.5)',
+    borderTopColor: colors.border,
   },
 });

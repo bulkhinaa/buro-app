@@ -21,7 +21,8 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNotificationStore } from '../../store/notificationStore';
@@ -120,6 +121,7 @@ const TABS: TabDef[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorHomeScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id?.startsWith('dev-');
@@ -581,12 +583,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
-    shadowColor: 'rgba(123,45,62,0.05)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -605,12 +607,12 @@ const styles = StyleSheet.create({
   // Tab bar
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: 4,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: glass.border.light,
     gap: 2,
   },
   tabItem: {
@@ -623,8 +625,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   tabItemActive: {
-    backgroundColor: colors.white,
-    shadowColor: 'rgba(123,45,62,0.1)',
+    backgroundColor: colors.bgCard,
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -668,9 +670,9 @@ const styles = StyleSheet.create({
 
   // Offered card
   offeredCard: {
-    borderColor: 'rgba(197,165,90,0.25)',
+    borderColor: colors.accent,
     borderWidth: 1.5,
-    backgroundColor: 'rgba(197,165,90,0.04)',
+    backgroundColor: colors.accentLight,
   },
   newBadge: {
     backgroundColor: colors.accentLight,
@@ -690,7 +692,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(197,165,90,0.15)',
+    backgroundColor: colors.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -842,10 +844,10 @@ const styles = StyleSheet.create({
   inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: glass.border.light,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
@@ -855,7 +857,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(123,45,62,0.1)',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },

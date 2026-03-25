@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass} from '../theme';
 
 // Reset web outline on focused inputs
 const webInputReset = Platform.OS === 'web'
@@ -202,12 +202,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     marginTop: spacing.xs,
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.15)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 1,
     shadowRadius: 20,

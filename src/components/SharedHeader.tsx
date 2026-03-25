@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '../theme';
+import { spacing, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface SharedHeaderProps {
   title: string;
@@ -23,13 +24,14 @@ export function SharedHeader({
   rightAction,
 }: SharedHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { colors, glass } = useTheme();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <View style={styles.left}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={[styles.title, { color: colors.heading }]} numberOfLines={1}>{title}</Text>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+          <Text style={[styles.subtitle, { color: colors.textLight }]} numberOfLines={1}>{subtitle}</Text>
         ) : null}
       </View>
 
@@ -38,13 +40,13 @@ export function SharedHeader({
 
         <Pressable
           onPress={onNotificationPress}
-          style={styles.iconButton}
+          style={[styles.iconButton, { backgroundColor: glass.fill.light, borderColor: glass.border.light }]}
           hitSlop={8}
-          accessibilityLabel="Уведомления"
+          accessibilityLabel="Notifications"
         >
           <Ionicons name="notifications-outline" size={22} color={colors.heading} />
           {notificationCount > 0 && (
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: colors.danger }]}>
               <Text style={styles.badgeText}>
                 {notificationCount > 9 ? '9+' : notificationCount}
               </Text>
@@ -56,9 +58,9 @@ export function SharedHeader({
           onPress={onAvatarPress}
           style={styles.avatarButton}
           hitSlop={4}
-          accessibilityLabel="Профиль"
+          accessibilityLabel="Profile"
         >
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, { backgroundColor: glass.fill.light, borderColor: glass.border.light }]}>
             <Ionicons name="person" size={18} color={colors.primary} />
           </View>
         </Pressable>
@@ -83,11 +85,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.heading,
   },
   subtitle: {
     fontSize: 13,
-    color: colors.textLight,
     marginTop: 2,
   },
   right: {
@@ -99,9 +99,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -112,7 +110,6 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
@@ -129,9 +126,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },

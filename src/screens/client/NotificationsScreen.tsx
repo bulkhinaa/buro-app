@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import {
   useNotificationStore,
@@ -42,6 +43,7 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export function NotificationsScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const navigation = useNavigation<any>();
   const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
@@ -175,22 +177,22 @@ const styles = StyleSheet.create({
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: glass.border.light,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.04)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 1,
   },
   notificationUnread: {
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
-    borderColor: 'rgba(123, 45, 62, 0.15)',
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.borderHover,
   },
   iconCircle: {
     width: 36,

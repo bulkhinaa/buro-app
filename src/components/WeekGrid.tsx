@@ -17,6 +17,7 @@ import {
   getWeekDates,
   formatDate,
 } from '../store/scheduleStore';
+import { useTheme } from '../theme/ThemeContext';
 
 interface WeekGridProps {
   weekStart: Date;
@@ -45,6 +46,7 @@ export function WeekGrid({
   onDragSelect,
   readOnly = false,
 }: WeekGridProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const gridRef = useRef<View>(null);
   const gridLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
   const draggedSlots = useRef<Set<string>>(new Set());
@@ -162,7 +164,7 @@ export function WeekGrid({
         return '#C7C7CC'; // System grey
       case 'available':
       default:
-        return 'rgba(123, 45, 62, 0.08)';
+        return colors.primaryLight;
     }
   };
 
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   todayNumber: {
-    color: '#FFFFFF',
+    color: colors.textBright,
     backgroundColor: colors.primary,
     borderRadius: 10,
     width: 20,
@@ -296,7 +298,7 @@ const styles = StyleSheet.create({
   cell: {
     flex: 1,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0,0,0,0.06)',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { DateCell } from './DateCell';
 
 interface DateItem {
@@ -27,6 +28,7 @@ export function DateSection({
   onPrevMonth,
   onNextMonth,
 }: DateSectionProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   return (
     <View style={styles.container}>
       <View style={styles.header}>

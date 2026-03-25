@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass} from '../theme';
 
 type MarkerLevel = 'dot' | 'avatar' | 'tooltip';
 
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   tooltipCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     borderWidth: 2,
     borderColor: colors.primary,

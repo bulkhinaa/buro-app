@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { Checkbox } from './Checkbox';
 import { RadioButton } from './RadioButton';
 
@@ -23,6 +24,7 @@ export function CellService({
   selectionType = 'checkbox',
   onPress,
 }: CellServiceProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   return (
     <Pressable
       onPress={onPress}

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 
+import { useTheme } from '../theme/ThemeContext';
 const MONTH_NAMES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
@@ -30,6 +31,7 @@ export function DateRangePicker({
   onDateToChange,
   minDate,
 }: DateRangePickerProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const today = useMemo(() => {
     const d = new Date();
     return formatISO(d.getFullYear(), d.getMonth(), d.getDate());
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dayCellInRange: {
-    backgroundColor: 'rgba(123, 45, 62, 0.1)',
+    backgroundColor: colors.primaryLight,
   },
   dayCellStart: {
     borderTopLeftRadius: CELL_SIZE / 2,

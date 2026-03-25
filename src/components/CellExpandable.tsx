@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass} from '../theme';
 
 interface CellExpandableProps {
   text: string;
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   cell: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.sm,

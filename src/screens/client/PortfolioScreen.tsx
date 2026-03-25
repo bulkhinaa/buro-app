@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Chip, GlassChip, EmptyStateIllustration } from '../../components';
 import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePortfolioStore } from '../../store/portfolioStore';
 import { hapticLight } from '../../utils/haptics';
@@ -231,6 +232,7 @@ function useHeartbeat() {
 }
 
 export function PortfolioScreen({ navigation }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [selectedFilter, setSelectedFilter] = useState('Все');
   const { bookmarks, toggleBookmark, toggleLike, isLiked } = usePortfolioStore();
   const bookmarkAnim = useHeartbeat();
@@ -444,13 +446,13 @@ const styles = StyleSheet.create({
 
   // --- Card ---
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.08)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 20,
@@ -498,11 +500,11 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 24,
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
   },
   dotInactive: {
     width: 8,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: glass.fill.regular,
   },
 
   // --- Info section ---
@@ -584,20 +586,20 @@ const styles = StyleSheet.create({
     width: 44,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
+    borderColor: glass.border.light,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: glass.fill.regular,
   },
   stageChip: {
     height: 36,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
+    borderColor: glass.border.light,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: glass.fill.regular,
   },
   stageChipText: {
     ...typography.small,

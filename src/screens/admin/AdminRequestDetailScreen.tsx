@@ -5,6 +5,7 @@ import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, SystemButton } fro
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
 import { useAdminStore, MOCK_PROJECTS } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
@@ -24,6 +25,7 @@ interface ProjectDetail extends Project {
 }
 
 export function AdminRequestDetailScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { projectId } = route.params;
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);

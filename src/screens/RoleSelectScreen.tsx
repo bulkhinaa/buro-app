@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../components';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { hapticSuccess, hapticLight } from '../utils/haptics';
 import { trackTap } from '../services/analyticsService';
 
@@ -20,20 +21,20 @@ const ROLES: RoleOption[] = [
   {
     key: 'client',
     icon: 'home-outline',
-    title: 'Заказчик',
-    subtitle: 'Хочу сделать ремонт',
+    title: 'Хочу сделать ремонт',
+    subtitle: 'Найду мастеров, буду следить за ходом работ',
   },
   {
     key: 'master',
     icon: 'hammer-outline',
-    title: 'Мастер',
-    subtitle: 'Выполняю ремонтные работы',
+    title: 'Ищу заказы на ремонт',
+    subtitle: 'Получу задачи, покажу портфолио, заработаю',
   },
   {
     key: 'supervisor',
     icon: 'eye-outline',
-    title: 'Супервайзер',
-    subtitle: 'Контролирую качество работ',
+    title: 'Контролирую качество',
+    subtitle: 'Проверяю работы мастеров, защищаю интересы клиентов',
   },
 ];
 
@@ -42,6 +43,7 @@ type Props = {
 };
 
 export function RoleSelectScreen({ onComplete }: Props) {
+  const { colors, glass, isDark } = useTheme();
   const [selected, setSelected] = useState<RoleOption['key']>('client');
   const [loading, setLoading] = useState(false);
 
@@ -64,12 +66,12 @@ export function RoleSelectScreen({ onComplete }: Props) {
     <ScreenWrapper scroll={false}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.iconCircle}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
             <Ionicons name="people" size={32} color={colors.primary} />
           </View>
-          <Text style={styles.title}>Кто вы?</Text>
-          <Text style={styles.subtitle}>
-            Выберите вашу роль в платформе
+          <Text style={[styles.title, { color: colors.heading }]}>Что привело вас к нам?</Text>
+          <Text style={[styles.subtitle, { color: colors.textLight }]}>
+            Выберите, и мы настроим приложение под вас
           </Text>
         </View>
 
@@ -79,13 +81,25 @@ export function RoleSelectScreen({ onComplete }: Props) {
             return (
               <Pressable
                 key={role.key}
-                style={[styles.card, isSelected && styles.cardSelected]}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.65)',
+                    borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+                    shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0, 0, 0, 0.06)',
+                  },
+                  isSelected && {
+                    borderColor: isDark ? colors.borderHover : 'rgba(123, 45, 62, 0.3)',
+                    backgroundColor: isDark ? colors.primaryLight : 'rgba(123, 45, 62, 0.06)',
+                  },
+                ]}
                 onPress={() => handleSelect(role.key)}
               >
                 <View
                   style={[
                     styles.roleIcon,
-                    isSelected && styles.roleIconSelected,
+                    { backgroundColor: colors.primaryLight },
+                    isSelected && { backgroundColor: colors.primary },
                   ]}
                 >
                   <Ionicons
@@ -98,15 +112,16 @@ export function RoleSelectScreen({ onComplete }: Props) {
                   <Text
                     style={[
                       styles.roleTitle,
-                      isSelected && styles.roleTitleSelected,
+                      { color: colors.heading },
+                      isSelected && { color: colors.primary },
                     ]}
                   >
                     {role.title}
                   </Text>
-                  <Text style={styles.roleSubtitle}>{role.subtitle}</Text>
+                  <Text style={[styles.roleSubtitle, { color: colors.textLight }]}>{role.subtitle}</Text>
                 </View>
                 {isSelected && (
-                  <View style={styles.checkCircle}>
+                  <View style={[styles.checkCircle, { backgroundColor: colors.primary }]}>
                     <Ionicons name="checkmark" size={14} color={colors.white} />
                   </View>
                 )}
@@ -143,20 +158,17 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
   },
   title: {
     ...typography.h1,
-    color: colors.heading,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textLight,
     textAlign: 'center',
   },
   cards: {
@@ -166,54 +178,36 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.xl,
-    // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.06)',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 10,
     elevation: 3,
   },
-  cardSelected: {
-    borderColor: 'rgba(123, 45, 62, 0.3)',
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
-  },
   roleIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.lg,
-  },
-  roleIconSelected: {
-    backgroundColor: colors.primary,
   },
   cardText: {
     flex: 1,
   },
   roleTitle: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginBottom: 2,
-  },
-  roleTitleSelected: {
-    color: colors.primary,
   },
   roleSubtitle: {
     ...typography.small,
-    color: colors.textLight,
   },
   checkCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,

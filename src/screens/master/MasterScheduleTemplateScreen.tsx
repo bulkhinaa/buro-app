@@ -22,11 +22,13 @@ import {
 } from '../../store/scheduleStore';
 import { useToastStore } from '../../store/toastStore';
 
+import { useTheme } from '../../theme/ThemeContext';
 /**
  * MasterScheduleTemplateScreen — define default working hours template
  * Drag/tap on a weekly grid to set working hours, then apply to future weeks.
  */
 export function MasterScheduleTemplateScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation();
   const { user } = useAuthStore();
   const { template, fetchTemplate, saveTemplate, applyTemplate } = useScheduleStore();
@@ -325,8 +327,8 @@ const styles = StyleSheet.create({
   gridCell: {
     flex: 1,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0,0,0,0.06)',
-    backgroundColor: 'rgba(123,45,62,0.04)',
+    borderColor: colors.border,
+    backgroundColor: colors.primaryLight,
   },
   gridCellWorking: {
     backgroundColor: colors.primary,

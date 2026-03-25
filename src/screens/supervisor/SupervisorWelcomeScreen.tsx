@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { hapticLight } from '../../utils/haptics';
 
 interface SlideConfig {
@@ -57,6 +58,7 @@ type Props = {
 };
 
 export function SupervisorWelcomeScreen({ onComplete }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
@@ -100,7 +102,7 @@ export function SupervisorWelcomeScreen({ onComplete }: Props) {
 
   return (
     <LinearGradient
-      colors={['#F3EDE8', '#EDE5DF', '#F8F5F2']}
+      colors={[colors.bgGradientStart, colors.bgGradientMid, colors.bgGradientEnd]}
       style={[styles.container, { paddingTop: insets.top + spacing.lg }]}
     >
       {/* Skip button */}
@@ -194,7 +196,7 @@ const styles = StyleSheet.create({
   },
   painCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 59, 48, 0.06)',
+    backgroundColor: colors.dangerLight,
     borderRadius: radius.xl,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -209,7 +211,7 @@ const styles = StyleSheet.create({
   },
   solutionCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(52, 199, 89, 0.06)',
+    backgroundColor: colors.successLight,
     borderRadius: radius.xl,
     padding: spacing.lg,
     gap: spacing.sm,

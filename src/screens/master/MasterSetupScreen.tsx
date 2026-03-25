@@ -22,7 +22,8 @@ import {
   Checkbox,
   TextArea,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
@@ -95,6 +96,7 @@ const PRICE_TYPE_KEYS: { value: PriceType; key: string }[] = [
 ];
 
 export function MasterSetupScreen({ onComplete }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const { saveDraft, completeSetup, setupDraft } = useMasterStore();
   const insets = useSafeAreaInsets();
@@ -729,10 +731,10 @@ const styles = StyleSheet.create({
   },
   levelCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.lg,
     alignItems: 'center',
     minHeight: 140,
@@ -744,20 +746,20 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   levelCardSelected: {
-    borderColor: 'rgba(123, 45, 62, 0.2)',
+    borderColor: colors.borderHover,
     backgroundColor: colors.primaryLight,
   },
   levelIconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: glass.fill.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   levelIconCircleSelected: {
-    backgroundColor: 'rgba(123, 45, 62, 0.1)',
+    backgroundColor: colors.primaryLight,
   },
   levelLabel: {
     ...typography.smallBold,
@@ -780,10 +782,10 @@ const styles = StyleSheet.create({
   },
   // Portfolio
   portfolioItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -816,10 +818,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.15)',
+    borderColor: colors.borderHover,
     borderStyle: 'dashed',
     paddingVertical: spacing.xl,
     gap: spacing.sm,
@@ -829,7 +831,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   addProjectForm: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -842,10 +844,10 @@ const styles = StyleSheet.create({
   },
   // Pricing
   pricingRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -884,7 +886,7 @@ const styles = StyleSheet.create({
   // Agreement
   certSection: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.lg,
     padding: spacing.xxl,
     marginBottom: spacing.xxl,
@@ -910,7 +912,7 @@ const styles = StyleSheet.create({
   },
   agreementRowError: {
     borderColor: colors.danger,
-    backgroundColor: 'rgba(255, 59, 48, 0.05)',
+    backgroundColor: colors.dangerLight,
   },
   fieldError: {
     ...typography.small,
@@ -925,10 +927,10 @@ const styles = StyleSheet.create({
   },
   // Summary
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.xl,
   },
   summaryTitle: {

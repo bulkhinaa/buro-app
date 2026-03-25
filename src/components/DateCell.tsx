@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface DateCellProps {
   day: number;
@@ -19,6 +20,7 @@ export function DateCell({
   disabled = false,
   onPress,
 }: DateCellProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const dayColor = selected
     ? colors.white
     : weekend

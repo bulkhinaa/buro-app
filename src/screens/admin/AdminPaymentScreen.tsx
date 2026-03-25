@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, Input, SystemButton, AppDialog, GlassChip } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticLight } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { fetchProjectStages, recordPayment, fetchProjectPayments } from '../../services/projectService';
@@ -47,6 +48,7 @@ const MOCK_PAYMENTS: PaymentRecord[] = [
 ];
 
 export function AdminPaymentScreen({ route, navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { projectId } = route.params;
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -342,10 +344,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: glass.border.light,
     gap: spacing.xs,
   },
   methodCardActive: {

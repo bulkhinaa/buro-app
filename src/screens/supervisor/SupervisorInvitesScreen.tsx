@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, Input, AppDialog } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { colors, spacing, typography, radius, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
@@ -78,6 +79,7 @@ const MOCK_INVITES: Invite[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorInvitesScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id?.startsWith('dev-');
@@ -401,12 +403,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     padding: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: glass.border.light,
   },
   statNum: {
     ...typography.h1,
@@ -453,7 +455,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   codeBox: {
-    backgroundColor: 'rgba(123,45,62,0.08)',
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.md,

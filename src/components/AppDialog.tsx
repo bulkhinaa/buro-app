@@ -7,7 +7,8 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface DialogButton {
   text: string;
@@ -30,6 +31,8 @@ export function AppDialog({
   buttons,
   onClose,
 }: AppDialogProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <Modal
       visible={visible}
@@ -38,9 +41,20 @@ export function AppDialog({
       onRequestClose={onClose}
     >
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.dialog} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>{title}</Text>
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+        <Pressable
+          style={[
+            styles.dialog,
+            {
+              backgroundColor: isDark ? colors.bgElevated : colors.white,
+              shadowColor: isDark ? 'rgba(0,0,0,0.6)' : '#000',
+            },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <Text style={[styles.title, { color: colors.heading }]}>{title}</Text>
+          {message ? (
+            <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
+          ) : null}
 
           <ScrollView
             style={styles.buttonsScroll}
@@ -62,9 +76,13 @@ export function AppDialog({
                   }}
                   style={({ pressed }) => [
                     styles.button,
-                    isCancel && styles.buttonCancel,
-                    isDestructive && styles.buttonDestructive,
-                    !isCancel && !isDestructive && styles.buttonDefault,
+                    isCancel && {
+                      backgroundColor: colors.bgCard,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    },
+                    isDestructive && { backgroundColor: colors.dangerLight },
+                    !isCancel && !isDestructive && { backgroundColor: colors.primary },
                     pressed && styles.buttonPressed,
                     index < buttons.length - 1 && styles.buttonSpacing,
                   ]}
@@ -72,9 +90,9 @@ export function AppDialog({
                   <Text
                     style={[
                       styles.buttonText,
-                      isCancel && styles.buttonTextCancel,
-                      isDestructive && styles.buttonTextDestructive,
-                      !isCancel && !isDestructive && styles.buttonTextDefault,
+                      isCancel && { color: colors.textLight },
+                      isDestructive && { color: colors.danger },
+                      !isCancel && !isDestructive && { color: colors.white },
                     ]}
                   >
                     {btn.text}
@@ -98,13 +116,11 @@ const styles = StyleSheet.create({
     padding: spacing.xxl,
   },
   dialog: {
-    backgroundColor: colors.white,
     borderRadius: radius.lg,
     padding: spacing.xxl,
     width: '100%',
     maxWidth: 360,
     maxHeight: '80%',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -112,13 +128,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-    color: colors.heading,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   message: {
     ...typography.body,
-    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.xl,
     lineHeight: 22,
@@ -135,31 +149,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
   },
-  buttonDefault: {
-    backgroundColor: colors.primary,
-  },
-  buttonCancel: {
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  buttonDestructive: {
-    backgroundColor: colors.dangerLight,
-  },
   buttonPressed: {
     opacity: 0.8,
   },
   buttonSpacing: {},
   buttonText: {
     ...typography.bodyBold,
-  },
-  buttonTextDefault: {
-    color: colors.white,
-  },
-  buttonTextCancel: {
-    color: colors.textLight,
-  },
-  buttonTextDestructive: {
-    color: colors.danger,
   },
 });

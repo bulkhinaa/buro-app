@@ -8,7 +8,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radius, typography } from '../theme';
+import { spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ButtonProps {
   title: string;
@@ -35,14 +36,17 @@ export function Button({
   badge,
   style,
 }: ButtonProps) {
+  const { isDark, colors } = useTheme();
   const isDisabled = disabled || loading;
+
+  const gradientEnd = isDark ? '#A63D58' : '#9B4D5E';
 
   const buttonStyle = [
     styles.base,
     styles[size],
     fullWidth && styles.fullWidth,
     isDisabled && styles.disabled,
-    variant === 'outline' && styles.outline,
+    variant === 'outline' && [styles.outline, { borderColor: colors.primary }],
     variant === 'ghost' && styles.ghost,
     style,
   ];
@@ -50,8 +54,8 @@ export function Button({
   const textStyle = [
     styles.text,
     styles[`text_${size}`],
-    variant === 'outline' && styles.textOutline,
-    variant === 'ghost' && styles.textGhost,
+    variant === 'outline' && { color: colors.primary },
+    variant === 'ghost' && { color: colors.primary },
   ];
 
   const content = (
@@ -66,8 +70,8 @@ export function Button({
       {icon && <View style={{ marginRight: spacing.sm }}>{icon}</View>}
       <Text style={textStyle}>{title}</Text>
       {badge && (
-        <View style={[styles.badge, variant !== 'primary' && styles.badgeOutline]}>
-          <Text style={[styles.badgeText, variant !== 'primary' && styles.badgeTextOutline]}>
+        <View style={[styles.badge, variant !== 'primary' && { backgroundColor: colors.primaryLight }]}>
+          <Text style={[styles.badgeText, variant !== 'primary' && { color: colors.primary }]}>
             {badge}
           </Text>
         </View>
@@ -84,7 +88,7 @@ export function Button({
         style={[fullWidth && styles.fullWidth, style]}
       >
         <LinearGradient
-          colors={[colors.primary, '#9B4D5E']}
+          colors={[colors.primary, gradientEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -126,21 +130,18 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   outline: {
     borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.transparent,
+    backgroundColor: 'transparent',
   },
   ghost: {
-    backgroundColor: colors.transparent,
+    backgroundColor: 'transparent',
   },
   text: {
     ...typography.button,
-    color: colors.white,
+    color: '#ffffff',
   },
   text_sm: { fontSize: 14 },
   text_md: { fontSize: 16 },
   text_lg: { fontSize: 17 },
-  textOutline: { color: colors.primary },
-  textGhost: { color: colors.primary },
   badge: {
     marginLeft: spacing.sm,
     backgroundColor: 'rgba(255,255,255,0.25)',
@@ -148,14 +149,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  badgeOutline: {
-    backgroundColor: colors.primaryLight,
-  },
   badgeText: {
     ...typography.small,
-    color: colors.white,
-  },
-  badgeTextOutline: {
-    color: colors.primary,
+    color: '#ffffff',
   },
 });

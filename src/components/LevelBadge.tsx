@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export type MasterLevel = 'start' | 'profi' | 'expert';
 
@@ -28,6 +29,7 @@ export function LevelBadge({
   variant = 'outline',
   size = 'md',
 }: LevelBadgeProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const isFilled = variant === 'filled';
   const iconSize = size === 'sm' ? 14 : 18;
 

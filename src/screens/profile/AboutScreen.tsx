@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, CellIndicator } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 
 export function AboutScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   return (
     <ScreenWrapper scroll={false}>
       <ScrollView
@@ -84,14 +86,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.1)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -107,13 +109,13 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
   descriptionCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.xl,
     marginBottom: spacing.xxl,
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -126,13 +128,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   linksCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
     padding: spacing.xs,
     marginBottom: spacing.xxl,
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,

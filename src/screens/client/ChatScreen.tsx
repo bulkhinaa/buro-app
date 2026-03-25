@@ -15,7 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radius, typography } from '../../theme';
+import { colors, spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { ChatMessage } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
@@ -36,6 +37,7 @@ function getSenderName(senderId: string): string {
 }
 
 export function ChatScreen({ route }: Props) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const {
     loadMessages,
@@ -543,7 +545,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: colors.border,
   },
   replyBar: {
     width: 3,
@@ -552,7 +554,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   replyBarOwn: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: glass.fill.regular,
   },
   replyInBubbleContent: {
     flex: 1,
@@ -652,7 +654,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   menuCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.bgCard,
     borderRadius: radius.xl,
     paddingVertical: spacing.sm,
     minWidth: 220,

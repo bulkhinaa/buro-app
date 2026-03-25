@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, GlassChip, SystemButton } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAdminStore, MOCK_LEADS, type Lead, type LeadFilter } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
@@ -32,6 +33,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function AdminLeadsScreen({ navigation }: any) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');

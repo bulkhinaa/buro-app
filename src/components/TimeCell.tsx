@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 interface TimeCellProps {
   time: string;
@@ -15,6 +16,7 @@ export function TimeCell({
   inactive = false,
   onPress,
 }: TimeCellProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const textColor = selected
     ? colors.white
     : inactive

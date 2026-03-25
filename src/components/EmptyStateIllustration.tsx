@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 type EmptyVariant =
   | 'no-projects'
@@ -77,6 +78,7 @@ export function EmptyStateIllustration({
   title,
   subtitle,
 }: EmptyStateIllustrationProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const config = VARIANT_CONFIG[variant];
 
   return (

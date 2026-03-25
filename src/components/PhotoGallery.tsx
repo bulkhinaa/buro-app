@@ -11,7 +11,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, glass } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import type { PhotoReport, Stage } from '../types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -26,6 +27,7 @@ interface PhotoGalleryProps {
 }
 
 export function PhotoGallery({ stages, photosByStage }: PhotoGalleryProps) {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const [filter, setFilter] = useState<PhotoFilter>('all');
   const [fullscreenPhoto, setFullscreenPhoto] = useState<PhotoReport | null>(null);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
@@ -217,9 +219,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: glass.fill.light,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderColor: glass.border.light,
   },
   filterChipActive: {
     backgroundColor: colors.primary,

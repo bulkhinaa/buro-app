@@ -20,6 +20,7 @@ import { supabase } from '../../lib/supabase';
 import {
   SPECIALIZATION_MAP,
 } from '../../data/specializations';
+import { useTheme } from '../../theme/ThemeContext';
 
 interface MasterCandidate {
   id: string;
@@ -109,6 +110,7 @@ const DEV_MASTERS: MasterCandidate[] = [
 ];
 
 export function MasterMatchScreen() {
+  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
@@ -428,7 +430,7 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.textBright,
   },
   bestMatchBadge: {
     flexDirection: 'row',

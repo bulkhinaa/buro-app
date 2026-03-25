@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Input } from './Input';
-import { colors } from '../theme';
 
 interface DateTimeInputProps {
   label?: string;
