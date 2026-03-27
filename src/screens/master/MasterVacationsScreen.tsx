@@ -15,12 +15,12 @@ import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, Button, GlassView, AppDialog, Input, DateRangePicker } from '../../components';
 import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
 import { useAuthStore } from '../../store/authStore';
 import { useScheduleStore } from '../../store/scheduleStore';
 import { useToastStore } from '../../store/toastStore';
 import type { MasterVacation } from '../../types';
 
-import { useTheme } from '../../theme/ThemeContext';
 const MONTH_NAMES = [
   'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
@@ -120,7 +120,6 @@ function SwipeableVacationCard({
 }
 
 export function MasterVacationsScreen() {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation();
   const { user } = useAuthStore();
   const { vacations, fetchVacations, addVacation, removeVacation } = useScheduleStore();
@@ -372,12 +371,12 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
   vacationDays: {
-    fontSize: 13,
+    ...typography.small,
     color: colors.textLight,
     marginTop: spacing.xs,
   },
   vacationReason: {
-    fontSize: 13,
+    ...typography.small,
     color: colors.text,
     marginTop: spacing.xs,
     fontStyle: 'italic',
@@ -413,7 +412,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   dialog: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.white,
     borderRadius: radius.lg,
     padding: spacing.xl,
     width: '100%',
@@ -421,7 +420,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   dialogTitle: {
-    fontSize: 18,
+    ...typography.h3,
     fontWeight: '800',
     color: colors.heading,
     textAlign: 'center',
@@ -431,15 +430,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     marginTop: spacing.sm,
   },
   selectedRangeText: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.smallBold,
     color: colors.primary,
     flex: 1,
   },
@@ -448,8 +446,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.smallBold,
     color: colors.text,
   },
   dialogButtons: {

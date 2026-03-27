@@ -463,6 +463,82 @@ export async function generateStagesForProject(
   return (data as Stage[]) || [];
 }
 
+// ---------- STAGE PLAN (SUPERVISOR) ----------
+
+/** Save a full stage plan for a project — upsert stages by project_id + order_index */
+export async function saveProjectStagePlan(
+  projectId: string,
+  stages: Array<{
+    title: string;
+    description: string;
+    order_index: number;
+    planned_start_date: string;
+    planned_end_date: string;
+    duration_days: number;
+  }>,
+): Promise<Stage[]> {
+  // Fetch existing stages for this project to determine insert vs update
+  const { data: existing, error: fetchError } = await supabase
+    .from('stages')
+    .select('id, order_index')
+    .eq('project_id', projectId);
+
+  if (fetchError) throw fetchError;
+
+  const existingByOrder = new Map(
+    (existing || []).map((s: { id: string; order_index: number }) => [s.order_index, s.id]),
+  );
+
+  const upsertPayloads = stages.map((s) => {
+    const base: Record<string, any> = {
+      project_id: projectId,
+      title: s.title,
+      description: s.description,
+      order_index: s.order_index,
+      planned_start_date: s.planned_start_date,
+      planned_end_date: s.planned_end_date,
+      duration_days: s.duration_days,
+      deadline: s.planned_end_date,
+    };
+
+    // If a stage with this order_index already exists, include its id for upsert
+    const existingId = existingByOrder.get(s.order_index);
+    if (existingId) {
+      base.id = existingId;
+    }
+
+    return base;
+  });
+
+  const { data, error } = await supabase
+    .from('stages')
+    .upsert(upsertPayloads, { onConflict: 'id' })
+    .select();
+
+  if (error) throw error;
+  return (data as Stage[]) || [];
+}
+
+/** Update a single stage (title, duration, description, etc.) */
+export async function updateStage(
+  stageId: string,
+  updates: {
+    title?: string;
+    duration_days?: number;
+    description?: string;
+    planned_start_date?: string;
+    planned_end_date?: string;
+    deadline?: string;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from('stages')
+    .update(updates)
+    .eq('id', stageId);
+
+  if (error) throw error;
+}
+
 // ---------- PHOTO REPORTS (CLIENT VIEW) ----------
 
 export async function fetchStagePhotos(stageId: string): Promise<PhotoReport[]> {

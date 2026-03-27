@@ -1,14 +1,11 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  FlatList,
   Pressable,
   RefreshControl,
-  Image,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -18,15 +15,12 @@ import {
   Button,
   MapPreview,
   Chip,
-  GlassChip,
-  GlassView,
   AnimatedEntry,
   EmptyStateIllustration,
   SkeletonCard,
   SharedHeader,
 } from '../../components';
-import { spacing, radius, typography, useSerifFont, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography, useSerifFont } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useObjectStore } from '../../store/objectStore';
@@ -45,8 +39,6 @@ import { SvgXml } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PORTFOLIO_CARD_WIDTH = SCREEN_WIDTH * 0.78;
 const OBJECT_CARD_WIDTH = 260;
 
 type Props = {
@@ -60,54 +52,10 @@ const HOW_IT_WORKS_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
   'checkmark-circle-outline',
 ];
 
-// Mock portfolio data — IDs match PortfolioScreen cases
-const MOCK_PORTFOLIO = [
-  {
-    id: '1',
-    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600',
-    repairType: 'Стандартный',
-    area: '54 м²',
-    address: 'ул. Ленина, 15',
-    cost: '870 000 ₽',
-    duration: '45 дней',
-    rating: 4.9,
-    reviewCount: 12,
-    supervisorName: 'Алексей К.',
-    stagesCount: 14,
-  },
-  {
-    id: '2',
-    imageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600',
-    repairType: 'Капитальный',
-    area: '78 м²',
-    address: 'пр. Мира, 42',
-    cost: '1 560 000 ₽',
-    duration: '72 дня',
-    rating: 5.0,
-    reviewCount: 8,
-    supervisorName: 'Борисова Е.',
-    stagesCount: 14,
-  },
-  {
-    id: '3',
-    imageUrl: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600',
-    repairType: 'Косметический',
-    area: '38 м²',
-    address: 'ул. Пушкина, 8',
-    cost: '285 000 ₽',
-    duration: '21 день',
-    rating: 4.8,
-    reviewCount: 15,
-    supervisorName: 'Григорьев М.',
-    stagesCount: 8,
-  },
-];
 
 export function ClientHomeScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const serifFont = useSerifFont();
-  const { colors, glass, isDark } = useTheme();
-  const styles = useClientHomeStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const { projects, isLoading, loadProjects } = useProjectStore();
   const { objects, loadObjects } = useObjectStore();
@@ -222,100 +170,39 @@ export function ClientHomeScreen({ navigation }: Props) {
           </ScrollView>
         </AnimatedEntry>
 
-        {/* Portfolio carousel — reference card design */}
+        {/* Portfolio link */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
           <Text style={styles.sectionTitle}>{t('home.realizedProjects')}</Text>
           <Pressable onPress={() => navigation.navigate('Portfolio')}>
             <Text style={styles.sectionLink}>{t('home.viewAll')}</Text>
           </Pressable>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.portfolioScroll}
-          decelerationRate="fast"
-          snapToInterval={PORTFOLIO_CARD_WIDTH + spacing.md}
-          snapToAlignment="start"
-        >
-          {MOCK_PORTFOLIO.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.portfolioCard}
-              onPress={() =>
-                navigation.navigate('CaseDetail', { caseId: item.id })
-              }
-            >
-              {/* Image with glass overlays */}
-              <View style={styles.portfolioImageContainer}>
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={styles.portfolioImage}
-                />
-                {/* Glass chip — repair type */}
-                <View style={styles.portfolioChipOverlay}>
-                  <GlassChip label={item.repairType} variant="light" size="sm" />
-                </View>
-                {/* Glass bookmark */}
-                <View style={styles.portfolioBookmarkOverlay}>
-                  <View style={styles.portfolioBookmarkCircle}>
-                    <Ionicons
-                      name="bookmark-outline"
-                      size={14}
-                      color={colors.heading}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Info — reference layout */}
-              <View style={styles.portfolioInfo}>
-                {/* Name + rating row */}
-                <View style={styles.portfolioNameRow}>
-                  <Text style={styles.portfolioSupervisor} numberOfLines={1}>
-                    {item.supervisorName}
-                  </Text>
-                  <View style={styles.portfolioRating}>
-                    <Ionicons name="star" size={12} color={colors.primary} />
-                    <Text style={styles.portfolioRatingText}>
-                      {item.rating} ({item.reviewCount})
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Repair type */}
-                <Text style={styles.portfolioDescTitle} numberOfLines={1}>
-                  {item.repairType} ремонт
-                </Text>
-
-                {/* Area + duration */}
-                <View style={styles.portfolioLocationRow}>
-                  <Ionicons
-                    name="resize-outline"
-                    size={13}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.portfolioLocationText}>
-                    {item.area} · {item.duration}
-                  </Text>
-                </View>
-
-                {/* Cost */}
-                <Text style={styles.portfolioCost}>
-                  {item.cost}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.padded}>
+          <Card style={styles.emptyCard}>
+            <EmptyStateIllustration
+              variant="no-projects"
+              title="Портфолио работ"
+              subtitle="Здесь появятся завершённые проекты с фотоотчётами"
+            />
+            <Button
+              title={t('home.viewAll')}
+              onPress={() => navigation.navigate('Portfolio')}
+              variant="outline"
+              style={{ marginTop: spacing.sm }}
+            />
+          </Card>
+        </View>
 
         {/* My Objects */}
         <View style={[styles.sectionHeaderRow, styles.padded]}>
           <Text style={styles.sectionTitle}>{t('home.myObjects')}</Text>
-          {objects.length > 0 && (
-            <Pressable onPress={() => navigation.navigate('AddObject')}>
-              <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-            </Pressable>
-          )}
+          <Pressable
+            onPress={() => navigation.navigate('AddObject')}
+            accessibilityLabel="Добавить объект"
+            accessibilityRole="button"
+          >
+            <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+          </Pressable>
         </View>
         {objects.length > 0 ? (
           <ScrollView
@@ -429,306 +316,185 @@ export function ClientHomeScreen({ navigation }: Props) {
   );
 }
 
-import type { ThemeColors } from '../../theme/colors';
-import type { GlassTokens } from '../../theme/glass';
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  padded: {
+    paddingHorizontal: spacing.xl,
+  },
+  // Hero Banner
+  heroBanner: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+    marginBottom: spacing.xxl,
+  },
+  heroTitle: {
+    ...typography.h2,
+    color: colors.heading,
+    marginBottom: spacing.sm,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: colors.textLight,
+    lineHeight: 22,
+  },
+  // Section titles
+  sectionTitle: {
+    ...typography.h3,
+    color: colors.heading,
+    marginBottom: spacing.lg,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionLink: {
+    ...typography.body,
+    color: colors.primary,
+  },
+  // How it works
+  howItWorksScroll: {
+    paddingLeft: spacing.xl,
+    paddingRight: spacing.xl + 8,
+    gap: spacing.md,
+    marginBottom: spacing.xxl,
+  },
+  howItWorksCard: {
+    width: 240,
+    padding: spacing.lg,
+  },
+  howItWorksIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  howItWorksTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: spacing.xs,
+  },
+  howItWorksText: {
+    ...typography.small,
+    color: colors.textLight,
+    lineHeight: 18,
+  },
+  // My Objects
+  objectsScroll: {
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+    marginBottom: spacing.xxl,
+  },
+  objectCard: {
+    width: OBJECT_CARD_WIDTH,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.08)',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  objectLayoutThumb: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    marginRight: spacing.md,
+  },
+  objectInfo: {
+    flex: 1,
+  },
+  objectAddress: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: 2,
+  },
+  objectMeta: {
+    ...typography.small,
+    color: colors.textLight,
+    marginBottom: spacing.xs,
+  },
+  objectProjects: {
+    ...typography.small,
+    color: colors.primary,
+  },
+  objectDots: {
+    flexDirection: 'row',
+    gap: 4,
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
 
-function useClientHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
-  return useMemo(
-    () =>
-      StyleSheet.create({
-        scroll: {
-          flex: 1,
-        },
-        padded: {
-          paddingHorizontal: spacing.xl,
-        },
-        // Hero Banner
-        heroBanner: {
-          borderLeftWidth: 3,
-          borderLeftColor: colors.primary,
-          marginBottom: spacing.xxl,
-        },
-        heroTitle: {
-          ...typography.h2,
-          color: colors.heading,
-          marginBottom: spacing.sm,
-        },
-        heroSubtitle: {
-          ...typography.body,
-          color: colors.textLight,
-          lineHeight: 22,
-        },
-        // Section titles
-        sectionTitle: {
-          ...typography.h3,
-          color: colors.heading,
-          marginBottom: spacing.lg,
-        },
-        sectionHeaderRow: {
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        },
-        sectionLink: {
-          ...typography.body,
-          color: colors.primary,
-        },
-        // How it works
-        howItWorksScroll: {
-          paddingLeft: spacing.xl,
-          paddingRight: spacing.xl + 8,
-          gap: spacing.md,
-          marginBottom: spacing.xxl,
-        },
-        howItWorksCard: {
-          width: 240,
-          padding: spacing.lg,
-        },
-        howItWorksIconCircle: {
-          width: 48,
-          height: 48,
-          borderRadius: 24,
-          backgroundColor: colors.primaryLight,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: spacing.md,
-        },
-        howItWorksTitle: {
-          ...typography.bodyBold,
-          color: colors.heading,
-          marginBottom: spacing.xs,
-        },
-        howItWorksText: {
-          ...typography.small,
-          color: colors.textLight,
-          lineHeight: 18,
-        },
-        // Portfolio carousel
-        portfolioScroll: {
-          paddingHorizontal: spacing.xl,
-          gap: spacing.md,
-          marginBottom: spacing.xxl,
-        },
-        portfolioCard: {
-          width: PORTFOLIO_CARD_WIDTH,
-          backgroundColor: colors.bgCard,
-          borderRadius: radius.xl,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: colors.border,
-          shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.08)',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 1,
-          shadowRadius: 12,
-          elevation: 3,
-        },
-        portfolioImageContainer: {
-          position: 'relative',
-        },
-        portfolioImage: {
-          width: PORTFOLIO_CARD_WIDTH,
-          height: PORTFOLIO_CARD_WIDTH * 0.62,
-          resizeMode: 'cover',
-        },
-        portfolioChipOverlay: {
-          position: 'absolute',
-          top: spacing.md,
-          left: spacing.md,
-        },
-        portfolioBookmarkOverlay: {
-          position: 'absolute',
-          top: spacing.md,
-          right: spacing.md,
-        },
-        portfolioBookmarkCircle: {
-          width: 30,
-          height: 30,
-          borderRadius: 15,
-          backgroundColor: glass.fill.light,
-          borderWidth: 1,
-          borderColor: glass.border.light,
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        portfolioInfo: {
-          padding: spacing.md,
-        },
-        portfolioNameRow: {
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: spacing.xs,
-        },
-        portfolioSupervisor: {
-          ...typography.small,
-          color: colors.text,
-          flex: 1,
-          marginRight: spacing.sm,
-        },
-        portfolioRating: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 3,
-        },
-        portfolioRatingText: {
-          ...typography.smallBold,
-          color: colors.heading,
-        },
-        portfolioDescRow: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.sm,
-          marginBottom: spacing.sm,
-        },
-        portfolioDescTitle: {
-          ...typography.bodyBold,
-          color: colors.heading,
-          flex: 1,
-        },
-        portfolioStagesChip: {
-          backgroundColor: colors.primaryLight,
-          borderRadius: radius.full,
-          paddingVertical: 1,
-          paddingHorizontal: spacing.sm,
-        },
-        portfolioStagesText: {
-          ...typography.caption,
-          color: colors.primary,
-          fontWeight: '700',
-        },
-        portfolioLocationRow: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 3,
-          marginBottom: spacing.xs,
-        },
-        portfolioLocationText: {
-          ...typography.small,
-          color: colors.primary,
-        },
-        portfolioCost: {
-          ...typography.bodyBold,
-          color: colors.heading,
-        },
-        portfolioDuration: {
-          ...typography.body,
-          color: colors.textLight,
-          fontWeight: '400',
-        },
-
-        // My Objects
-        objectsScroll: {
-          paddingHorizontal: spacing.xl,
-          gap: spacing.md,
-          marginBottom: spacing.xxl,
-        },
-        objectCard: {
-          width: OBJECT_CARD_WIDTH,
-          backgroundColor: isDark ? glass.fill.light : 'rgba(255, 255, 255, 0.6)',
-          borderRadius: radius.xl,
-          borderWidth: 1,
-          borderColor: isDark ? glass.border.light : 'rgba(255, 255, 255, 0.85)',
-          padding: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123, 45, 62, 0.08)',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 1,
-          shadowRadius: 10,
-          elevation: 3,
-        },
-        objectLayoutThumb: {
-          width: 70,
-          height: 70,
-          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.5)',
-          borderRadius: radius.lg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
-          marginRight: spacing.md,
-        },
-        objectInfo: {
-          flex: 1,
-        },
-        objectAddress: {
-          ...typography.bodyBold,
-          color: colors.heading,
-          marginBottom: 2,
-        },
-        objectMeta: {
-          ...typography.small,
-          color: colors.textLight,
-          marginBottom: spacing.xs,
-        },
-        objectProjects: {
-          ...typography.small,
-          color: colors.primary,
-        },
-        objectDots: {
-          flexDirection: 'row',
-          gap: 4,
-          position: 'absolute',
-          top: spacing.md,
-          right: spacing.md,
-        },
-        statusDot: {
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-        },
-
-        // My Projects (backward compat for projects without objects)
-        projectCard: {
-          marginBottom: spacing.lg,
-        },
-        projectHeader: {
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: spacing.md,
-        },
-        projectDate: {
-          ...typography.small,
-          color: colors.textLight,
-        },
-        projectTitle: {
-          ...typography.h3,
-          color: colors.heading,
-          marginBottom: spacing.xs,
-        },
-        projectAddress: {
-          ...typography.body,
-          color: colors.textLight,
-          marginBottom: spacing.md,
-        },
-        projectMeta: {
-          flexDirection: 'row',
-          gap: spacing.sm,
-          marginBottom: spacing.sm,
-        },
-        projectBudget: {
-          ...typography.bodyBold,
-          color: colors.gold,
-        },
-        // Empty
-        emptyCard: {
-          alignItems: 'center',
-          paddingVertical: spacing.huge,
-          marginTop: spacing.sm,
-        },
-        emptyTitle: {
-          ...typography.h2,
-          color: colors.heading,
-          marginBottom: spacing.sm,
-        },
-        emptyText: {
-          ...typography.body,
-          color: colors.textLight,
-          textAlign: 'center',
-          lineHeight: 22,
-        },
-      }),
-    [colors, glass, isDark],
-  );
-}
+  // My Projects (backward compat for projects without objects)
+  projectCard: {
+    marginBottom: spacing.lg,
+  },
+  projectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  projectDate: {
+    ...typography.small,
+    color: colors.textLight,
+  },
+  projectTitle: {
+    ...typography.h3,
+    color: colors.heading,
+    marginBottom: spacing.xs,
+  },
+  projectAddress: {
+    ...typography.body,
+    color: colors.textLight,
+    marginBottom: spacing.md,
+  },
+  projectMeta: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  projectBudget: {
+    ...typography.bodyBold,
+    color: colors.gold,
+  },
+  // Empty
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: spacing.huge,
+    marginTop: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.h2,
+    color: colors.heading,
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+});

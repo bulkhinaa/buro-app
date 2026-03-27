@@ -1,37 +1,48 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, StatusBadge, EmptyStateIllustration, AnimatedEntry, SharedHeader } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { ScreenWrapper, Card, StatusBadge, AnimatedEntry, SharedHeader, GlassChip } from '../../components';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useToastStore } from '../../store/toastStore';
 import { useTranslation } from 'react-i18next';
 import { trackTap } from '../../services/analyticsService';
+import { SPECIALIZATION_MAP, type SpecializationId } from '../../data/specializations';
 
 // Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
 // Set to true once the function is deployed and tested.
 const JUMP_FINANCE_ENABLED = false;
 
 export function MasterHomeScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const { tasks, loadTasks } = useTaskStore();
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+  const showToast = useToastStore((s) => s.show);
+  const [loadError, setLoadError] = useState(false);
 
   const isVerified = profile?.verification_status === 'approved';
   const completedCount = profile?.completed_tasks ?? 0;
   const rating = profile?.rating ?? 0;
 
-  useEffect(() => {
-    if (user) {
-      loadTasks(user.id);
+  const loadData = async () => {
+    if (!user) return;
+    try {
+      setLoadError(false);
+      await loadTasks(user.id);
       useNotificationStore.getState().loadNotifications(user.id);
+    } catch {
+      setLoadError(true);
+      showToast('Не удалось загрузить данные', 'error');
     }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [user]);
 
   const handleTaskPress = (task: TaskItem) => {
@@ -115,6 +126,45 @@ export function MasterHomeScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Specializations chips */}
+      {(() => {
+        const specs = (profile?.specializations ?? []) as SpecializationId[];
+        if (specs.length === 0) {
+          return (
+            <View style={styles.specsRow}>
+              <GlassChip
+                label={t('master.home.addSpecializations')}
+                size="md"
+                active={false}
+                onPress={() => navigation?.navigate('EditSpecializations')}
+              />
+            </View>
+          );
+        }
+        const visible = specs.slice(0, 4);
+        const extra = specs.length - 4;
+        return (
+          <View style={styles.specsRow}>
+            {visible.map((id) => (
+              <GlassChip
+                key={id}
+                label={SPECIALIZATION_MAP[id]?.label ?? id}
+                size="sm"
+                active={true}
+              />
+            ))}
+            {extra > 0 && (
+              <GlassChip
+                label={t('master.home.moreSpecs', { count: extra })}
+                size="sm"
+                active={false}
+                onPress={() => navigation?.navigate('EditSpecializations')}
+              />
+            )}
+          </View>
+        );
+      })()}
+
       {/* Rejected tasks */}
       {rejectedTasks.length > 0 && (
         <>
@@ -156,15 +206,77 @@ export function MasterHomeScreen({ navigation }: any) {
         </>
       )}
 
+      {/* Retry button on load error */}
+      {loadError && (
+        <Pressable onPress={() => { setLoadError(false); loadData(); }} style={styles.retryButton}>
+          <Ionicons name="refresh-outline" size={15} color={colors.primary} />
+          <Text style={styles.retryText}>Повторить попытку</Text>
+        </Pressable>
+      )}
+
       {/* Empty state */}
-      {tasks.length === 0 && (
+      {tasks.length === 0 && !loadError && (
         <AnimatedEntry index={0}>
           <Card style={styles.emptyCard}>
-            <EmptyStateIllustration
-              variant="no-tasks"
-              title={t('master.home.allDone')}
-              subtitle={t('master.home.awaitAssignments')}
-            />
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="construct-outline" size={44} color={colors.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Пока нет задач</Text>
+            <Text style={styles.emptySubtext}>
+              Выполни несколько шагов, чтобы начать получать заказы
+            </Text>
+
+            {/* Readiness checklist */}
+            <View style={styles.checklistContainer}>
+              {/* Step 1 — fill profile */}
+              <Pressable
+                style={styles.checklistItem}
+                onPress={() => navigation?.navigate('Profile')}
+              >
+                <View style={[styles.checklistBullet, { backgroundColor: `${colors.primary}15` }]}>
+                  <Ionicons name="person-outline" size={16} color={colors.primary} />
+                </View>
+                <View style={styles.checklistContent}>
+                  <Text style={styles.checklistTitle}>Заполни профиль</Text>
+                  <Text style={styles.checklistSubtitle}>Имя, фото, контакты</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+              </Pressable>
+
+              {/* Step 2 — add specializations */}
+              <Pressable
+                style={styles.checklistItem}
+                onPress={() => navigation?.navigate('EditProfile')}
+              >
+                <View style={[styles.checklistBullet, { backgroundColor: `${colors.primary}15` }]}>
+                  <Ionicons name="build-outline" size={16} color={colors.primary} />
+                </View>
+                <View style={styles.checklistContent}>
+                  <Text style={styles.checklistTitle}>Добавь специализации</Text>
+                  <Text style={styles.checklistSubtitle}>Что умеешь делать</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+              </Pressable>
+
+              {/* Step 3 — wait for offer (no navigation, informational) */}
+              <View style={[styles.checklistItem, styles.checklistItemLast]}>
+                <View style={[styles.checklistBullet, { backgroundColor: `${colors.success}15` }]}>
+                  <Ionicons name="time-outline" size={16} color={colors.success} />
+                </View>
+                <View style={styles.checklistContent}>
+                  <Text style={styles.checklistTitle}>Дождись предложения</Text>
+                  <Text style={styles.checklistSubtitle}>Супервайзер назначит тебя на объект</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* CTA button */}
+            <Pressable
+              style={styles.fillProfileButton}
+              onPress={() => navigation?.navigate('Profile')}
+            >
+              <Text style={styles.fillProfileButtonText}>Заполнить профиль</Text>
+            </Pressable>
           </Card>
         </AnimatedEntry>
       )}
@@ -182,7 +294,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 149, 0, 0.08)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.warning,
+    borderColor: 'rgba(255, 149, 0, 0.2)',
     padding: spacing.lg,
     marginBottom: spacing.xl,
     gap: spacing.md,
@@ -191,7 +303,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: 'rgba(255, 149, 0, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -214,12 +326,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
   },
   statNumber: {
     ...typography.h2,
@@ -235,6 +347,12 @@ const styles = StyleSheet.create({
   statLabel: {
     ...typography.caption,
     color: colors.textLight,
+  },
+  specsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.h3,
@@ -285,15 +403,91 @@ const styles = StyleSheet.create({
   emptyCard: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
   },
-  emptyText: {
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: `${colors.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
     ...typography.h3,
     color: colors.heading,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   emptySubtext: {
     ...typography.body,
     color: colors.textLight,
     textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  checklistContainer: {
+    width: '100%',
+    marginBottom: spacing.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.bgCard,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.md,
+  },
+  checklistItemLast: {
+    borderBottomWidth: 0,
+  },
+  checklistBullet: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checklistContent: {
+    flex: 1,
+  },
+  checklistTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: 1,
+  },
+  checklistSubtitle: {
+    ...typography.small,
+    color: colors.textLight,
+  },
+  fillProfileButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xxl,
+    alignItems: 'center',
+  },
+  fillProfileButtonText: {
+    ...typography.bodyBold,
+    color: colors.white,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  retryText: {
+    ...typography.small,
+    color: colors.primary,
   },
 });

@@ -21,13 +21,9 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 type EmailType =
   | 'stage_status_changed'
@@ -194,9 +190,10 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');

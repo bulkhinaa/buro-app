@@ -292,6 +292,36 @@ const ru: Record<string, string> = {
   'master.home.allDone': 'Все задачи выполнены',
   'master.home.awaitAssignments': 'Ожидайте новые назначения от супервайзера',
 
+  'master.home.addSpecializations': '+ Укажите специализации',
+  'master.home.moreSpecs': '+{{count}}',
+
+  // ─── Supervisor setup ───
+  'supervisor.setup.addressLabel': 'Адрес офиса или базы',
+  'supervisor.setup.addressPlaceholder': 'Начните вводить адрес',
+  'supervisor.setup.addressHint': 'Клиенты и мастера увидят ваш район, не точный адрес',
+
+  // ─── Schedule ───
+  'schedule.dragHint': 'Проведите пальцем для выделения нескольких часов',
+
+  // ─── Stage edit ───
+  'stageEdit.title': 'Редактирование этапа',
+  'stageEdit.titleNew': 'Новый этап',
+  'stageEdit.nameLabel': 'Название этапа',
+  'stageEdit.namePlaceholder': 'Например: Укладка плитки',
+  'stageEdit.durationLabel': 'Длительность, дней',
+  'stageEdit.descriptionLabel': 'Описание работ',
+  'stageEdit.descriptionPlaceholder': 'Что входит в этот этап',
+  'stageEdit.save': 'Сохранить этап',
+  'stageEdit.saving': 'Сохраняем...',
+  'stageEdit.nameRequired': 'Укажите название этапа',
+  'stageEdit.deadlinePast': 'Дедлайн не может быть в прошлом',
+  'stageEdit.saveError': 'Не удалось сохранить. Попробуйте ещё раз',
+
+  // ─── Documents ───
+  'documents.loading': 'Загружаем документ...',
+  'documents.loadError': 'Не удалось загрузить документ',
+  'documents.openInBrowser': 'Открыть в браузере',
+
   // ─── Specialization categories ───
   'labels.specCategory.construction': 'Строительные',
   'labels.specCategory.specialized': 'Специализированные',

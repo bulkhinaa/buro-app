@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   ScreenWrapper,
   Card,
@@ -19,7 +20,6 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTaskStore } from '../../store/taskStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -40,7 +40,6 @@ type Props = {
 };
 
 export function StageApprovalScreen({ navigation, route }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const {
     stageId,
     stageTitle = 'Штукатурка стен',
@@ -170,12 +169,12 @@ export function StageApprovalScreen({ navigation, route }: Props) {
         </Card>
       )}
 
-      {/* Master comment — show first photo comment if available */}
-      {photoReports.length > 0 && photoReports.some((p) => (p as any).comment) && (
+      {/* Master comment — shown when photos have been submitted */}
+      {photoReports.length > 0 && (
         <Card style={styles.commentCard}>
-          <Text style={styles.commentLabel}>Комментарий мастера:</Text>
+          <Text style={styles.commentLabel}>Фотоотчёт мастера:</Text>
           <Text style={styles.commentText}>
-            {photoReports.find((p) => (p as any).comment)?.uri ? 'Фото загружены' : ''}
+            {photoReports.length} {photoReports.length === 1 ? 'фото загружено' : 'фото загружено'}
           </Text>
         </Card>
       )}
@@ -192,33 +191,45 @@ export function StageApprovalScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        {!showRejection ? (
-          <>
+      {/* Actions — hidden for clients, shown for supervisors and masters */}
+      {user?.role === 'client' ? (
+        <View style={styles.clientInfoCard}>
+          <Ionicons name="time-outline" size={22} color={colors.textLight} />
+          <View style={styles.clientInfoTextBlock}>
+            <Text style={styles.clientInfoTitle}>Этот этап на проверке у супервайзера</Text>
+            <Text style={styles.clientInfoSubtitle}>
+              Супервайзер проверит выполненную работу и примет решение о приёмке
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.actions}>
+          {!showRejection ? (
+            <>
+              <Button
+                title="Принять этап ✓"
+                onPress={handleApprove}
+                fullWidth
+                loading={loading}
+              />
+              <Button
+                title="Есть замечания"
+                onPress={handleReject}
+                variant="outline"
+                fullWidth
+                style={{ marginTop: spacing.md }}
+              />
+            </>
+          ) : (
             <Button
-              title="Принять этап ✓"
-              onPress={handleApprove}
+              title="Отправить замечания"
+              onPress={handleReject}
               fullWidth
               loading={loading}
             />
-            <Button
-              title="Есть замечания"
-              onPress={handleReject}
-              variant="outline"
-              fullWidth
-              style={{ marginTop: spacing.md }}
-            />
-          </>
-        ) : (
-          <Button
-            title="Отправить замечания"
-            onPress={handleReject}
-            fullWidth
-            loading={loading}
-          />
-        )}
-      </View>
+          )}
+        </View>
+      )}
 
       <AppDialog
         visible={dialogVisible}
@@ -294,5 +305,34 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginBottom: spacing.huge,
+  },
+  clientInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.85)',
+    padding: spacing.lg,
+    marginBottom: spacing.huge,
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  clientInfoTextBlock: {
+    flex: 1,
+  },
+  clientInfoTitle: {
+    ...typography.bodyBold,
+    color: colors.heading,
+    marginBottom: spacing.xs,
+  },
+  clientInfoSubtitle: {
+    ...typography.small,
+    color: colors.textLight,
+    lineHeight: 18,
   },
 });

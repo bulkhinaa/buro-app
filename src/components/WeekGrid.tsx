@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useState, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,9 @@ import {
   LayoutChangeEvent,
   GestureResponderEvent,
 } from 'react-native';
-import { colors } from '../theme/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { spacing, radius } from '../theme/spacing';
+import type { ThemeColors } from '../theme/colors';
 import type { ScheduleSlot, ScheduleSlotStatus } from '../types';
 import {
   SCHEDULE_HOURS,
@@ -18,6 +19,8 @@ import {
   formatDate,
 } from '../store/scheduleStore';
 import { useTheme } from '../theme/ThemeContext';
+import { hapticLight, hapticSuccess } from '../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
 interface WeekGridProps {
   weekStart: Date;
@@ -31,12 +34,57 @@ interface WeekGridProps {
 const CELL_HEIGHT = 36;
 const HEADER_HEIGHT = 32;
 const HOUR_COLUMN_WIDTH = 44;
+const DRAG_HINT_KEY = 'schedule_drag_hint_shown';
+const PENDING_THROTTLE_MS = 50;
+
+type WeekGridStyles = ReturnType<typeof createStyles>;
+
+interface GridCellProps {
+  cellKey: string;
+  bgColor: string;
+  isPending: boolean;
+  pendingColor: string;
+  isBooked: boolean;
+  textColor: string;
+  isFirstCol: boolean;
+  isFirstRow: boolean;
+  styles: WeekGridStyles;
+}
+
+/** Memoised cell to avoid full grid re-renders during drag */
+const GridCell = memo(function GridCell({
+  bgColor,
+  isPending,
+  pendingColor,
+  isBooked,
+  textColor,
+  isFirstCol,
+  isFirstRow,
+  styles,
+}: GridCellProps) {
+  return (
+    <View
+      style={[
+        styles.cell,
+        { backgroundColor: isPending ? pendingColor : bgColor },
+        isFirstCol && styles.cellFirstCol,
+        isFirstRow && styles.cellFirstRow,
+      ]}
+    >
+      {isBooked && (
+        <Text style={[styles.cellIcon, { color: textColor }]}>●</Text>
+      )}
+    </View>
+  );
+});
 
 /**
  * WeekGrid — 8:00-23:00 × Mon-Sun hourly schedule grid
  *
  * UX: Tap toggles a single slot. Drag-select paints multiple slots.
  * Colors: light purple = available, dark purple = working, grey = booked (locked).
+ * Haptic feedback on drag start and release.
+ * Visual highlight of pending cells during drag.
  */
 export function WeekGrid({
   weekStart,
@@ -46,12 +94,33 @@ export function WeekGrid({
   onDragSelect,
   readOnly = false,
 }: WeekGridProps) {
-  const { colors: themeColors, glass, isDark } = useTheme();
+  const { colors: themeColors } = useTheme();
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
+  const { t } = useTranslation();
   const gridRef = useRef<View>(null);
   const gridLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
   const draggedSlots = useRef<Set<string>>(new Set());
   const dragStatus = useRef<ScheduleSlotStatus>('working');
   const isDragging = useRef(false);
+  const lastUpdateTime = useRef(0);
+
+  // Realtime drag highlight
+  const [pendingCells, setPendingCells] = useState<Set<string>>(new Set());
+
+  // First-visit drag hint
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (readOnly) return;
+    AsyncStorage.getItem(DRAG_HINT_KEY).then((val) => {
+      if (!val) {
+        setShowHint(true);
+        AsyncStorage.setItem(DRAG_HINT_KEY, '1');
+        const timer = setTimeout(() => setShowHint(false), 3000);
+        return () => clearTimeout(timer);
+      }
+    });
+  }, [readOnly]);
 
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
   const dateStrings = useMemo(() => weekDates.map(formatDate), [weekDates]);
@@ -110,6 +179,11 @@ export function WeekGrid({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt: GestureResponderEvent) => {
+        // Re-measure grid position on each touch start to handle scroll offset changes
+        gridRef.current?.measureInWindow((x, y, width, height) => {
+          gridLayout.current = { x, y, width, height };
+        });
+
         const { pageX, pageY } = evt.nativeEvent;
         const cell = touchToCell(pageX, pageY);
         if (!cell) return;
@@ -117,10 +191,21 @@ export function WeekGrid({
         const status = getSlotStatus(cell.date, cell.hour);
         if (status === 'booked') return;
 
+        // Haptic on drag start
+        hapticLight();
+
+        // Hide hint on first drag
+        if (showHint) setShowHint(false);
+
         isDragging.current = false;
-        draggedSlots.current = new Set([`${cell.date}-${cell.hour}`]);
+        const key = `${cell.date}-${cell.hour}`;
+        draggedSlots.current = new Set([key]);
         // Determine paint mode: if cell is working → paint available, else → paint working
         dragStatus.current = status === 'working' ? 'available' : 'working';
+
+        // Show pending highlight immediately
+        setPendingCells(new Set([key]));
+        lastUpdateTime.current = Date.now();
       },
       onPanResponderMove: (evt: GestureResponderEvent) => {
         const { pageX, pageY } = evt.nativeEvent;
@@ -134,6 +219,13 @@ export function WeekGrid({
         if (!draggedSlots.current.has(key)) {
           isDragging.current = true;
           draggedSlots.current.add(key);
+
+          // Throttled state update for pending highlight (max once per 50ms)
+          const now = Date.now();
+          if (now - lastUpdateTime.current >= PENDING_THROTTLE_MS) {
+            lastUpdateTime.current = now;
+            setPendingCells(new Set(draggedSlots.current));
+          }
         }
       },
       onPanResponderRelease: () => {
@@ -142,29 +234,32 @@ export function WeekGrid({
           return { date, hour: parseInt(hourStr, 10) };
         });
 
+        // Haptic on release
         if (isDragging.current && selectedSlots.length > 1) {
-          // Drag select: batch toggle
+          hapticSuccess();
           onDragSelect(selectedSlots, dragStatus.current);
         } else if (selectedSlots.length === 1) {
-          // Single tap
+          hapticLight();
           onToggleSlot(selectedSlots[0].date, selectedSlots[0].hour);
         }
 
+        // Clear pending highlight
+        setPendingCells(new Set());
         draggedSlots.current.clear();
         isDragging.current = false;
       },
     });
-  }, [readOnly, touchToCell, getSlotStatus, onToggleSlot, onDragSelect]);
+  }, [readOnly, touchToCell, getSlotStatus, onToggleSlot, onDragSelect, showHint]);
 
   const getCellColor = (status: ScheduleSlotStatus): string => {
     switch (status) {
       case 'working':
-        return colors.primary;
+        return themeColors.primary;
       case 'booked':
         return '#C7C7CC'; // System grey
       case 'available':
       default:
-        return colors.primaryLight;
+        return themeColors.primaryLight;
     }
   };
 
@@ -176,9 +271,12 @@ export function WeekGrid({
         return '#8E8E93';
       case 'available':
       default:
-        return colors.textLight;
+        return themeColors.textLight;
     }
   };
+
+  // Pending cell highlight color — semi-transparent primary
+  const pendingColor = `${themeColors.primary}66`; // ~40% opacity
 
   return (
     <View
@@ -187,6 +285,15 @@ export function WeekGrid({
       onLayout={handleLayout}
       {...panResponder.panHandlers}
     >
+      {/* Drag hint — shown once on first visit */}
+      {showHint && (
+        <View style={[styles.hintBar, { backgroundColor: `${themeColors.primary}15` }]}>
+          <Text style={[styles.hintText, { color: themeColors.primary }]}>
+            {t('schedule.dragHint')}
+          </Text>
+        </View>
+      )}
+
       {/* Header row: day labels + date numbers */}
       <View style={styles.headerRow}>
         <View style={styles.hourColumn} />
@@ -194,7 +301,7 @@ export function WeekGrid({
           const isToday = formatDate(date) === formatDate(new Date());
           return (
             <View key={i} style={styles.dayHeader}>
-              <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
+              <Text style={[styles.dayLabel, isToday && { color: themeColors.primary }]}>
                 {DAY_LABELS_SHORT[i]}
               </Text>
               <Text style={[styles.dateNumber, isToday && styles.todayNumber]}>
@@ -213,22 +320,20 @@ export function WeekGrid({
           </View>
           {dateStrings.map((date, dayIdx) => {
             const status = getSlotStatus(date, hour);
+            const key = `${date}-${hour}`;
             return (
-              <View
-                key={`${date}-${hour}`}
-                style={[
-                  styles.cell,
-                  {
-                    backgroundColor: getCellColor(status),
-                  },
-                  dayIdx === 0 && styles.cellFirstCol,
-                  hourIdx === 0 && styles.cellFirstRow,
-                ]}
-              >
-                {status === 'booked' && (
-                  <Text style={[styles.cellIcon, { color: getCellTextColor(status) }]}>●</Text>
-                )}
-              </View>
+              <GridCell
+                key={key}
+                cellKey={key}
+                bgColor={getCellColor(status)}
+                isPending={pendingCells.has(key)}
+                pendingColor={pendingColor}
+                isBooked={status === 'booked'}
+                textColor={getCellTextColor(status)}
+                isFirstCol={dayIdx === 0}
+                isFirstRow={hourIdx === 0}
+                styles={styles}
+              />
             );
           })}
         </View>
@@ -237,78 +342,85 @@ export function WeekGrid({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    borderRadius: radius.md,
-    backgroundColor: colors.bgCard,
-    ...(Platform.OS === 'web' ? { userSelect: 'none' } as any : {}),
-  },
-  headerRow: {
-    flexDirection: 'row',
-    height: HEADER_HEIGHT,
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  hourColumn: {
-    width: HOUR_COLUMN_WIDTH,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayHeader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.textLight,
-    textTransform: 'uppercase',
-  },
-  dateNumber: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.heading,
-    marginTop: 1,
-  },
-  todayLabel: {
-    color: colors.primary,
-  },
-  todayNumber: {
-    color: colors.textBright,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    textAlign: 'center',
-    lineHeight: 20,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    height: CELL_HEIGHT,
-  },
-  hourLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textLight,
-  },
-  cell: {
-    flex: 1,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cellFirstCol: {
-    borderLeftWidth: 0,
-  },
-  cellFirstRow: {
-    borderTopWidth: 0,
-  },
-  cellIcon: {
-    fontSize: 8,
-  },
-});
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      overflow: 'hidden',
+      borderRadius: radius.md,
+      backgroundColor: c.bgCard,
+      ...(Platform.OS === 'web' ? { userSelect: 'none' } as any : {}),
+    },
+    hintBar: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+    },
+    hintText: {
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      height: HEADER_HEIGHT,
+      alignItems: 'center',
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    hourColumn: {
+      width: HOUR_COLUMN_WIDTH,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayHeader: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: c.textLight,
+      textTransform: 'uppercase',
+    },
+    dateNumber: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.heading,
+      marginTop: 1,
+    },
+    todayNumber: {
+      color: c.textBright,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      width: 20,
+      height: 20,
+      textAlign: 'center',
+      lineHeight: 20,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      height: CELL_HEIGHT,
+    },
+    hourLabel: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: c.textLight,
+    },
+    cell: {
+      flex: 1,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cellFirstCol: {
+      borderLeftWidth: 0,
+    },
+    cellFirstRow: {
+      borderTopWidth: 0,
+    },
+    cellIcon: {
+      fontSize: 8,
+    },
+  });

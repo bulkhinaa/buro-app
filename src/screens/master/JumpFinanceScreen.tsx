@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { ScreenWrapper, Card, Button, Input } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
@@ -35,7 +34,6 @@ const PENDING_STEPS = [
 ];
 
 export function JumpFinanceScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const updateProfile = useMasterStore((s) => s.updateProfile);
@@ -198,7 +196,6 @@ export function JumpFinanceScreen({ navigation }: any) {
               title="Зарегистрироваться"
               onPress={handleStartVerification}
               loading={loading}
-              disabled={inn.length < 12}
               fullWidth
               style={styles.actionButton}
             />
@@ -366,7 +363,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
@@ -404,7 +401,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -454,15 +451,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   pendingBanner: {
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
-    borderColor: colors.warning,
+    backgroundColor: 'rgba(255, 149, 0, 0.06)',
+    borderColor: 'rgba(255, 149, 0, 0.2)',
   },
   approvedBanner: {
-    backgroundColor: colors.successLight,
+    backgroundColor: 'rgba(52, 199, 89, 0.06)',
     borderColor: 'rgba(52, 199, 89, 0.2)',
   },
   rejectedBanner: {
-    backgroundColor: colors.dangerLight,
+    backgroundColor: 'rgba(255, 59, 48, 0.06)',
     borderColor: 'rgba(255, 59, 48, 0.2)',
   },
   statusTitle: {
@@ -507,7 +504,7 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     height: Dimensions.get('window').height * 0.85,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
@@ -520,7 +517,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -539,7 +536,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -550,6 +547,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.white,
   },
 });

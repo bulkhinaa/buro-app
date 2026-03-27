@@ -15,9 +15,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
 
-import { useTheme } from '../../theme/ThemeContext';
 export function MasterOfferDetailScreen() {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
@@ -249,7 +247,7 @@ const styles = StyleSheet.create({
   matchText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.textBright,
+    color: '#FFFFFF',
   },
   projectTitle: {
     fontSize: 20,

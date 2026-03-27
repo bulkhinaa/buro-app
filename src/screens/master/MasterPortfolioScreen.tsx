@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Card, AppDialog, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 
@@ -33,7 +32,6 @@ const CARD_PADDING = spacing.xl;
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 export function MasterPortfolioScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const profile = useMasterStore((s) => s.profile);
   const removePortfolioProject = useMasterStore((s) => s.removePortfolioProject);
   const showToast = useToastStore((s) => s.show);
@@ -86,6 +84,9 @@ export function MasterPortfolioScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper scroll={false}>
+      <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={24} color={colors.heading} />
+      </Pressable>
       <View style={styles.header}>
         <Text style={styles.title}>Моё портфолио</Text>
         <Text style={styles.subtitle}>
@@ -155,6 +156,13 @@ export function MasterPortfolioScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
   header: {
     paddingTop: spacing.lg,
     marginBottom: spacing.xl,
@@ -213,7 +221,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 12,
   },
   emptyState: {

@@ -22,8 +22,7 @@ import {
   Checkbox,
   TextArea,
 } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
@@ -96,7 +95,6 @@ const PRICE_TYPE_KEYS: { value: PriceType; key: string }[] = [
 ];
 
 export function MasterSetupScreen({ onComplete }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const { saveDraft, completeSetup, setupDraft } = useMasterStore();
   const insets = useSafeAreaInsets();
@@ -579,7 +577,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
               title=""
               onPress={handleBack}
               variant="ghost"
-              icon={<Ionicons name="arrow-back" size={22} color={colors.heading} />}
+              icon={<Ionicons name="chevron-back" size={22} color={colors.heading} />}
               style={styles.backButton}
             />
           ) : (
@@ -731,10 +729,10 @@ const styles = StyleSheet.create({
   },
   levelCard: {
     flex: 1,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     alignItems: 'center',
     minHeight: 140,
@@ -746,20 +744,20 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   levelCardSelected: {
-    borderColor: colors.borderHover,
+    borderColor: 'rgba(123, 45, 62, 0.2)',
     backgroundColor: colors.primaryLight,
   },
   levelIconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   levelIconCircleSelected: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.1)',
   },
   levelLabel: {
     ...typography.smallBold,
@@ -782,10 +780,10 @@ const styles = StyleSheet.create({
   },
   // Portfolio
   portfolioItem: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -818,10 +816,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.06)',
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: colors.borderHover,
+    borderColor: 'rgba(123, 45, 62, 0.15)',
     borderStyle: 'dashed',
     paddingVertical: spacing.xl,
     gap: spacing.sm,
@@ -831,7 +829,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   addProjectForm: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -844,10 +842,10 @@ const styles = StyleSheet.create({
   },
   // Pricing
   pricingRow: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -886,7 +884,7 @@ const styles = StyleSheet.create({
   // Agreement
   certSection: {
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
     padding: spacing.xxl,
     marginBottom: spacing.xxl,
@@ -912,7 +910,7 @@ const styles = StyleSheet.create({
   },
   agreementRowError: {
     borderColor: colors.danger,
-    backgroundColor: colors.dangerLight,
+    backgroundColor: 'rgba(255, 59, 48, 0.05)',
   },
   fieldError: {
     ...typography.small,
@@ -927,10 +925,10 @@ const styles = StyleSheet.create({
   },
   // Summary
   summaryCard: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.xl,
   },
   summaryTitle: {

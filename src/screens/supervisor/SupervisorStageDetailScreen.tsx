@@ -20,8 +20,7 @@ import {
   MasterSelectModal,
 } from '../../components';
 import type { DialogButton, MasterCandidate } from '../../components';
-import { colors, spacing, typography, radius, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { Stage, PhotoReport } from '../../types';
 import {
@@ -45,66 +44,6 @@ const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
   : {};
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_STAGE: Stage = {
-  id: 'stg-5',
-  project_id: 'sp-1',
-  title: 'Штукатурка стен',
-  description: 'Выравнивание стен, штукатурка по маякам. Все стены должны быть отштукатурены под правило 2 метра с допуском не более 2 мм.',
-  order_index: 5,
-  status: 'done_by_master',
-  deadline: '2026-03-20',
-  started_at: '2026-03-10',
-  completed_at: '2026-03-18',
-};
-
-const MOCK_CHECKLIST = [
-  'Грунтовка стен перед нанесением штукатурки',
-  'Установка маяков по уровню',
-  'Нанесение штукатурки по маякам',
-  'Проверка плоскости правилом (2 метра)',
-  'Вертикальность углов проверена',
-  'Заглаживание поверхности',
-];
-
-const MOCK_PHOTOS: PhotoReport[] = [
-  {
-    id: 'ph-1',
-    stage_id: 'stg-5',
-    uploaded_by: 'master-1',
-    url: 'https://images.unsplash.com/photo-1581093806997-124204d9fa9d?w=600',
-    comment: 'Грунтовка нанесена',
-    created_at: '2026-03-11T10:00:00Z',
-  },
-  {
-    id: 'ph-2',
-    stage_id: 'stg-5',
-    uploaded_by: 'master-1',
-    url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600',
-    comment: 'Маяки установлены',
-    created_at: '2026-03-12T14:00:00Z',
-  },
-  {
-    id: 'ph-3',
-    stage_id: 'stg-5',
-    uploaded_by: 'master-1',
-    url: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600',
-    comment: 'Штукатурка нанесена, финальный слой',
-    created_at: '2026-03-18T16:00:00Z',
-  },
-];
-
-// ─── Mock masters for dev mode ────────────────────────────────────────────────
-
-const MOCK_MASTERS: MasterCandidate[] = [
-  { id: 'm-1', name: 'Иван Кузнецов', specialization: 'Штукатур', rating: 4.8, reviewCount: 34, activeTasksCount: 1 },
-  { id: 'm-2', name: 'Сергей Попов', specialization: 'Универсал', rating: 4.5, reviewCount: 22, activeTasksCount: 2 },
-  { id: 'm-3', name: 'Дмитрий Лебедев', specialization: 'Электрик', rating: 4.9, reviewCount: 56, activeTasksCount: 0 },
-  { id: 'm-4', name: 'Андрей Морозов', specialization: 'Плиточник', rating: 4.7, reviewCount: 18, activeTasksCount: 1 },
-  { id: 'm-5', name: 'Павел Новиков', specialization: 'Сантехник', rating: 4.6, reviewCount: 41, activeTasksCount: 0 },
-  { id: 'm-6', name: 'Виктор Соловьёв', specialization: 'Маляр', rating: 4.3, reviewCount: 12, activeTasksCount: 3 },
-];
 
 // ─── Checklist item state ─────────────────────────────────────────────────────
 
@@ -129,21 +68,18 @@ function formatDateTime(iso: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorStageDetailScreen({ route, navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
 
-  const stageId: string = route?.params?.stageId ?? 'stg-5';
-  const projectId: string = route?.params?.projectId ?? 'sp-1';
+  const stageId: string = route?.params?.stageId;
+  const projectId: string = route?.params?.projectId;
   const stageTitle: string = route?.params?.stageTitle ?? 'Этап';
 
-  const [stage, setStage] = useState<Stage | null>(isDev ? MOCK_STAGE : null);
-  const [photos, setPhotos] = useState<PhotoReport[]>(isDev ? MOCK_PHOTOS : []);
-  const [checklist, setChecklist] = useState<ChecklistEntry[]>(
-    isDev ? MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })) : [],
-  );
-  const [loading, setLoading] = useState(!isDev);
+  const [stage, setStage] = useState<Stage | null>(null);
+  const [photos, setPhotos] = useState<PhotoReport[]>([]);
+  const [checklist, setChecklist] = useState<ChecklistEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [rejectComment, setRejectComment] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -272,7 +208,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   // ─── Load data ────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (isDev) return;
+    if (!stageId || !projectId) return;
     setLoading(true);
     try {
       const [allStages, stagePhotos] = await Promise.all([
@@ -287,10 +223,10 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
           try {
             setChecklist(JSON.parse((found as any).checklist_json));
           } catch {
-            setChecklist(MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })));
+            setChecklist([]);
           }
         } else {
-          setChecklist(MOCK_CHECKLIST.map((t) => ({ text: t, state: 'unchecked' as CheckState })));
+          setChecklist([]);
         }
       }
       setPhotos(stagePhotos);
@@ -299,7 +235,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [stageId, projectId, isDev]);
+  }, [stageId, projectId]);
 
   useEffect(() => {
     loadData();
@@ -885,7 +821,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         visible={masterModalVisible}
         onClose={() => setMasterModalVisible(false)}
         onSelect={handleAssignMaster}
-        masters={isDev ? MOCK_MASTERS : []}
+        masters={[]}
         stageTitle={stage.title}
       />
     </ScreenWrapper>
@@ -1119,7 +1055,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
+    backgroundColor: 'rgba(255,149,0,0.08)',
     borderRadius: radius.md,
     padding: spacing.md,
   },
@@ -1241,10 +1177,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     gap: spacing.sm,
-    backgroundColor: colors.successLight,
+    backgroundColor: 'rgba(52,199,89,0.06)',
   },
   decidedCardRejected: {
-    backgroundColor: colors.dangerLight,
+    backgroundColor: 'rgba(255,59,48,0.06)',
   },
   decidedTitle: {
     ...typography.bodyBold,
@@ -1305,7 +1241,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 12,
   },
   uploadRow: {
@@ -1317,10 +1253,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.lg,
   },

@@ -17,13 +17,15 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components';
-import { spacing } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing } from '../../theme';
 import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
 const ONBOARDING_KEY = 'hasSeenOnboarding';
+
+/** Warm cream background matching the 3D illustration style */
+const BG_CREAM = '#F5EFE9';
 
 /**
  * Illustration occupies the top ~62% of the screen, stretching edge-to-edge.
@@ -66,17 +68,14 @@ const SLIDE_CONFIGS: SlideConfig[] = [
 
 type Props = {
   onComplete: () => void;
+  onBack?: () => void;
 };
 
-export function OnboardingScreen({ onComplete }: Props) {
-  const { colors, isDark } = useTheme();
+export function OnboardingScreen({ onComplete, onBack }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const isScrolling = useRef(false);
   const { t } = useTranslation();
-
-  /** Background color — cream for light, dark bg for dark theme */
-  const bgColor = isDark ? colors.bg : '#F5EFE9';
 
   // Fix: RN Web Image sets internal opacity:0 for its loading fade-in.
   useEffect(() => {
@@ -96,6 +95,7 @@ export function OnboardingScreen({ onComplete }: Props) {
 
   const isLast = activeIndex === SLIDE_CONFIGS.length - 1;
 
+  // Track active slide from scroll position (works on web and native)
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = e.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / width);
@@ -111,17 +111,20 @@ export function OnboardingScreen({ onComplete }: Props) {
     const targetX = index * width;
 
     if (Platform.OS === 'web') {
+      // Web: use DOM scrollTo which is more reliable than RN scrollTo
       const scrollNode = (scrollRef.current as any)?.getScrollableNode?.() ||
         (scrollRef.current as any)?._nativeRef?.current;
       if (scrollNode) {
         scrollNode.scrollTo({ left: targetX, behavior: 'smooth' });
       } else {
+        // Fallback: try RN scrollTo
         scrollRef.current?.scrollTo({ x: targetX, animated: true });
       }
     } else {
       scrollRef.current?.scrollTo({ x: targetX, animated: true });
     }
 
+    // Update index immediately for responsive UI
     setActiveIndex(index);
 
     setTimeout(() => {
@@ -144,7 +147,7 @@ export function OnboardingScreen({ onComplete }: Props) {
   };
 
   const renderSlide = (item: SlideConfig) => (
-    <View style={[styles.slide, { backgroundColor: bgColor }]}>
+    <View style={styles.slide}>
       {/* 3D illustration — fills upper portion, edge to edge */}
       <Image
         source={item.image}
@@ -154,26 +157,35 @@ export function OnboardingScreen({ onComplete }: Props) {
 
       {/* Text content — anchored at bottom, gradient fade over illustration */}
       <LinearGradient
-        colors={['transparent', bgColor, bgColor]}
+        colors={['transparent', BG_CREAM, BG_CREAM]}
         locations={[0, 0.25, 1]}
         style={styles.slideContent}
       >
-        <View style={[styles.iconPill, { backgroundColor: colors.primary }]}>
+        <View style={styles.iconPill}>
           <Ionicons name={item.icon} size={20} color="#FFFFFF" />
         </View>
-        <Text style={[styles.title, { color: colors.heading }]}>{t(item.titleKey)}</Text>
-        <Text style={[styles.subtitle, { color: colors.textLight }]}>{t(item.subtitleKey)}</Text>
+        <Text style={styles.title}>{t(item.titleKey)}</Text>
+        <Text style={styles.subtitle}>{t(item.subtitleKey)}</Text>
       </LinearGradient>
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
+    <View style={styles.container}>
+      {/* Back button — top left (only on first slide if onBack is provided) */}
+      {onBack && activeIndex === 0 && (
+        <SafeAreaView style={styles.backSafe} edges={['top']} pointerEvents="box-none">
+          <Pressable style={styles.backButton} onPress={onBack}>
+            <Ionicons name="chevron-back" size={24} color={colors.heading} />
+          </Pressable>
+        </SafeAreaView>
+      )}
+
       {/* Skip button — top right */}
       {!isLast && (
         <SafeAreaView style={styles.skipSafe} edges={['top']} pointerEvents="box-none">
           <Pressable style={styles.skipButton} onPress={handleSkip}>
-            <Text style={[styles.skipText, { color: colors.textLight }]}>{t('onboarding.skip', 'Пропустить')}</Text>
+            <Text style={styles.skipText}>{t('onboarding.skip', 'Пропустить')}</Text>
           </Pressable>
         </SafeAreaView>
       )}
@@ -206,11 +218,7 @@ export function OnboardingScreen({ onComplete }: Props) {
                 hitSlop={8}
               >
                 <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: isDark ? 'rgba(232,87,122,0.2)' : 'rgba(123, 45, 62, 0.2)' },
-                    i === activeIndex && [styles.dotActive, { backgroundColor: colors.primary }],
-                  ]}
+                  style={[styles.dot, i === activeIndex && styles.dotActive]}
                 />
               </Pressable>
             ))}
@@ -233,6 +241,21 @@ export { ONBOARDING_KEY };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: BG_CREAM,
+  },
+  backSafe: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.md,
+    marginTop: spacing.md,
   },
   skipSafe: {
     position: 'absolute',
@@ -247,10 +270,12 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 15,
     fontWeight: '500',
+    color: colors.textLight,
   },
   slide: {
     width,
     height,
+    backgroundColor: BG_CREAM,
   },
   illustration: {
     position: 'absolute',
@@ -271,6 +296,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -278,12 +304,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
+    color: colors.heading,
     marginBottom: spacing.sm,
     lineHeight: 38,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
+    color: colors.textLight,
     lineHeight: 24,
   },
   footerSafe: {
@@ -305,8 +333,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: 'rgba(123, 45, 62, 0.2)',
   },
   dotActive: {
+    backgroundColor: colors.primary,
     width: 24,
   },
 });

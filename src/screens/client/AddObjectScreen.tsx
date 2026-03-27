@@ -24,8 +24,7 @@ import {
   AppDialog,
 } from '../../components';
 import type { DaDataSuggestion } from '../../components/AddressInput';
-import { spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useObjectStore } from '../../store/objectStore';
 import { useToastStore } from '../../store/toastStore';
@@ -130,7 +129,6 @@ const GOAL_OPTIONS: {
 ];
 
 export function AddObjectScreen({ navigation }: Props) {
-  const { colors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const { addObject } = useObjectStore();
   const insets = useSafeAreaInsets();
@@ -301,18 +299,6 @@ export function AddObjectScreen({ navigation }: Props) {
     }
   }, [user, address, area, propertyType, rooms, bathrooms, kitchenType, goal, selectedLayoutId, addObject]);
 
-  // --- Theme-aware glass card style helper ---
-  const glassCard = {
-    backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.6)',
-    borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
-    shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0, 0, 0, 0.06)',
-  };
-  const glassCardSelected = {
-    borderColor: isDark ? colors.borderHover : 'rgba(123, 45, 62, 0.2)',
-    backgroundColor: colors.primaryLight,
-    shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(123, 45, 62, 0.1)',
-  };
-
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -331,8 +317,8 @@ export function AddObjectScreen({ navigation }: Props) {
   // ─── Step 1: Address & type ───
   const renderStep1 = () => (
     <>
-      <Text style={[styles.title, { color: colors.heading }]}>Добавьте объект</Text>
-      <Text style={[styles.subtitle, { color: colors.textLight }]}>Укажите адрес и тип жилья</Text>
+      <Text style={styles.title}>Добавьте объект</Text>
+      <Text style={styles.subtitle}>Укажите адрес и тип жилья</Text>
 
       <View style={styles.formSection}>
         <AddressInput
@@ -354,7 +340,7 @@ export function AddObjectScreen({ navigation }: Props) {
           value={area}
           onChangeText={(text) => {
             setArea(text);
-            setAreaAutoFilled(false);
+            setAreaAutoFilled(false); // User override clears badge
             if (text.length > 0) setAreaTouched(true);
           }}
           keyboardType="numeric"
@@ -365,7 +351,7 @@ export function AddObjectScreen({ navigation }: Props) {
             areaAutoFilled ? (
               <View style={styles.autofilledBadge}>
                 <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                <Text style={[styles.autofilledText, { color: colors.success }]}>из реестра</Text>
+                <Text style={styles.autofilledText}>из реестра</Text>
               </View>
             ) : undefined
           }
@@ -374,7 +360,7 @@ export function AddObjectScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.belowDropdown}>
-        <Text style={[styles.sectionTitle, { color: colors.heading }]}>Тип жилья</Text>
+        <Text style={styles.sectionTitle}>Тип жилья</Text>
 
         {/* Property type vertical cards */}
         {PROPERTY_TYPES_DATA.map((type) => {
@@ -385,12 +371,11 @@ export function AddObjectScreen({ navigation }: Props) {
               onPress={() => setPropertyType(type.value)}
               style={[
                 styles.typeCard,
-                glassCard,
-                isSelected && glassCardSelected,
+                isSelected && styles.typeCardSelected,
               ]}
             >
               {/* Property photo */}
-              <View style={[styles.typeImageArea, { backgroundColor: colors.bgCard }]}>
+              <View style={styles.typeImageArea}>
                 <Image source={type.image} style={styles.typeImage} />
                 {isSelected && <View style={styles.typeImageOverlay} />}
               </View>
@@ -398,13 +383,13 @@ export function AddObjectScreen({ navigation }: Props) {
               {/* Info row below image */}
               <View style={styles.typeInfoRow}>
                 <View style={styles.typeTextBlock}>
-                  <Text style={[styles.typeLabel, { color: colors.heading }, isSelected && { color: colors.primary }]}>
+                  <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>
                     {type.label}
                   </Text>
-                  <Text style={[styles.typeDescription, { color: colors.textLight }]}>{type.description}</Text>
+                  <Text style={styles.typeDescription}>{type.description}</Text>
                 </View>
                 {isSelected && (
-                  <View style={[styles.typeCheckCircle, { backgroundColor: colors.primary }]}>
+                  <View style={styles.typeCheckCircle}>
                     <Ionicons name="checkmark" size={16} color={colors.white} />
                   </View>
                 )}
@@ -419,10 +404,10 @@ export function AddObjectScreen({ navigation }: Props) {
   // ─── Step 2: Parameters ───
   const renderStep2 = () => (
     <>
-      <Text style={[styles.title, { color: colors.heading }]}>Параметры</Text>
-      <Text style={[styles.subtitle, { color: colors.textLight }]}>Расскажите подробнее об объекте</Text>
+      <Text style={styles.title}>Параметры</Text>
+      <Text style={styles.subtitle}>Расскажите подробнее об объекте</Text>
 
-      <Text style={[styles.sectionTitle, { color: colors.heading }]}>Комнаты</Text>
+      <Text style={styles.sectionTitle}>Комнаты</Text>
       <View style={styles.chipRow}>
         {ROOM_OPTIONS.map((opt) => (
           <Chip
@@ -434,7 +419,7 @@ export function AddObjectScreen({ navigation }: Props) {
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.heading }]}>Санузлы</Text>
+      <Text style={styles.sectionTitle}>Санузлы</Text>
       <View style={styles.chipRow}>
         {BATHROOM_OPTIONS.map((opt) => (
           <Chip
@@ -446,7 +431,7 @@ export function AddObjectScreen({ navigation }: Props) {
         ))}
       </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.heading }]}>Кухня</Text>
+      <Text style={styles.sectionTitle}>Кухня</Text>
       <View style={styles.chipRow}>
         {KITCHEN_OPTIONS.map((opt) => (
           <Chip
@@ -463,28 +448,20 @@ export function AddObjectScreen({ navigation }: Props) {
   // ─── Step 3: Layout ───
   const renderStep3 = () => (
     <>
-      <Text style={[styles.title, { color: colors.heading }]}>Планировка</Text>
-      <Text style={[styles.subtitle, { color: colors.textLight }]}>Выберите похожую или загрузите свою</Text>
+      <Text style={styles.title}>Планировка</Text>
+      <Text style={styles.subtitle}>Выберите похожую или загрузите свою</Text>
 
       {/* Disclaimer */}
-      <View
-        style={[
-          styles.disclaimerRow,
-          {
-            backgroundColor: isDark
-              ? 'rgba(240, 201, 93, 0.1)'
-              : 'rgba(197, 165, 90, 0.08)',
-          },
-        ]}
-      >
+      <View style={styles.disclaimerRow}>
         <Ionicons name="information-circle-outline" size={16} color={colors.textLight} />
-        <Text style={[styles.disclaimerText, { color: colors.textLight }]}>
+        <Text style={styles.disclaimerText}>
           Примерная схема — точный план составит супервайзер после осмотра
         </Text>
       </View>
 
       <View style={styles.layoutGrid}>
         {availableLayouts.map((layout) => {
+          // Show "best match" badge for layouts matching bathroom + kitchen
           const isBestMatch =
             layout.bathrooms === bathrooms && layout.kitchen_type === kitchenType;
           return (
@@ -519,23 +496,20 @@ export function AddObjectScreen({ navigation }: Props) {
   // ─── Step 4: Goal ───
   const renderStep4 = () => (
     <>
-      <Text style={[styles.title, { color: colors.heading }]}>Цель ремонта</Text>
-      <Text style={[styles.subtitle, { color: colors.textLight }]}>
+      <Text style={styles.title}>Цель ремонта</Text>
+      <Text style={styles.subtitle}>
         Это поможет подобрать оптимальные решения
       </Text>
 
       <View style={styles.goalGrid}>
         {GOAL_OPTIONS.map((opt) => (
           <View key={opt.value} style={styles.goalCell}>
-            <GoalCardInner
+            <GoalCard
               icon={opt.icon}
               label={opt.label}
               description={opt.description}
               selected={goal === opt.value}
               onPress={() => setGoal(opt.value)}
-              colors={colors}
-              glass={glass}
-              isDark={isDark}
             />
           </View>
         ))}
@@ -555,11 +529,11 @@ export function AddObjectScreen({ navigation }: Props) {
             title=""
             onPress={handleBack}
             variant="ghost"
-            icon={<Ionicons name="arrow-back" size={22} color={colors.heading} />}
+            icon={<Ionicons name="chevron-back" size={22} color={colors.heading} />}
             style={styles.backButton}
           />
           <View style={styles.progressArea}>
-            <Text style={[styles.stepLabel, { color: colors.textLight }]}>Шаг {step} из {TOTAL_STEPS}</Text>
+            <Text style={styles.stepLabel}>Шаг {step} из {TOTAL_STEPS}</Text>
             <ProgressBar progress={step / TOTAL_STEPS} height={4} />
           </View>
           <View style={{ width: 44 }} />
@@ -579,7 +553,11 @@ export function AddObjectScreen({ navigation }: Props) {
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {step < TOTAL_STEPS ? (
             <Button
-              title="Далее →"
+              title={
+                step === 1 ? 'Далее: площадь →' :
+                step === 2 ? 'Далее: планировка →' :
+                'Далее: проверка →'
+              }
               onPress={handleNext}
               fullWidth
             />
@@ -628,63 +606,36 @@ export function AddObjectScreen({ navigation }: Props) {
 
 // ─── Goal card sub-component ───
 
-function GoalCardInner({
+function GoalCard({
   icon,
   label,
   description,
   selected,
   onPress,
-  colors,
-  glass,
-  isDark,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   description: string;
   selected: boolean;
   onPress: () => void;
-  colors: ReturnType<typeof useTheme>['colors'];
-  glass: ReturnType<typeof useTheme>['glass'];
-  isDark: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        styles.goalCard,
-        {
-          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.6)',
-          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
-          shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
-        },
-        selected && {
-          borderColor: colors.primary,
-          backgroundColor: colors.primaryLight,
-        },
-      ]}
+      style={[styles.goalCard, selected && styles.goalCardSelected]}
     >
       <View style={styles.goalCardContent}>
-        <View
-          style={[
-            styles.goalIconCircle,
-            {
-              backgroundColor: isDark ? glass.fill.light : 'rgba(255, 255, 255, 0.8)',
-            },
-            selected && {
-              backgroundColor: isDark ? colors.primaryLight : 'rgba(123, 45, 62, 0.1)',
-            },
-          ]}
-        >
+        <View style={[styles.goalIconCircle, selected && styles.goalIconCircleSelected]}>
           <Ionicons
             name={icon}
             size={28}
             color={selected ? colors.primary : colors.textLight}
           />
         </View>
-        <Text style={[styles.goalLabel, { color: colors.heading }, selected && { color: colors.primary }]}>
+        <Text style={[styles.goalLabel, selected && styles.goalLabelSelected]}>
           {label}
         </Text>
-        <Text style={[styles.goalDescription, { color: colors.textLight }]}>{description}</Text>
+        <Text style={styles.goalDescription}>{description}</Text>
         {selected && (
           <View style={styles.goalCheck}>
             <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
@@ -718,6 +669,7 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     ...typography.caption,
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
@@ -730,10 +682,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
+    color: colors.heading,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
+    color: colors.textLight,
     marginBottom: spacing.xxl,
   },
   formSection: {
@@ -749,14 +703,25 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     overflow: 'hidden',
     marginBottom: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    // Glass shadow
+    shadowColor: 'rgba(0, 0, 0, 0.06)',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 10,
     elevation: 3,
   },
+  typeCardSelected: {
+    borderColor: 'rgba(123, 45, 62, 0.2)',
+    backgroundColor: colors.primaryLight,
+    shadowColor: 'rgba(123, 45, 62, 0.1)',
+    elevation: 5,
+  },
   typeImageArea: {
     height: 160,
+    backgroundColor: colors.bgCard,
   },
   typeImage: {
     width: '100%',
@@ -778,21 +743,28 @@ const styles = StyleSheet.create({
   },
   typeLabel: {
     ...typography.bodyBold,
+    color: colors.heading,
     marginBottom: 2,
+  },
+  typeLabelSelected: {
+    color: colors.primary,
   },
   typeDescription: {
     ...typography.small,
+    color: colors.textLight,
   },
   typeCheckCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.md,
   },
   sectionTitle: {
     ...typography.h3,
+    color: colors.heading,
     marginBottom: spacing.md,
     marginTop: spacing.lg,
   },
@@ -805,6 +777,7 @@ const styles = StyleSheet.create({
   disclaimerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(197, 165, 90, 0.08)',
     borderRadius: radius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -813,6 +786,7 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     ...typography.small,
+    color: colors.textLight,
     flex: 1,
   },
   // Layout grid
@@ -836,14 +810,22 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   goalCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     height: 160,
+    // Glass shadow
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 2,
+  },
+  goalCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   goalCardContent: {
     flex: 1,
@@ -854,17 +836,26 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
+  goalIconCircleSelected: {
+    backgroundColor: 'rgba(123, 45, 62, 0.1)',
+  },
   goalLabel: {
     ...typography.bodyBold,
+    color: colors.heading,
     textAlign: 'center',
     marginBottom: 2,
   },
+  goalLabelSelected: {
+    color: colors.primary,
+  },
   goalDescription: {
     ...typography.caption,
+    color: colors.textLight,
     textAlign: 'center',
   },
   goalCheck: {
@@ -885,5 +876,6 @@ const styles = StyleSheet.create({
   },
   autofilledText: {
     ...typography.caption,
+    color: colors.success,
   },
 });

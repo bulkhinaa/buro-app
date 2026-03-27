@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper, Card, SearchInput, GlassChip, Toggle } from '../../components';
+import { ScreenWrapper, Card, SearchInput, GlassChip, Toggle, AppDialog } from '../../components';
+import type { DialogButton } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
-import { useAdminStore, MOCK_USERS, type AdminUser, type UserFilter } from '../../store/adminStore';
+import { useAdminStore, type AdminUser, type UserFilter } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { fetchAllUsers, toggleUserActive } from '../../services/projectService';
@@ -22,7 +23,7 @@ const ROLE_COLORS: Record<string, string> = {
   client: colors.primary,
   master: colors.success,
   supervisor: colors.gold,
-  admin: '#8B5CF6',
+  admin: colors.adminPurple,
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -33,7 +34,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function AdminUsersScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
+  const nav = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');
@@ -64,28 +65,36 @@ export function AdminUsersScreen({ navigation }: any) {
 
   const [loading, setLoading] = useState(false);
 
+  // Dialog state for block confirmation
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
+
+  const showDialog = (title: string, message: string, buttons: DialogButton[]) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogButtons(buttons);
+    setDialogVisible(true);
+  };
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      if (isDev) {
-        setUsers(MOCK_USERS);
-      } else {
-        const data = await fetchAllUsers();
-        setUsers(data as AdminUser[]);
-      }
+      const data = await fetchAllUsers();
+      setUsers(data as AdminUser[]);
     } catch {
-      setUsers(MOCK_USERS);
+      // On error, keep whatever is already in store
     } finally {
       setLoading(false);
     }
-  }, [isDev, setUsers]);
+  }, [setUsers]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleToggleActive = async (targetUser: AdminUser) => {
-    const newActive = !targetUser.is_active;
+  const performToggleActive = async (targetUser: AdminUser, newActive: boolean) => {
     try {
       if (!isDev) await toggleUserActive(targetUser.id, newActive);
       setUsers(
@@ -100,6 +109,28 @@ export function AdminUsersScreen({ navigation }: any) {
       );
     } catch {
       showToast('Ошибка', 'error');
+    }
+  };
+
+  const handleToggleActive = (targetUser: AdminUser) => {
+    const newActive = !targetUser.is_active;
+
+    // Blocking requires confirmation; activating is instant
+    if (!newActive) {
+      showDialog(
+        'Заблокировать пользователя?',
+        'Пользователь потеряет доступ к платформе. Это действие можно отменить.',
+        [
+          {
+            text: 'Заблокировать',
+            style: 'destructive',
+            onPress: () => performToggleActive(targetUser, newActive),
+          },
+          { text: 'Отмена', style: 'cancel', onPress: () => {} },
+        ],
+      );
+    } else {
+      performToggleActive(targetUser, newActive);
     }
   };
 
@@ -164,6 +195,9 @@ export function AdminUsersScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={styles.container}>
+      <Pressable onPress={() => nav.goBack()} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={24} color={colors.heading} />
+      </Pressable>
       <View style={styles.header}>
         <Text style={styles.title}>Пользователи</Text>
         <Text style={styles.subtitle}>
@@ -216,16 +250,31 @@ export function AdminUsersScreen({ navigation }: any) {
           renderItem={renderUser}
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
+
+      <AppDialog
+        visible={dialogVisible}
+        title={dialogTitle}
+        message={dialogMessage}
+        buttons={dialogButtons}
+        onClose={() => setDialogVisible(false)}
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 100,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   header: {
     marginTop: spacing.lg,

@@ -6,7 +6,6 @@ import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
 import { colors, spacing, typography, radius } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import {
   fetchStageTemplates,
   createStageTemplate,
@@ -36,7 +35,6 @@ const DEFAULT_TEMPLATES: StageTemplate[] = [
 const webInputStyle = Platform.OS === 'web' ? { outlineStyle: 'none' as any, outlineWidth: 0 } : {};
 
 export function AdminTemplatesScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const [templates, setTemplates] = useState<StageTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -339,7 +337,7 @@ export function AdminTemplatesScreen({ navigation }: any) {
           renderItem={renderTemplate}
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           extraData={`${editingId}-${expandedId}`}
         />
       )}
@@ -361,7 +359,7 @@ export function AdminTemplatesScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   backRow: {
     flexDirection: 'row',

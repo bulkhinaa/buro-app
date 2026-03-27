@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, CellIndicator } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 
 const BASE_URL = 'https://bulkhinaa.github.io/buro-app';
 
@@ -49,7 +48,6 @@ const DOCUMENTS: DocItem[] = [
 ];
 
 export function DocumentsScreen() {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation<any>();
 
   const handleOpenDoc = (uri: string, title: string) => {
@@ -109,14 +107,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   docsCard: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.xs,
     marginBottom: spacing.xxl,
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,

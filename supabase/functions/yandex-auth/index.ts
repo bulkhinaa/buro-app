@@ -13,25 +13,20 @@
  * 6. Client uses the OTP to establish a Supabase session
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 
 Deno.serve(async (req: Request) => {
   // CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { code, redirect_uri } = await req.json();
 
     if (!code) {
-      return jsonError('Missing authorization code', 400);
+      return jsonError('Missing authorization code', 400, corsHeaders);
     }
 
     const YANDEX_CLIENT_ID = Deno.env.get('YANDEX_CLIENT_ID')!;
@@ -57,7 +52,7 @@ Deno.serve(async (req: Request) => {
     if (!tokenData.access_token) {
       console.error('Yandex token exchange failed:', tokenData);
       const detail = tokenData.error_description || tokenData.error || 'unknown';
-      return jsonError(`Failed to exchange authorization code: ${detail}`, 400);
+      return jsonError(`Failed to exchange authorization code: ${detail}`, 400, corsHeaders);
     }
 
     // ── 2. Fetch user info from Yandex ──
@@ -69,7 +64,7 @@ Deno.serve(async (req: Request) => {
 
     const email = yandexUser.default_email;
     if (!email) {
-      return jsonError('No email found in Yandex profile', 400);
+      return jsonError('No email found in Yandex profile', 400, corsHeaders);
     }
 
     const displayName =
@@ -131,12 +126,12 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err: any) {
     console.error('yandex-auth error:', err);
-    return jsonError(err.message || 'Internal server error', 500);
+    return jsonError(err.message || 'Internal server error', 500, corsHeaders);
   }
 });
 
 /** Helper: return a JSON error response */
-function jsonError(message: string, status: number) {
+function jsonError(message: string, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

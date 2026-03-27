@@ -6,11 +6,11 @@ import {
   ScrollView,
   TextInput,
   Platform,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Chip } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
@@ -28,7 +28,6 @@ const PRICE_TYPES: { value: PriceType; label: string }[] = [
 ];
 
 export function MasterPricingScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const profile = useMasterStore((s) => s.profile);
   const updatePricing = useMasterStore((s) => s.updatePricing);
   const showToast = useToastStore((s) => s.show);
@@ -69,12 +68,9 @@ export function MasterPricingScreen({ navigation }: any) {
     <ScreenWrapper scroll={false} edges={[]}>
       {/* Header */}
       <View style={styles.header}>
-        <Ionicons
-          name="arrow-back"
-          size={24}
-          color={colors.heading}
-          onPress={() => navigation.goBack()}
-        />
+        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={24} color={colors.heading} />
+        </Pressable>
         <Text style={styles.headerTitle}>Мои расценки</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -158,6 +154,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.lg,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: {
     ...typography.h3,
     color: colors.heading,
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.06)',
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
@@ -180,10 +182,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pricingRow: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -231,6 +233,6 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.5)',
   },
 });

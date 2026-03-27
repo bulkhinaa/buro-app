@@ -4,8 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, GlassChip, SystemButton } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
-import { useAdminStore, MOCK_LEADS, type Lead, type LeadFilter } from '../../store/adminStore';
+import { useAdminStore, type Lead, type LeadFilter } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { fetchAllLeads, updateLeadStatus } from '../../services/projectService';
@@ -33,7 +32,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function AdminLeadsScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');
@@ -56,18 +54,14 @@ export function AdminLeadsScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      if (isDev) {
-        setLeads(MOCK_LEADS);
-      } else {
-        const data = await fetchAllLeads();
-        setLeads(data as Lead[]);
-      }
+      const data = await fetchAllLeads();
+      setLeads(data as Lead[]);
     } catch {
-      setLeads(MOCK_LEADS);
+      // On error, keep whatever is already in store
     } finally {
       setLoading(false);
     }
-  }, [isDev, setLeads]);
+  }, [setLeads]);
 
   useEffect(() => {
     loadData();
@@ -229,7 +223,7 @@ export function AdminLeadsScreen({ navigation }: any) {
           renderItem={renderLead}
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
     </ScreenWrapper>
@@ -238,7 +232,7 @@ export function AdminLeadsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   backRow: {
     flexDirection: 'row',

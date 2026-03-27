@@ -113,7 +113,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
             )
           `)
           .eq('master_id', userId)
-          .in('status', ['pending', 'in_progress', 'rejected'])
+          .in('status', ['pending', 'in_progress', 'done_by_master', 'rejected'])
           .order('deadline', { ascending: true });
 
         if (error) throw error;

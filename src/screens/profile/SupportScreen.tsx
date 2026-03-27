@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   Linking,
   KeyboardAvoidingView,
   Platform,
@@ -17,8 +16,8 @@ import {
   CellIndicator,
   CellFaq,
 } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
+import { useToastStore } from '../../store/toastStore';
 
 const FAQ_DATA = [
   {
@@ -49,30 +48,26 @@ const FAQ_DATA = [
 ];
 
 export function SupportScreen() {
-  const { colors, glass, isDark } = useTheme();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const showToast = useToastStore((s) => s.show);
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      showToast('Введите текст сообщения', 'error');
+      return;
+    }
     setSending(true);
     try {
       // In production: send message to support API
       await new Promise((resolve) => setTimeout(resolve, 500));
-      Alert.alert(
-        'Сообщение отправлено',
-        'Мы ответим в течение 15 минут в рабочее время (9:00–21:00)',
-      );
+      showToast('Сообщение отправлено. Ответим в течение 15 минут', 'success');
       setMessage('');
     } catch {
-      Alert.alert('Ошибка', 'Не удалось отправить сообщение');
+      showToast('Не удалось отправить сообщение', 'error');
     } finally {
       setSending(false);
     }
-  };
-
-  const handleCallSupport = () => {
-    Linking.openURL('tel:+74951234567');
   };
 
   const handleEmailSupport = () => {
@@ -90,32 +85,20 @@ export function SupportScreen() {
           contentContainerStyle={styles.content}
         >
           {/* Contact options */}
-          <Text style={[styles.sectionTitle, { color: colors.heading }]}>Связаться с нами</Text>
-          <View style={[styles.contactCard, {
-            backgroundColor: glass.fill.regular,
-            borderColor: glass.border.light,
-            shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
-          }]}>
-            <CellIndicator
-              variant="card"
-              icon={<Ionicons name="call-outline" size={20} color={colors.primary} />}
-              name="Позвонить"
-              value="+7 495 123-45-67"
-              showChevron
-              onPress={handleCallSupport}
-            />
+          <Text style={styles.sectionTitle}>Связаться с нами</Text>
+          <View style={styles.contactCard}>
             <CellIndicator
               variant="card"
               icon={<Ionicons name="mail-outline" size={20} color={colors.primary} />}
               name="Email"
-              value="support@buroremontov.ru"
+              value="support@br.ru"
               showChevron
               onPress={handleEmailSupport}
             />
           </View>
 
           {/* Write to support */}
-          <Text style={[styles.sectionTitle, { color: colors.heading }]}>Написать в поддержку</Text>
+          <Text style={styles.sectionTitle}>Написать в поддержку</Text>
           <TextArea
             placeholder="Опишите ваш вопрос или проблему..."
             value={message}
@@ -125,13 +108,12 @@ export function SupportScreen() {
           <Button
             title={sending ? 'Отправляем...' : 'Отправить'}
             onPress={handleSendMessage}
-            disabled={!message.trim() || sending}
             loading={sending}
             fullWidth
           />
 
           {/* FAQ */}
-          <Text style={[styles.sectionTitle, { marginTop: spacing.xxxl, color: colors.heading }]}>
+          <Text style={[styles.sectionTitle, { marginTop: spacing.xxxl }]}>
             Частые вопросы
           </Text>
           {FAQ_DATA.map((faq, i) => (
@@ -158,14 +140,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   contactCard: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.xs,
     marginBottom: spacing.xxl,
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,

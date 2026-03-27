@@ -15,14 +15,14 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
-import { RepairType, Stage } from '../../types';
+import { RepairType } from '../../types';
 import { getStageBreakdown, StageBreakdownItem } from '../../data/stageBreakdown';
 import { STAGE_DEPENDENCIES } from '../../data/stageDependencies';
 import { hapticSuccess } from '../../utils/haptics';
+import { saveProjectStagePlan } from '../../services/projectService';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -90,9 +90,9 @@ function DatePickerRow({
             fontSize: 15,
             padding: '8px 12px',
             borderRadius: 12,
-            border: '1px solid ' + glass.border.light,
-            backgroundColor: glass.fill.regular,
-            color: colors.heading,
+            border: '1px solid rgba(255,255,255,0.8)',
+            backgroundColor: 'rgba(255,255,255,0.65)',
+            color: '#1a1a2e',
             fontFamily: 'inherit',
             outline: 'none',
           }}
@@ -152,12 +152,12 @@ const dateStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.lg,
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.8)',
   },
   dateText: {
     ...typography.body,
@@ -256,7 +256,6 @@ function calculateStagePlan(
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export function SupervisorStagePlanScreen({ route, navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -315,7 +314,7 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   const handleSave = useCallback(async () => {
     setDialogTitle('Сохранить план?');
     setDialogMessage(
-      `${stagePlan.length} этапов, ${totalDays} дней\nНачало: ${formatDateFull(startDate)}\nОкончание: ${formatDateFull(estimatedEnd)}`,
+      `${stagePlan.length} этапов, ${totalDays} дней\nНачало: ${formatDateFull(startDate)}\nОкончание: ${formatDateFull(estimatedEnd)}\n\nВнимание: если работы по этапам уже начались, сохранение перезапишет план.`,
     );
     setDialogButtons([
       {
@@ -323,14 +322,22 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
         onPress: async () => {
           setSaving(true);
           try {
-            if (!isDev) {
-              // In production, create stages in Supabase
-              // For now, this is a placeholder for the service call
-              // await createProjectStages(projectId, stagePlan.map(...))
+            if (isDev) {
+              // Simulate save for dev users
+              await new Promise((r) => setTimeout(r, 500));
+            } else {
+              await saveProjectStagePlan(
+                projectId,
+                stagePlan.map((s) => ({
+                  title: s.title,
+                  description: s.description,
+                  order_index: s.orderIndex,
+                  planned_start_date: toISODate(s.startDate),
+                  planned_end_date: toISODate(s.endDate),
+                  duration_days: s.days,
+                })),
+              );
             }
-
-            // Simulate save for dev
-            await new Promise((r) => setTimeout(r, 500));
 
             hapticSuccess();
             showToast('План этапов сохранён', 'success');
@@ -563,7 +570,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   endDateText: {
     ...typography.body,
@@ -593,7 +600,7 @@ const styles = StyleSheet.create({
   timelineLineTop: {
     width: 2,
     flex: 1,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123,45,62,0.15)',
     marginBottom: -1,
   },
   timelineDot: {
@@ -617,20 +624,20 @@ const styles = StyleSheet.create({
   timelineLineBottom: {
     width: 2,
     flex: 1,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123,45,62,0.15)',
     marginTop: -1,
   },
 
   // Stage card
   stageCard: {
     flex: 1,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
     padding: spacing.md,
     gap: spacing.xs + 2,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123,45,62,0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -638,8 +645,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   stageCardParallel: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accentLight,
+    borderColor: 'rgba(197,165,90,0.3)',
+    backgroundColor: 'rgba(197,165,90,0.05)',
   },
   stageHeader: {
     flexDirection: 'row',
@@ -653,7 +660,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   daysBadge: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123,45,62,0.1)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -691,7 +698,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: colors.accentLight,
+    backgroundColor: 'rgba(197,165,90,0.12)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -716,8 +723,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(243,237,232,0.95)',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255,255,255,0.8)',
   },
 });

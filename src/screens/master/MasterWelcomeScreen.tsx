@@ -11,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { hapticLight } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +35,6 @@ type Props = {
 };
 
 export function MasterWelcomeScreen({ onComplete }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
@@ -184,7 +182,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xxxl,
@@ -230,7 +228,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.2)',
   },
   dotActive: {
     width: 24,

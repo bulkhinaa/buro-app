@@ -306,22 +306,13 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     }
 
     try {
-      // Delete old template
-      await supabase
-        .from('master_schedule_templates')
-        .delete()
-        .eq('master_id', masterId);
-
-      // Insert new
-      const rows = workingSlots.map(({ day, hour }) => ({
-        master_id: masterId,
-        day_of_week: day,
-        hour,
-        is_working: true,
-      }));
-      if (rows.length > 0) {
-        await supabase.from('master_schedule_templates').insert(rows);
-      }
+      // Atomic replace via RPC (single transaction)
+      const slotsJsonb = workingSlots.map(({ day, hour }) => ({ day, hour }));
+      const { error } = await supabase.rpc('replace_schedule_template', {
+        p_master_id: masterId,
+        p_slots: slotsJsonb,
+      });
+      if (error) throw error;
 
       await get().fetchTemplate(masterId);
     } catch { /* ignore */ }

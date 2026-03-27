@@ -12,6 +12,7 @@ import { MasterScheduleScreen } from '../screens/master/MasterScheduleScreen';
 import { MasterScheduleTemplateScreen } from '../screens/master/MasterScheduleTemplateScreen';
 import { MasterVacationsScreen } from '../screens/master/MasterVacationsScreen';
 import { MasterOfferDetailScreen } from '../screens/master/MasterOfferDetailScreen';
+import { EditSpecializationsScreen } from '../screens/master/EditSpecializationsScreen';
 import { ChatScreen } from '../screens/client/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
@@ -65,6 +66,8 @@ export function MasterNavigator() {
       <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false, title: 'Расценки' }} />
       {/* Verification */}
       <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: t('nav.verification') }} />
+      {/* Specializations */}
+      <Stack.Screen name="EditSpecializations" component={EditSpecializationsScreen} options={{ headerShown: false, title: 'Специализации' }} />
       {/* Profile & settings */}
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false, title: 'Профиль' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerTitle: t('nav.editProfile') }} />

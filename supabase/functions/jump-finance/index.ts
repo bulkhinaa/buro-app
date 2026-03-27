@@ -10,12 +10,7 @@
  * 3. check_status — poll GET /selfemployer until is_verified === true
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 
 const JUMP_BASE_URL = 'https://api.jump.finance/services/openapi';
 
@@ -41,14 +36,15 @@ async function getAgentId(headers: Record<string, string>): Promise<number> {
 
 Deno.serve(async (req: Request) => {
   // CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const clientKey = Deno.env.get('JUMP_FINANCE_CLIENT_KEY');
     if (!clientKey) {
-      return jsonError('JUMP_FINANCE_CLIENT_KEY not configured', 500);
+      return jsonError('JUMP_FINANCE_CLIENT_KEY not configured', 500, corsHeaders);
     }
 
     const body = await req.json();
@@ -64,13 +60,13 @@ Deno.serve(async (req: Request) => {
     if (action === 'create_contractor') {
       const { name, phone, inn } = body;
       if (!name || !phone || !inn) {
-        return jsonError('name, phone and inn are required', 400);
+        return jsonError('name, phone and inn are required', 400, corsHeaders);
       }
 
       // Validate INN format (12 digits for individuals/self-employed)
       const cleanInn = inn.replace(/\s/g, '');
       if (!/^\d{12}$/.test(cleanInn)) {
-        return jsonError('ИНН должен содержать 12 цифр', 400);
+        return jsonError('ИНН должен содержать 12 цифр', 400, corsHeaders);
       }
 
       // Split full name into parts (Jump API requires first_name, last_name)
@@ -115,21 +111,21 @@ Deno.serve(async (req: Request) => {
             (f: { field: string; messages: string[] }) =>
               `${f.field}: ${f.messages.join(', ')}`,
           );
-          return jsonError(msgs.join('; '), res.status);
+          return jsonError(msgs.join('; '), res.status, corsHeaders);
         }
         const msg = data?.error?.detail || data?.message || 'Failed to create contractor';
-        return jsonError(msg, res.status);
+        return jsonError(msg, res.status, corsHeaders);
       }
 
       const contractorId = String(data.item?.id || data.id || data.contractor_id);
-      return jsonSuccess({ contractor_id: contractorId });
+      return jsonSuccess({ contractor_id: contractorId }, corsHeaders);
     }
 
     // ── Check self-employed status ──
     if (action === 'check_status') {
       const { contractor_id } = body;
       if (!contractor_id) {
-        return jsonError('contractor_id is required', 400);
+        return jsonError('contractor_id is required', 400, corsHeaders);
       }
 
       const res = await fetch(
@@ -141,7 +137,7 @@ Deno.serve(async (req: Request) => {
       if (!res.ok) {
         console.error('Jump check_status error:', JSON.stringify(data));
         const msg = data?.error?.detail || data?.message || 'Failed to check status';
-        return jsonError(msg, res.status);
+        return jsonError(msg, res.status, corsHeaders);
       }
 
       const item = data.item || data;
@@ -157,14 +153,14 @@ Deno.serve(async (req: Request) => {
         reason,
         is_verified: isVerified,
         is_can_pay_taxes: item.is_can_pay_taxes || false,
-      });
+      }, corsHeaders);
     }
 
     // ── Get contractor info ──
     if (action === 'get_contractor') {
       const { contractor_id } = body;
       if (!contractor_id) {
-        return jsonError('contractor_id is required', 400);
+        return jsonError('contractor_id is required', 400, corsHeaders);
       }
 
       const res = await fetch(
@@ -176,7 +172,7 @@ Deno.serve(async (req: Request) => {
       if (!res.ok) {
         console.error('Jump get_contractor error:', JSON.stringify(data));
         const msg = data?.error?.detail || data?.message || 'Failed to get contractor';
-        return jsonError(msg, res.status);
+        return jsonError(msg, res.status, corsHeaders);
       }
 
       const item = data.item || data;
@@ -189,24 +185,24 @@ Deno.serve(async (req: Request) => {
         se_status: item.legal_form?.status?.value,
         se_verified: item.legal_form?.status?.is_verified,
         identification: item.identification?.value,
-      });
+      }, corsHeaders);
     }
 
-    return jsonError(`Unknown action: ${action}`, 400);
+    return jsonError(`Unknown action: ${action}`, 400, corsHeaders);
   } catch (err: any) {
     console.error('jump-finance error:', err);
-    return jsonError(err.message || 'Internal server error', 500);
+    return jsonError(err.message || 'Internal server error', 500, corsHeaders);
   }
 });
 
-function jsonSuccess(data: Record<string, unknown>) {
+function jsonSuccess(data: Record<string, unknown>, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
-function jsonError(message: string, status: number) {
+function jsonError(message: string, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

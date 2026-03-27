@@ -66,6 +66,9 @@ export interface Stage {
   completed_at?: string;
   approved_at?: string;
   rejection_reason?: string;
+  duration_days?: number;
+  planned_start_date?: string;
+  planned_end_date?: string;
 }
 
 export type StageStatus =

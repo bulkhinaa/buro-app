@@ -12,8 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Input, TextArea, Button } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
@@ -22,7 +21,6 @@ import type { PortfolioProject } from '../../types';
 const MAX_PHOTOS = 5;
 
 export function MasterPortfolioEditScreen({ navigation, route }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const projectId = route?.params?.projectId as string | undefined;
   const profile = useMasterStore((s) => s.profile);
   const addPortfolioProject = useMasterStore((s) => s.addPortfolioProject);
@@ -99,7 +97,7 @@ export function MasterPortfolioEditScreen({ navigation, route }: any) {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.heading} />
+            <Ionicons name="chevron-back" size={24} color={colors.heading} />
           </Pressable>
           <Text style={styles.headerTitle}>
             {isEditing ? 'Редактировать проект' : 'Новый проект'}
@@ -218,7 +216,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
   },
   addPhotoButton: {
@@ -226,9 +224,9 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: colors.borderHover,
+    borderColor: 'rgba(123, 45, 62, 0.15)',
     borderStyle: 'dashed',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
@@ -240,6 +238,6 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.5)',
   },
 });

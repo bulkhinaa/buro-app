@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SharedHeader } from '../../components';
 import { hapticLight } from '../../utils/haptics';
-import { colors, spacing, typography, radius, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
-import { useAdminStore, MOCK_STATS, MOCK_PROJECTS, MOCK_LEADS, MOCK_USERS } from '../../store/adminStore';
-import { fetchAdminStats } from '../../services/projectService';
+import { useAdminStore } from '../../store/adminStore';
 
 interface QuickAction {
   icon: keyof typeof Ionicons.glyphMap;
@@ -21,43 +19,23 @@ const QUICK_ACTIONS: QuickAction[] = [
   { icon: 'document-text-outline', label: 'Заявки', route: 'AdminRequests', color: colors.primary },
   { icon: 'megaphone-outline', label: 'Лиды', route: 'AdminLeads', color: colors.gold },
   { icon: 'people-outline', label: 'Пользователи', route: 'AdminUsers', color: colors.success },
-  { icon: 'book-outline', label: 'База знаний', route: 'AdminTemplates', color: '#8B5CF6' },
+  { icon: 'book-outline', label: 'База знаний', route: 'AdminTemplates', color: colors.adminPurple },
 ];
 
 export function AdminHomeScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
-  const isDev = user?.id.startsWith('dev-');
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
   const stats = useAdminStore((s) => s.stats);
-  const setStats = useAdminStore((s) => s.setStats);
-  const setProjects = useAdminStore((s) => s.setProjects);
-  const setLeads = useAdminStore((s) => s.setLeads);
-  const setUsers = useAdminStore((s) => s.setUsers);
-  const [loading, setLoading] = useState(true);
+  const isLoading = useAdminStore((s) => s.isLoading);
+  const fetchAll = useAdminStore((s) => s.fetchAll);
 
-  const loadStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (isDev) {
-        setStats(MOCK_STATS);
-        setProjects(MOCK_PROJECTS);
-        setLeads(MOCK_LEADS);
-        setUsers(MOCK_USERS);
-      } else {
-        const data = await fetchAdminStats();
-        setStats(data);
-      }
-    } catch {
-      setStats(MOCK_STATS);
-    } finally {
-      setLoading(false);
-    }
-  }, [isDev, setStats, setProjects, setLeads, setUsers]);
+  const loadData = useCallback(async () => {
+    await fetchAll();
+  }, [fetchAll]);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    loadData();
+  }, [loadData]);
 
   return (
     <ScreenWrapper style={styles.container}>
@@ -71,7 +49,7 @@ export function AdminHomeScreen({ navigation }: any) {
         />
 
         {/* Stats grid */}
-        {loading ? (
+        {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
@@ -98,7 +76,7 @@ export function AdminHomeScreen({ navigation }: any) {
             <StatCard
               number={stats.totalSupervisors}
               label="Супервайзеров"
-              color="#8B5CF6"
+              color={colors.adminPurple}
               onPress={() => navigation.navigate('AdminUsers')}
             />
           </View>
@@ -180,7 +158,7 @@ function SummaryRow({ label, value }: { label: string; value: number }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -196,13 +174,13 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '47%',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
     borderRadius: 20,
     padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: glass.border.light,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: 'rgba(123, 45, 62, 0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -231,13 +209,13 @@ const styles = StyleSheet.create({
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: radius.xl,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     gap: spacing.md,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -267,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
   },
   summaryLabel: {
     ...typography.body,

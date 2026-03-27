@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, SearchInput, GlassChip, Button, AppDialog } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticLight } from '../../utils/haptics';
 import { colors, spacing, typography, radius } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
-import { useAdminStore, MOCK_PROJECTS, type ProjectFilter } from '../../store/adminStore';
+import { useAdminStore, type ProjectFilter } from '../../store/adminStore';
 import { fetchAllProjects, assignSupervisor, updateProjectStatus, fetchUsersByRole } from '../../services/projectService';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
@@ -22,7 +22,7 @@ const FILTER_OPTIONS: { key: ProjectFilter; label: string }[] = [
 ];
 
 export function AdminRequestsScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
+  const nav = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');
@@ -67,27 +67,18 @@ export function AdminRequestsScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      if (isDev) {
-        setProjects(MOCK_PROJECTS);
-        setSupervisors([
-          { id: 'sv-1', name: 'Алексеев П.И.' },
-          { id: 'sv-2', name: 'Борисова Е.А.' },
-          { id: 'sv-3', name: 'Григорьев М.С.' },
-        ]);
-      } else {
-        const [projectsData, svData] = await Promise.all([
-          fetchAllProjects(),
-          fetchUsersByRole('supervisor'),
-        ]);
-        setProjects(projectsData);
-        setSupervisors(svData.map((sv) => ({ id: sv.id, name: sv.name || 'Без имени' })));
-      }
+      const [projectsData, svData] = await Promise.all([
+        fetchAllProjects(),
+        fetchUsersByRole('supervisor'),
+      ]);
+      setProjects(projectsData);
+      setSupervisors(svData.map((sv) => ({ id: sv.id, name: sv.name || 'Без имени' })));
     } catch {
-      setProjects(MOCK_PROJECTS);
+      // On error, keep whatever is already in store (could be empty)
     } finally {
       setLoading(false);
     }
-  }, [isDev, setProjects]);
+  }, [setProjects]);
 
   useEffect(() => {
     loadData();
@@ -194,6 +185,9 @@ export function AdminRequestsScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={styles.container}>
+      <Pressable onPress={() => nav.goBack()} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={24} color={colors.heading} />
+      </Pressable>
       <View style={styles.header}>
         <Text style={styles.title}>Заявки</Text>
         <Text style={styles.subtitle}>
@@ -251,7 +245,7 @@ export function AdminRequestsScreen({ navigation }: any) {
           renderItem={renderProject}
           keyExtractor={(item) => item.id}
           scrollEnabled={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
 
@@ -268,7 +262,14 @@ export function AdminRequestsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 100,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   header: {
     marginTop: spacing.lg,

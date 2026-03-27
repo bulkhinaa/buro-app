@@ -18,11 +18,11 @@ const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
   : {};
 
-// ─── DaData configuration ───────────────────────────────────────────
-// Free tier: 10,000 requests/day
-// Get your token at https://dadata.ru/profile/#info
-const DADATA_TOKEN = '4f5dfae6e7088a2e5f51f6be3f94337b22504878';
-const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address';
+// ─── DaData via Supabase Edge Function proxy ────────────────────────
+// Token is stored server-side in the dadata-proxy Edge Function.
+// Client sends requests through the proxy with Supabase auth.
+const DADATA_PROXY_URL = 'https://aaghopgrlxdjsrvmbuds.supabase.co/functions/v1/dadata-proxy';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhZ2hvcGdybHhkanNydm1idWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTU0ODUsImV4cCI6MjA4ODM5MTQ4NX0.kcRS5xcS5yR8ghUdhE5FJkYTB_23a0OOMzhcI-SGIzY';
 
 export interface DaDataSuggestion {
   value: string; // "г Москва, ул Тверская, д 1, кв 5"
@@ -84,25 +84,18 @@ export function AddressInput({
       return;
     }
 
-    // If no DaData token — fall back to Nominatim
-    if (!DADATA_TOKEN) {
-      await searchNominatim(query);
-      return;
-    }
-
     setLoading(true);
     try {
-      const res = await fetch(DADATA_URL, {
+      const res = await fetch(DADATA_PROXY_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Token ${DADATA_TOKEN}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           query,
           count: 7,
-          // Suggest down to apartment level (flat) or house level
           from_bound: { value: 'city' },
           to_bound: { value: level },
         }),
@@ -112,12 +105,12 @@ export function AddressInput({
       setSuggestions(items);
       setShowDropdown(items.length > 0);
     } catch {
-      setSuggestions([]);
-      setShowDropdown(false);
+      // Fallback to Nominatim if proxy is unavailable
+      await searchNominatim(query);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [level]);
 
   // Fallback: Nominatim (free, no API key, worse quality for Russia)
   const searchNominatim = useCallback(async (query: string) => {

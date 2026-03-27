@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,13 +14,15 @@ import {
   UIManager,
   Platform,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Chip, GlassChip, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
 import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePortfolioStore } from '../../store/portfolioStore';
+import { supabase } from '../../lib/supabase';
 import { hapticLight } from '../../utils/haptics';
 
 // Enable LayoutAnimation on Android
@@ -53,123 +55,9 @@ export interface PortfolioCase {
 
 const FILTER_OPTIONS = ['Все', 'Избранное', 'Косметический', 'Стандартный', 'Капитальный', 'Дизайнерский'];
 
-// Mock data — will be replaced with real API data
-export const MOCK_CASES: PortfolioCase[] = [
-  {
-    id: '1',
-    images: [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800',
-    ],
-    repairType: 'Стандартный',
-    area: '54 м²',
-    cost: '870 000 ₽',
-    rating: 4.9,
-    reviewCount: 12,
-    address: 'ул. Ленина, 15',
-    duration: '45 дней',
-    supervisorName: 'Алексей К.',
-    stagesCount: 14,
-    description: 'Полный ремонт квартиры',
-    likes: 47,
-  },
-  {
-    id: '2',
-    images: [
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800',
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-    ],
-    repairType: 'Капитальный',
-    area: '78 м²',
-    cost: '1 560 000 ₽',
-    rating: 5.0,
-    reviewCount: 8,
-    address: 'пр. Мира, 42',
-    duration: '72 дня',
-    supervisorName: 'Борисова Е.',
-    stagesCount: 14,
-    description: 'Капитальный ремонт трёхкомнатной',
-    likes: 83,
-  },
-  {
-    id: '3',
-    images: [
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800',
-    ],
-    repairType: 'Косметический',
-    area: '38 м²',
-    cost: '285 000 ₽',
-    rating: 4.8,
-    reviewCount: 15,
-    address: 'ул. Пушкина, 8',
-    duration: '21 день',
-    supervisorName: 'Григорьев М.',
-    stagesCount: 8,
-    description: 'Обновление студии',
-    likes: 31,
-  },
-  {
-    id: '4',
-    images: [
-      'https://images.unsplash.com/photo-1600573472591-ee6981cf81e6?w=800',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
-    ],
-    repairType: 'Дизайнерский',
-    area: '92 м²',
-    cost: '3 200 000 ₽',
-    rating: 5.0,
-    reviewCount: 6,
-    address: 'ул. Гагарина, 30',
-    duration: '90 дней',
-    supervisorName: 'Алексей К.',
-    stagesCount: 14,
-    description: 'Авторский дизайн-проект',
-    likes: 124,
-  },
-  {
-    id: '5',
-    images: [
-      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800',
-    ],
-    repairType: 'Стандартный',
-    area: '45 м²',
-    cost: '720 000 ₽',
-    rating: 4.7,
-    reviewCount: 9,
-    address: 'ул. Лесная, 12',
-    duration: '38 дней',
-    supervisorName: 'Борисова Е.',
-    stagesCount: 14,
-    description: 'Ремонт двушки в новостройке',
-    likes: 56,
-  },
-  {
-    id: '6',
-    images: [
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800',
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800',
-    ],
-    repairType: 'Косметический',
-    area: '28 м²',
-    cost: '196 000 ₽',
-    rating: 4.6,
-    reviewCount: 21,
-    address: 'пр. Победы, 55',
-    duration: '18 дней',
-    supervisorName: 'Григорьев М.',
-    stagesCount: 6,
-    description: 'Быстрое обновление интерьера',
-    likes: 19,
-  },
-];
-
 // --- Image carousel with dots ---
 function ImageCarousel({ images, width }: { images: string[]; width: number }) {
+  const { colors } = useTheme();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -204,7 +92,9 @@ function ImageCarousel({ images, width }: { images: string[]; width: number }) {
               key={i}
               style={[
                 styles.dot,
-                i === activeIndex ? styles.dotActive : styles.dotInactive,
+                i === activeIndex
+                  ? [styles.dotActive, { backgroundColor: colors.white }]
+                  : [styles.dotInactive, { backgroundColor: 'rgba(255,255,255,0.5)' }],
               ]}
             />
           ))}
@@ -231,12 +121,84 @@ function useHeartbeat() {
   return { scale, trigger };
 }
 
+// Fetch completed projects from Supabase and map to PortfolioCase format
+async function fetchPortfolioCases(): Promise<PortfolioCase[]> {
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        title,
+        status,
+        budget,
+        start_date,
+        end_date,
+        objects (
+          address,
+          total_area,
+          property_type
+        ),
+        profiles!projects_supervisor_id_fkey (
+          name
+        )
+      `)
+      .eq('status', 'completed')
+      .order('end_date', { ascending: false })
+      .limit(20);
+
+    if (error || !data || data.length === 0) return [];
+
+    return data.map((project: any, index: number) => {
+      const obj = project.objects;
+      const supervisor = project.profiles;
+      const startDate = project.start_date ? new Date(project.start_date) : null;
+      const endDate = project.end_date ? new Date(project.end_date) : null;
+      const durationDays = startDate && endDate
+        ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      return {
+        id: project.id,
+        images: [], // No photo storage for completed projects yet
+        repairType: 'Стандартный',
+        area: obj?.total_area ? `${obj.total_area} м²` : '',
+        cost: project.budget ? `${Number(project.budget).toLocaleString('ru-RU')} ₽` : '',
+        rating: 0,
+        reviewCount: 0,
+        address: obj?.address ?? '',
+        duration: durationDays > 0 ? `${durationDays} дней` : '',
+        supervisorName: supervisor?.name ?? '',
+        stagesCount: 14,
+        description: project.title ?? 'Ремонт',
+        likes: 0,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export function PortfolioScreen({ navigation }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
+  const { colors, glass } = useTheme();
   const [selectedFilter, setSelectedFilter] = useState('Все');
   const { bookmarks, toggleBookmark, toggleLike, isLiked } = usePortfolioStore();
   const bookmarkAnim = useHeartbeat();
   const likeAnim = useHeartbeat();
+  const [cases, setCases] = useState<PortfolioCase[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      const fetched = await fetchPortfolioCases();
+      if (mounted) {
+        setCases(fetched);
+        setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleFilterChange = useCallback((filter: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -245,10 +207,10 @@ export function PortfolioScreen({ navigation }: Props) {
 
   const filteredCases =
     selectedFilter === 'Все'
-      ? MOCK_CASES
+      ? cases
       : selectedFilter === 'Избранное'
-        ? MOCK_CASES.filter((c) => bookmarks.has(c.id))
-        : MOCK_CASES.filter((c) => c.repairType === selectedFilter);
+        ? cases.filter((c) => bookmarks.has(c.id))
+        : cases.filter((c) => c.repairType === selectedFilter);
 
   const renderCase = useCallback(({ item }: { item: PortfolioCase }) => {
     const isSaved = bookmarks.has(item.id);
@@ -257,62 +219,77 @@ export function PortfolioScreen({ navigation }: Props) {
 
     return (
       <Pressable
-        style={styles.card}
+        style={[styles.card, {
+          backgroundColor: glass.fill.light,
+          borderColor: glass.border.light,
+          shadowColor: `${colors.primary}14`,
+        }]}
         onPress={() => navigation.navigate('CaseDetail', { caseId: item.id })}
       >
         {/* Image carousel section */}
-        <View style={styles.imageSection}>
-          <ImageCarousel images={item.images} width={IMAGE_WIDTH} />
+        {item.images.length > 0 ? (
+          <View style={styles.imageSection}>
+            <ImageCarousel images={item.images} width={IMAGE_WIDTH} />
 
-          {/* Glass chip — repair type (top-left) */}
-          <View style={styles.chipOverlay}>
+            {/* Glass chip -- repair type (top-left) */}
+            <View style={styles.chipOverlay}>
+              <GlassChip label={item.repairType} variant="light" />
+            </View>
+
+            {/* Glass bookmark button (top-right) with heartbeat animation */}
+            <Pressable
+              style={styles.bookmarkOverlay}
+              onPress={() => {
+                bookmarkAnim.trigger();
+                toggleBookmark(item.id);
+              }}
+              hitSlop={8}
+            >
+              <Animated.View style={[styles.bookmarkCircle, {
+                backgroundColor: glass.fill.light,
+                borderColor: glass.border.light,
+              }, { transform: [{ scale: bookmarkAnim.scale }] }]}>
+                <Ionicons
+                  name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                  size={18}
+                  color={isSaved ? colors.primary : colors.heading}
+                />
+              </Animated.View>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={[styles.imagePlaceholder, { backgroundColor: colors.bgCard }]}>
             <GlassChip label={item.repairType} variant="light" />
           </View>
-
-          {/* Glass bookmark button (top-right) with heartbeat animation */}
-          <Pressable
-            style={styles.bookmarkOverlay}
-            onPress={() => {
-              bookmarkAnim.trigger();
-              toggleBookmark(item.id);
-            }}
-            hitSlop={8}
-          >
-            <Animated.View style={[styles.bookmarkCircle, { transform: [{ scale: bookmarkAnim.scale }] }]}>
-              <Ionicons
-                name={isSaved ? 'bookmark' : 'bookmark-outline'}
-                size={18}
-                color={isSaved ? colors.primary : colors.heading}
-              />
-            </Animated.View>
-          </Pressable>
-        </View>
+        )}
 
         {/* Info section */}
         <View style={styles.infoSection}>
           {/* Row 1: Supervisor name + rating */}
           <View style={styles.nameRow}>
-            <Text style={styles.supervisorLabel}>Супервайзер</Text>
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={14} color={colors.primary} />
-              <Text style={styles.ratingText}>
-                {item.rating} ({item.reviewCount})
-              </Text>
-            </View>
+            <Text style={[styles.supervisorLabel, { color: colors.textLight }]}>Супервайзер</Text>
+            {item.rating > 0 && (
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={14} color={colors.primary} />
+                <Text style={[styles.ratingText, { color: colors.heading }]}>
+                  {item.rating} ({item.reviewCount})
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.supervisorName} numberOfLines={1}>
-            {item.supervisorName}
+          <Text style={[styles.supervisorName, { color: colors.heading }]} numberOfLines={1}>
+            {item.supervisorName || 'Не указан'}
           </Text>
 
           {/* Row 2: Description */}
-          <Text style={styles.descTitle} numberOfLines={1}>
+          <Text style={[styles.descTitle, { color: colors.heading }]} numberOfLines={1}>
             {item.description}
           </Text>
 
           {/* Row 3: Area + Cost + duration */}
-          <Text style={styles.costText}>
-            {item.area} · {item.cost}
-            <Text style={styles.durationText}> · {item.duration}</Text>
+          <Text style={[styles.costText, { color: colors.heading }]}>
+            {item.area}{item.area && item.cost ? ' · ' : ''}{item.cost}
+            {item.duration ? <Text style={[styles.durationText, { color: colors.textLight }]}> · {item.duration}</Text> : null}
           </Text>
 
           {/* Row 4: Likes + stage chips */}
@@ -332,7 +309,7 @@ export function PortfolioScreen({ navigation }: Props) {
                   color={liked ? colors.danger : colors.textLight}
                 />
               </Animated.View>
-              <Text style={[styles.likeCount, liked && { color: colors.danger }]}>
+              <Text style={[styles.likeCount, { color: liked ? colors.danger : colors.textLight }]}>
                 {likeCount}
               </Text>
             </Pressable>
@@ -343,12 +320,12 @@ export function PortfolioScreen({ navigation }: Props) {
               contentContainerStyle={styles.stagesScroll}
               style={styles.stagesContainer}
             >
-              <View style={styles.stageCalendarChip}>
+              <View style={[styles.stageCalendarChip, { borderColor: glass.border.light, backgroundColor: glass.fill.light }]}>
                 <Ionicons name="calendar-outline" size={16} color={colors.primary} />
               </View>
               {STAGES_PREVIEW.map((stage) => (
-                <View key={stage} style={styles.stageChip}>
-                  <Text style={styles.stageChipText}>{stage}</Text>
+                <View key={stage} style={[styles.stageChip, { borderColor: glass.border.light, backgroundColor: glass.fill.light }]}>
+                  <Text style={[styles.stageChipText, { color: colors.primary }]}>{stage}</Text>
                 </View>
               ))}
             </ScrollView>
@@ -356,14 +333,17 @@ export function PortfolioScreen({ navigation }: Props) {
         </View>
       </Pressable>
     );
-  }, [bookmarks, toggleBookmark, toggleLike, isLiked, navigation]);
+  }, [bookmarks, toggleBookmark, toggleLike, isLiked, navigation, colors, glass]);
 
   return (
     <ScreenWrapper scroll={false}>
-      <Text style={styles.title}>Наши работы</Text>
-      <Text style={styles.subtitle}>Реальные проекты наших клиентов</Text>
+      <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={24} color={colors.heading} />
+      </Pressable>
+      <Text style={[styles.title, { color: colors.heading }]}>Наши работы</Text>
+      <Text style={[styles.subtitle, { color: colors.textLight }]}>Реальные проекты наших клиентов</Text>
 
-      {/* Filters — fixed, not scrollable vertically */}
+      {/* Filters -- fixed, not scrollable vertically */}
       <FlatList
         horizontal
         data={FILTER_OPTIONS}
@@ -380,8 +360,12 @@ export function PortfolioScreen({ navigation }: Props) {
         )}
       />
 
-      {/* Cards list — single column, large cards */}
-      {filteredCases.length > 0 ? (
+      {/* Loading state */}
+      {loading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : filteredCases.length > 0 ? (
         <FlatList
           data={filteredCases}
           renderItem={renderCase}
@@ -403,7 +387,11 @@ export function PortfolioScreen({ navigation }: Props) {
               subtitle="Нажмите на закладку, чтобы сохранить проект"
             />
           ) : (
-            <EmptyStateIllustration variant="no-portfolio" />
+            <EmptyStateIllustration
+              variant="no-portfolio"
+              title="Пока нет завершённых проектов"
+              subtitle="Здесь появятся реальные проекты наших клиентов"
+            />
           )}
         </View>
       )}
@@ -412,16 +400,23 @@ export function PortfolioScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // --- Back button ---
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+
   // --- Header ---
   title: {
     ...typography.h1,
-    color: colors.heading,
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textLight,
     marginBottom: spacing.lg,
   },
 
@@ -446,13 +441,9 @@ const styles = StyleSheet.create({
 
   // --- Card ---
   card: {
-    backgroundColor: glass.fill.regular,
     borderRadius: radius.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: glass.border.light,
-    // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 20,
@@ -462,6 +453,12 @@ const styles = StyleSheet.create({
   // --- Image section ---
   imageSection: {
     position: 'relative',
+  },
+  imagePlaceholder: {
+    height: 120,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
+    padding: spacing.md,
   },
   chipOverlay: {
     position: 'absolute',
@@ -477,9 +474,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: glass.fill.light,
     borderWidth: 1,
-    borderColor: glass.border.light,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -500,11 +495,9 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 24,
-    backgroundColor: colors.bgCard,
   },
   dotInactive: {
     width: 8,
-    backgroundColor: glass.fill.regular,
   },
 
   // --- Info section ---
@@ -521,11 +514,9 @@ const styles = StyleSheet.create({
   },
   supervisorLabel: {
     ...typography.caption,
-    color: colors.textLight,
   },
   supervisorName: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginBottom: spacing.sm,
   },
   ratingBadge: {
@@ -535,25 +526,21 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     ...typography.bodyBold,
-    color: colors.heading,
   },
 
   // Row 2: Description
   descTitle: {
     ...typography.h3,
-    color: colors.heading,
     marginBottom: spacing.sm,
   },
 
   // Row 3: Cost
   costText: {
     ...typography.h3,
-    color: colors.heading,
     marginBottom: spacing.md,
   },
   durationText: {
     ...typography.body,
-    color: colors.textLight,
     fontWeight: '400',
   },
 
@@ -571,7 +558,6 @@ const styles = StyleSheet.create({
   },
   likeCount: {
     ...typography.small,
-    color: colors.textLight,
     fontWeight: '600',
   },
   stagesContainer: {
@@ -586,24 +572,19 @@ const styles = StyleSheet.create({
     width: 44,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: glass.border.light,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: glass.fill.regular,
   },
   stageChip: {
     height: 36,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: glass.border.light,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: glass.fill.regular,
   },
   stageChipText: {
     ...typography.small,
-    color: colors.primary,
     fontWeight: '600',
   },
 
@@ -613,15 +594,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.huge,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
   },
 });

@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import {
   useNotificationStore,
@@ -43,7 +42,6 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export function NotificationsScreen() {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const navigation = useNavigation<any>();
   const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
@@ -68,14 +66,8 @@ export function NotificationsScreen() {
           navigation.navigate('Chat', { projectId });
           break;
         case 'master_offer':
-          navigation.navigate('MasterOfferDetail', {
-            offerId: meta?.offer_id,
-            stageId: meta?.stage_id,
-            projectId,
-          });
-          break;
         case 'schedule_reminder':
-          navigation.navigate('Schedule');
+          navigation.navigate('ProjectDetail', { projectId });
           break;
         case 'task_approved':
         case 'task_rejected':
@@ -172,27 +164,27 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   list: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.04)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 1,
   },
   notificationUnread: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.borderHover,
+    backgroundColor: 'rgba(123, 45, 62, 0.08)',
+    borderColor: 'rgba(123, 45, 62, 0.15)',
   },
   iconCircle: {
     width: 36,

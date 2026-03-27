@@ -14,9 +14,9 @@ import {
   Input,
   Chip,
   ProgressBar,
+  AddressInput,
 } from '../../components';
 import { colors, spacing, radius, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useSupervisorStore } from '../../store/supervisorStore';
@@ -53,10 +53,10 @@ const TOTAL_STEPS = 3;
 
 type Props = {
   onComplete: () => void;
+  onBack?: () => void;
 };
 
-export function SupervisorSetupScreen({ onComplete }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
+export function SupervisorSetupScreen({ onComplete, onBack }: Props) {
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const saveSetupData = useSupervisorStore((s) => s.saveSetupData);
@@ -76,32 +76,44 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
   // Step 3: About
   const [about, setAbout] = useState('');
 
+  // Validation error highlight states
+  const [experienceError, setExperienceError] = useState<boolean>(false);
+  const [specsError, setSpecsError] = useState<boolean>(false);
+  const [regionsError, setRegionsError] = useState<boolean>(false);
+
   const toggleSpec = (spec: string) => {
-    setSelectedSpecs((prev) =>
-      prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec],
-    );
+    setSelectedSpecs((prev) => {
+      const next = prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec];
+      if (next.length > 0) setSpecsError(false);
+      return next;
+    });
   };
 
   const toggleRegion = (region: string) => {
-    setSelectedRegions((prev) =>
-      prev.includes(region) ? prev.filter((r) => r !== region) : [...prev, region],
-    );
+    setSelectedRegions((prev) => {
+      const next = prev.includes(region) ? prev.filter((r) => r !== region) : [...prev, region];
+      if (next.length > 0) setRegionsError(false);
+      return next;
+    });
   };
 
   const handleNext = () => {
     if (step === 1) {
       if (!experience) {
         showToast('Выберите опыт работы', 'error');
+        setExperienceError(true);
         return;
       }
       if (selectedSpecs.length === 0) {
         showToast('Выберите хотя бы одну специализацию', 'error');
+        setSpecsError(true);
         return;
       }
     }
     if (step === 2) {
       if (selectedRegions.length === 0) {
         showToast('Выберите хотя бы один регион', 'error');
+        setRegionsError(true);
         return;
       }
     }
@@ -156,19 +168,22 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
             </Text>
 
             <Text style={styles.label}>Стаж работы</Text>
-            <View style={styles.chipRow}>
+            <View style={[styles.chipRow, experienceError && styles.chipGroupError]}>
               {EXPERIENCE_OPTIONS.map((opt) => (
                 <Chip
                   key={opt.value}
                   label={opt.label}
                   selected={experience === opt.value}
-                  onPress={() => setExperience(opt.value)}
+                  onPress={() => { setExperience(opt.value); setExperienceError(false); }}
                 />
               ))}
             </View>
+            {experienceError && (
+              <Text style={styles.chipErrorText}>Выберите опыт работы</Text>
+            )}
 
             <Text style={styles.label}>Специализация</Text>
-            <View style={styles.chipRow}>
+            <View style={[styles.chipRow, specsError && styles.chipGroupError]}>
               {SPECIALIZATIONS.map((spec) => (
                 <Chip
                   key={spec}
@@ -178,6 +193,9 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
                 />
               ))}
             </View>
+            {specsError && (
+              <Text style={styles.chipErrorText}>Выберите хотя бы одну специализацию</Text>
+            )}
           </>
         );
 
@@ -189,7 +207,7 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
               Где вы готовы осуществлять надзор
             </Text>
 
-            <View style={styles.chipRow}>
+            <View style={[styles.chipRow, regionsError && styles.chipGroupError]}>
               {REGIONS.map((region) => (
                 <Chip
                   key={region}
@@ -199,14 +217,20 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
                 />
               ))}
             </View>
+            {regionsError && (
+              <Text style={styles.chipErrorText}>Выберите хотя бы один регион</Text>
+            )}
 
-            <Input
-              label="Адрес (необязательно)"
+            <AddressInput
+              label="Адрес офиса или базы"
               showLabel={true}
-              placeholder="Ваш адрес для расчёта расстояний"
+              placeholder="Начните вводить адрес"
               value={address}
               onChangeText={setAddress}
             />
+            <Text style={[styles.hintText, { color: colors.textLight }]}>
+              Клиенты и мастера увидят ваш район, не точный адрес
+            </Text>
           </>
         );
 
@@ -261,26 +285,34 @@ export function SupervisorSetupScreen({ onComplete }: Props) {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {renderStep()}
         </ScrollView>
 
         {/* Bottom buttons */}
         <View style={[styles.bottomRow, { paddingBottom: insets.bottom + spacing.md }]}>
-          {step > 1 && (
+          {step > 1 ? (
             <Button
               title="Назад"
               onPress={handleBack}
               variant="outline"
               style={{ flex: 1 }}
             />
-          )}
+          ) : onBack ? (
+            <Button
+              title="Назад"
+              onPress={onBack}
+              variant="outline"
+              style={{ flex: 1 }}
+            />
+          ) : null}
           <Button
             title={step === TOTAL_STEPS ? 'Завершить' : 'Далее'}
             onPress={handleNext}
             loading={loading}
-            style={{ flex: step > 1 ? 1 : undefined }}
-            fullWidth={step === 1}
+            style={{ flex: (step > 1 || onBack) ? 1 : undefined }}
+            fullWidth={step === 1 && !onBack}
           />
         </View>
       </View>
@@ -325,6 +357,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  chipGroupError: {
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+  },
+  chipErrorText: {
+    ...typography.small,
+    color: colors.danger,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
+  },
   summaryCard: {
     flexDirection: 'row',
     backgroundColor: 'rgba(52, 199, 89, 0.06)',
@@ -345,6 +389,10 @@ const styles = StyleSheet.create({
   summarySubtitle: {
     ...typography.small,
     color: colors.textLight,
+  },
+  hintText: {
+    fontSize: 12,
+    marginTop: 4,
   },
   bottomRow: {
     flexDirection: 'row',

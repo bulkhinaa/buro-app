@@ -9,39 +9,43 @@ const CHAT_KEY_PREFIX = 'chat_messages_';
 // Stable empty array reference to avoid infinite re-renders in Zustand selectors
 const EMPTY_MESSAGES: ChatMessage[] = [];
 
-// ─── Dev mock data ───
+// ─── Dev mock data (tree-shaken in production via __DEV__) ───
 
-const DEV_MOCK_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg-1',
-    project_id: 'proj-1',
-    sender_id: 'dev-supervisor',
-    text: 'Добрый день! Я ваш супервайзер, Михаил. Сегодня провёл проверку — штукатурка стен идёт по графику.',
-    created_at: '2026-03-15T10:00:00Z',
-  },
-  {
-    id: 'msg-2',
-    project_id: 'proj-1',
-    sender_id: 'dev-master',
-    text: 'Отлично, спасибо! Завтра заканчиваю штукатурку в коридоре, загружу фото.',
-    created_at: '2026-03-15T14:00:00Z',
-  },
-  {
-    id: 'msg-3',
-    project_id: 'proj-1',
-    sender_id: 'dev-supervisor',
-    text: 'Хорошо. Обратите внимание на стыки возле окна — нужно пройти ещё раз.',
-    image_url: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=400',
-    created_at: '2026-03-15T16:30:00Z',
-  },
-];
+const DEV_MOCK_MESSAGES: ChatMessage[] = __DEV__
+  ? [
+      {
+        id: 'msg-1',
+        project_id: 'proj-1',
+        sender_id: 'dev-supervisor',
+        text: 'Добрый день! Я ваш супервайзер, Михаил. Сегодня провёл проверку — штукатурка стен идёт по графику.',
+        created_at: '2026-03-15T10:00:00Z',
+      },
+      {
+        id: 'msg-2',
+        project_id: 'proj-1',
+        sender_id: 'dev-master',
+        text: 'Отлично, спасибо! Завтра заканчиваю штукатурку в коридоре, загружу фото.',
+        created_at: '2026-03-15T14:00:00Z',
+      },
+      {
+        id: 'msg-3',
+        project_id: 'proj-1',
+        sender_id: 'dev-supervisor',
+        text: 'Хорошо. Обратите внимание на стыки возле окна — нужно пройти ещё раз.',
+        image_url: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=400',
+        created_at: '2026-03-15T16:30:00Z',
+      },
+    ]
+  : [];
 
-// Sender info for display (dev-mode only)
-export const DEV_SENDER_NAMES: Record<string, string> = {
-  'dev-supervisor': 'Михаил (супервайзер)',
-  'dev-client': 'Клиент',
-  'dev-master': 'Алексей (мастер)',
-};
+// Sender info for display (tree-shaken in production via __DEV__)
+export const DEV_SENDER_NAMES: Record<string, string> = __DEV__
+  ? {
+      'dev-supervisor': 'Михаил (супервайзер)',
+      'dev-client': 'Клиент',
+      'dev-master': 'Алексей (мастер)',
+    }
+  : {};
 
 interface ChatState {
   messages: Record<string, ChatMessage[]>; // projectId → messages
@@ -261,8 +265,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
           const newMsg = payload.new as ChatMessage;
           const { messages } = get();
           const existing = messages[projectId] || [];
-          // Avoid duplicates (optimistic update may already have it)
-          if (!existing.find((m) => m.id === newMsg.id)) {
+
+          // Deduplicate: check by server ID first, then by content match
+          // (optimistic insert uses local ID like "msg-..." while server returns UUID)
+          const isDuplicate = existing.some((m) => {
+            if (m.id === newMsg.id) return true;
+            // Match optimistic message by sender + text within 5s window
+            if (
+              m.id.startsWith('msg-') &&
+              m.sender_id === newMsg.sender_id &&
+              m.text === newMsg.text &&
+              Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 5000
+            ) {
+              return true;
+            }
+            return false;
+          });
+
+          if (isDuplicate) {
+            // Replace optimistic message with server version (to get the real ID)
+            const updated = existing.map((m) => {
+              if (
+                m.id.startsWith('msg-') &&
+                m.sender_id === newMsg.sender_id &&
+                m.text === newMsg.text &&
+                Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 5000
+              ) {
+                return newMsg;
+              }
+              return m;
+            });
+            set((state) => ({
+              messages: { ...state.messages, [projectId]: updated },
+            }));
+            persistMessages(projectId, updated);
+          } else {
             const updated = [...existing, newMsg];
             set((state) => ({
               messages: { ...state.messages, [projectId]: updated },
@@ -301,7 +338,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           filter: `project_id=eq.${projectId}`,
         },
         (payload) => {
-          const deletedId = (payload.old as any)?.id;
+          const deletedId = (payload.old as Record<string, unknown>)?.id as string | undefined;
           if (!deletedId) return;
           const { messages } = get();
           const existing = messages[projectId] || [];

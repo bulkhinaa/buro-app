@@ -5,9 +5,8 @@ import { ScreenWrapper, Card, Button, AppDialog, SystemButton, Toggle } from '..
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { UserRole } from '../../types';
-import { useAdminStore, MOCK_USERS, type AdminUser } from '../../store/adminStore';
+import { useAdminStore, type AdminUser } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import {
@@ -27,11 +26,10 @@ const ROLE_COLORS: Record<string, string> = {
   client: colors.primary,
   master: colors.success,
   supervisor: colors.gold,
-  admin: '#8B5CF6',
+  admin: colors.adminPurple,
 };
 
 export function AdminUserDetailScreen({ route, navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { userId } = route.params;
   const currentUser = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -57,12 +55,9 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
     const storeUser = useAdminStore.getState().users.find((u) => u.id === userId);
     if (storeUser) {
       setUser(storeUser);
-    } else if (isDev) {
-      const mockUser = MOCK_USERS.find((u) => u.id === userId);
-      if (mockUser) setUser(mockUser);
     }
     setLoading(false);
-  }, [userId, isDev]);
+  }, [userId]);
 
   const handleToggleActive = async () => {
     if (!user) return;

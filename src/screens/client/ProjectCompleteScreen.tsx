@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, CellIndicator } from '../../components';
 import { colors, spacing, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = {
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export function ProjectCompleteScreen({ navigation, route }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const {
     area = '54 м²',
     cost = '870 000 ₽',

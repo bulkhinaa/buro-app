@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   Platform,
 } from 'react-native';
@@ -13,6 +13,7 @@ import { ScreenWrapper, ProgressBar, GlassView } from '../../components';
 import { WeekGrid } from '../../components/WeekGrid';
 import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
 import { useAuthStore } from '../../store/authStore';
 import {
   useScheduleStore,
@@ -23,14 +24,12 @@ import {
 } from '../../store/scheduleStore';
 import type { ScheduleSlotStatus } from '../../types';
 
-import { useTheme } from '../../theme/ThemeContext';
 const MONTH_NAMES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
 ];
 
 export function MasterScheduleScreen() {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
   const {
@@ -130,44 +129,47 @@ export function MasterScheduleScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={colors.heading} />
+          </Pressable>
           <Text style={styles.title}>Мой график</Text>
           <View style={styles.headerActions}>
-            <TouchableOpacity
+            <Pressable
               style={styles.headerBtn}
               onPress={() => navigation.navigate('MasterScheduleTemplate')}
             >
               <Ionicons name="copy-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               style={styles.headerBtn}
               onPress={() => navigation.navigate('MasterVacations')}
             >
               <Ionicons name="airplane-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
         {/* Week navigation */}
         <View style={styles.weekNav}>
-          <TouchableOpacity onPress={handlePrevWeek} style={styles.navArrow}>
+          <Pressable onPress={handlePrevWeek} style={styles.navArrow}>
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowMonthView(!showMonthView)}>
+          </Pressable>
+          <Pressable onPress={() => setShowMonthView(!showMonthView)}>
             <Text style={styles.weekLabel}>{weekLabel}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleNextWeek} style={styles.navArrow}>
+          </Pressable>
+          <Pressable onPress={handleNextWeek} style={styles.navArrow}>
             <Ionicons name="chevron-forward" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Today button */}
         {formatDate(currentWeekStart) !== formatDate(getWeekStart(new Date())) && (
-          <TouchableOpacity
+          <Pressable
             style={styles.todayBtn}
             onPress={() => setCurrentWeekStart(getWeekStart(new Date()))}
           >
             <Text style={styles.todayBtnText}>Сегодня</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
 
         {/* Month overview (toggle) */}
@@ -179,7 +181,7 @@ export function MasterScheduleScreen() {
                   formatDate(weekDate) === formatDate(currentWeekStart);
                 const dates = getWeekDates(weekDate);
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={i}
                     style={[styles.monthWeek, isActive && styles.monthWeekActive]}
                     onPress={() => {
@@ -195,7 +197,7 @@ export function MasterScheduleScreen() {
                     >
                       {dates[0].getDate()}-{dates[6].getDate()}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
@@ -205,7 +207,7 @@ export function MasterScheduleScreen() {
         {/* Legend */}
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.primaryLight }]} />
+            <View style={[styles.legendDot, { backgroundColor: 'rgba(123,45,62,0.08)' }]} />
             <Text style={styles.legendText}>Свободен</Text>
           </View>
           <View style={styles.legendItem}>
@@ -254,6 +256,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -261,8 +269,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    ...typography.h1,
     color: colors.heading,
   },
   headerActions: {
@@ -291,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weekLabel: {
-    fontSize: 16,
+    ...typography.button,
     fontWeight: '700',
     color: colors.heading,
   },
@@ -304,8 +311,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   todayBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.smallBold,
     color: colors.primary,
   },
   monthOverview: {
@@ -325,12 +331,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   monthWeekText: {
-    fontSize: 12,
+    ...typography.caption,
     fontWeight: '600',
     color: colors.text,
   },
   monthWeekTextActive: {
-    color: colors.textBright,
+    color: '#FFFFFF',
   },
   legend: {
     flexDirection: 'row',
@@ -349,8 +355,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 12,
-    fontWeight: '500',
+    ...typography.caption,
     color: colors.textLight,
   },
   occupancyCard: {
@@ -364,8 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   occupancyLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...typography.bodyBold,
     color: colors.heading,
   },
   occupancyValue: {
@@ -374,7 +378,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   occupancyDetail: {
-    fontSize: 12,
+    ...typography.caption,
     color: colors.textLight,
     marginTop: spacing.xs,
   },

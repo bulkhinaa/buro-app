@@ -6,16 +6,15 @@ import {
   StyleSheet,
   Image,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, CityPicker } from '../../components';
-import { colors, spacing, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = {
@@ -23,7 +22,6 @@ type Props = {
 };
 
 export function EditProfileScreen({ navigation }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user, saveProfile } = useAuthStore();
 
   const [name, setName] = useState(user?.name || '');
@@ -32,10 +30,12 @@ export function EditProfileScreen({ navigation }: Props) {
   const [city, setCity] = useState(user?.city || '');
   const [saving, setSaving] = useState(false);
 
-  const canSave = name.trim().length > 0;
-
   const handleSave = async () => {
-    if (!canSave || !user) return;
+    if (!user) return;
+    if (name.trim().length === 0) {
+      useToastStore.getState().show('Введите имя', 'error');
+      return;
+    }
     setSaving(true);
     try {
       await saveProfile({
@@ -47,26 +47,14 @@ export function EditProfileScreen({ navigation }: Props) {
       hapticSuccess();
       navigation.goBack();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось сохранить изменения');
+      useToastStore.getState().show('Не удалось сохранить изменения', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const handleAvatarPress = () => {
-    // In production: open image picker
-    Alert.alert(
-      'Фото профиля',
-      'Выберите действие',
-      [
-        { text: 'Сделать фото', onPress: () => {} },
-        { text: 'Выбрать из галереи', onPress: () => {} },
-        ...(user?.avatar_url
-          ? [{ text: 'Удалить фото', style: 'destructive' as const, onPress: () => {} }]
-          : []),
-        { text: 'Отмена', style: 'cancel' as const },
-      ],
-    );
+    useToastStore.getState().show('Загрузка фото будет доступна в следующей версии', 'info');
   };
 
   return (
@@ -137,7 +125,6 @@ export function EditProfileScreen({ navigation }: Props) {
           <Button
             title={saving ? 'Сохраняем...' : 'Сохранить'}
             onPress={handleSave}
-            disabled={!canSave || saving}
             loading={saving}
             fullWidth
           />
@@ -172,7 +159,7 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 2,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
   },
   avatarText: {
     fontSize: 36,

@@ -20,8 +20,7 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useObjectStore } from '../../store/objectStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useToastStore } from '../../store/toastStore';
@@ -47,7 +46,6 @@ type Props = {
 };
 
 export function ObjectDetailScreen({ navigation, route }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const object = route.params?.object as PropertyObject | undefined;
   const { removeObject } = useObjectStore();
   const showToast = useToastStore((s) => s.show);
@@ -313,13 +311,13 @@ const styles = StyleSheet.create({
   layoutSvgContainer: {
     width: 180,
     height: 180,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.sm,
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.08)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -346,14 +344,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   infoCard: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.md,
     marginBottom: spacing.xxl,
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 12,
@@ -379,10 +377,10 @@ const styles = StyleSheet.create({
   emptyProjects: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
-    backgroundColor: glass.fill.subtle,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
   },
   emptyTitle: {
     ...typography.h3,
@@ -397,14 +395,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
   },
   projectCard: {
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     marginBottom: spacing.md,
     // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,

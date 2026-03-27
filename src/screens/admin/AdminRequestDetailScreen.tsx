@@ -5,9 +5,8 @@ import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, SystemButton } fro
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
 import { colors, spacing, typography } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
-import { useAdminStore, MOCK_PROJECTS } from '../../store/adminStore';
+import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import {
@@ -25,7 +24,6 @@ interface ProjectDetail extends Project {
 }
 
 export function AdminRequestDetailScreen({ route, navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { projectId } = route.params;
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -56,25 +54,7 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
   const loadData = async () => {
     setLoading(true);
     try {
-      if (isDev) {
-        const mockProject = MOCK_PROJECTS.find((p) => p.id === projectId);
-        if (mockProject) {
-          setProject({
-            ...mockProject,
-            client_name: 'Тестовый клиент',
-            client_phone: '+7 (999) 000-00-00',
-            supervisor_name: mockProject.supervisor_id
-              ? 'Алексеев П.И.'
-              : undefined,
-          });
-        }
-        setSupervisors([
-          { id: 'sv-1', name: 'Алексеев П.И.' },
-          { id: 'sv-2', name: 'Борисова Е.А.' },
-          { id: 'sv-3', name: 'Григорьев М.С.' },
-        ]);
-        setStagesCount(14);
-      } else {
+      {
         const [projectData, svData, stages] = await Promise.all([
           fetchProjectWithClient(projectId),
           fetchUsersByRole('supervisor'),

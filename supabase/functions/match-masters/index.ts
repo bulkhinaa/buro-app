@@ -3,8 +3,8 @@
  *
  * Finds and ranks top-5 masters for a project stage using Match Score algorithm.
  *
- * Score = 0.30×Specialization + 0.25×Availability + 0.15×Rating +
- *         0.10×Workload + 0.10×Price + 0.05×Experience + 0.05×Geography
+ * Score = 0.30xSpecialization + 0.25xAvailability + 0.15xRating +
+ *         0.10xWorkload + 0.10xPrice + 0.05xExperience + 0.05xGeography
  *
  * POST /match-masters
  * Body: {
@@ -20,13 +20,9 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Specialization → stage index mapping (mirrors client-side specializations.ts)
+// Specialization -> stage index mapping (mirrors client-side specializations.ts)
 const SPECIALIZATION_STAGES: Record<string, number[]> = {
   demolition: [0],
   electrician: [1, 6],
@@ -90,9 +86,10 @@ function getSpecializationsForStage(stageIndex: number): string[] {
 }
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightIfNeeded(req);
+  if (preflightResponse) return preflightResponse;
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const body: MatchRequest = await req.json();
@@ -211,7 +208,6 @@ serve(async (req: Request) => {
       const ratingScore = rating > 0 ? rating / 5.0 : 0.5; // Default 0.5 if no rating
 
       // 4. Workload score (0.10) — lower workload = higher score
-      const maxSlots = 16 * 14; // 2 weeks × 16 hours
       const workloadPercent = totalScheduled > 0 ? (avail.booked / totalScheduled) : 0;
       const workloadScore = 1.0 - workloadPercent;
 

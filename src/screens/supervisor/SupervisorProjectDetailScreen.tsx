@@ -18,8 +18,7 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { Project, Stage, REPAIR_TYPE_LABELS, STAGE_STATUS_LABELS } from '../../types';
 import {
@@ -30,126 +29,6 @@ import {
 import { formatRubles } from '../../utils/calculator';
 import { hapticSuccess } from '../../utils/haptics';
 
-// ─── Mock data for dev mode ───────────────────────────────────────────────────
-
-const MOCK_PROJECT: Project = {
-  id: 'sp-1',
-  client_id: '1',
-  supervisor_id: '2',
-  title: 'Ремонт квартиры на Ленина 15',
-  address: 'г Москва, ул Ленина, д 15, кв 42',
-  area_sqm: 54,
-  repair_type: 'standard',
-  status: 'in_progress',
-  created_at: '2026-02-15',
-  updated_at: '2026-03-05',
-};
-
-const MOCK_STAGES: Stage[] = [
-  {
-    id: 'stg-1',
-    project_id: 'sp-1',
-    title: 'Демонтаж',
-    description: 'Снятие старых покрытий, демонтаж перегородок, вынос строительного мусора',
-    order_index: 1,
-    status: 'approved',
-    deadline: '2026-02-25',
-    started_at: '2026-02-18',
-    completed_at: '2026-02-23',
-    approved_at: '2026-02-24',
-  },
-  {
-    id: 'stg-2',
-    project_id: 'sp-1',
-    title: 'Электрика (черновая)',
-    description: 'Прокладка кабелей, установка подрозетников, электрощита',
-    order_index: 2,
-    status: 'approved',
-    deadline: '2026-03-01',
-    started_at: '2026-02-25',
-    completed_at: '2026-02-28',
-    approved_at: '2026-03-01',
-  },
-  {
-    id: 'stg-3',
-    project_id: 'sp-1',
-    title: 'Сантехника (черновая)',
-    description: 'Разводка труб водоснабжения и канализации',
-    order_index: 3,
-    status: 'approved',
-    deadline: '2026-03-03',
-    started_at: '2026-02-25',
-    completed_at: '2026-03-01',
-    approved_at: '2026-03-02',
-  },
-  {
-    id: 'stg-4',
-    project_id: 'sp-1',
-    title: 'Стяжка пола',
-    description: 'Выравнивание основания пола, устройство стяжки',
-    order_index: 4,
-    status: 'approved',
-    deadline: '2026-03-10',
-    started_at: '2026-03-04',
-    completed_at: '2026-03-09',
-    approved_at: '2026-03-09',
-  },
-  {
-    id: 'stg-5',
-    project_id: 'sp-1',
-    title: 'Штукатурка стен',
-    description: 'Выравнивание стен, штукатурка по маякам',
-    order_index: 5,
-    status: 'done_by_master',
-    deadline: '2026-03-20',
-    started_at: '2026-03-10',
-  },
-  {
-    id: 'stg-6',
-    project_id: 'sp-1',
-    title: 'Укладка плитки',
-    description: 'Облицовка стен и пола плиткой в мокрых зонах',
-    order_index: 6,
-    status: 'pending',
-    deadline: '2026-04-01',
-  },
-  {
-    id: 'stg-7',
-    project_id: 'sp-1',
-    title: 'Электрика (чистовая)',
-    description: 'Установка розеток, выключателей, светильников',
-    order_index: 7,
-    status: 'pending',
-    deadline: '2026-04-05',
-  },
-  {
-    id: 'stg-8',
-    project_id: 'sp-1',
-    title: 'Сантехника (чистовая)',
-    description: 'Установка смесителей, унитаза, раковин',
-    order_index: 8,
-    status: 'pending',
-    deadline: '2026-04-07',
-  },
-  {
-    id: 'stg-9',
-    project_id: 'sp-1',
-    title: 'Шпаклёвка и покраска',
-    description: 'Финишное выравнивание стен, покраска или поклейка обоев',
-    order_index: 9,
-    status: 'pending',
-    deadline: '2026-04-15',
-  },
-  {
-    id: 'stg-10',
-    project_id: 'sp-1',
-    title: 'Напольное покрытие',
-    description: 'Укладка ламината, паркета или линолеума',
-    order_index: 10,
-    status: 'pending',
-    deadline: '2026-04-20',
-  },
-];
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
@@ -180,17 +59,15 @@ function getStageStatusIcon(status: Stage['status']): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorProjectDetailScreen({ route, navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
-  const isDev = user?.id?.startsWith('dev-');
 
-  const projectId: string = route?.params?.projectId ?? 'sp-1';
+  const projectId: string = route?.params?.projectId;
   const initialStatus: string = route?.params?.projectStatus ?? 'in_progress';
 
   const [activeTab, setActiveTab] = useState<Tab>('object');
-  const [project, setProject] = useState<Project | null>(isDev ? { ...MOCK_PROJECT, status: initialStatus as any } : null);
-  const [stages, setStages] = useState<Stage[]>(isDev ? MOCK_STAGES : []);
-  const [loading, setLoading] = useState(!isDev);
+  const [project, setProject] = useState<Project | null>(null);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -206,7 +83,7 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
   };
 
   const loadData = useCallback(async () => {
-    if (isDev) return;
+    if (!projectId) return;
     setLoading(true);
     try {
       const [proj, stgs] = await Promise.all([
@@ -220,7 +97,7 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, isDev]);
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
@@ -241,7 +118,7 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
           text: 'Принять',
           onPress: async () => {
             try {
-              if (!isDev) await supervisorAcceptProject(projectId);
+              await supervisorAcceptProject(projectId);
               setProject((prev) => prev ? { ...prev, status: 'in_progress' } : prev);
               hapticSuccess();
             } catch {
@@ -572,12 +449,12 @@ const styles = StyleSheet.create({
   // Tabs
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: radius.xl,
     padding: 4,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
   },
   tabItem: {
     flex: 1,
@@ -589,8 +466,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   tabItemActive: {
-    backgroundColor: colors.bgCard,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: colors.white,
+    shadowColor: 'rgba(123,45,62,0.1)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -639,7 +516,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.accentLight,
+    backgroundColor: 'rgba(197,165,90,0.12)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.full,
@@ -684,11 +561,11 @@ const styles = StyleSheet.create({
   // Stage list
   stageSummaryRow: {
     flexDirection: 'row',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.xl,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
   },
   stageSummaryItem: {
     flex: 1,
@@ -708,13 +585,13 @@ const styles = StyleSheet.create({
   stageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.xl,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
     gap: spacing.md,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123,45,62,0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -722,11 +599,11 @@ const styles = StyleSheet.create({
   },
   stageCardDone: {
     opacity: 0.65,
-    backgroundColor: colors.successLight,
+    backgroundColor: 'rgba(52,199,89,0.04)',
   },
   stageCardReview: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accentLight,
+    borderColor: 'rgba(197,165,90,0.3)',
+    backgroundColor: 'rgba(197,165,90,0.06)',
   },
   stageNumber: {
     width: 30,
@@ -772,7 +649,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: colors.accentLight,
+    backgroundColor: 'rgba(197,165,90,0.15)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.full,

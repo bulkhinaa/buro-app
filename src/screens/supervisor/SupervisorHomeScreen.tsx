@@ -21,8 +21,7 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
-import { colors, spacing, typography, radius, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, typography, radius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNotificationStore } from '../../store/notificationStore';
@@ -32,6 +31,7 @@ import {
   supervisorAcceptProject,
   supervisorDeclineProject,
 } from '../../services/projectService';
+import { supabase } from '../../lib/supabase';
 
 // ─── Extended project type (with enriched fields) ─────────────────────────────
 
@@ -42,64 +42,6 @@ type ProjectItem = Project & {
   pendingReview: number;
 };
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_OFFERED: ProjectItem[] = [
-  {
-    id: 'sp-3',
-    client_id: '5',
-    supervisor_id: 'dev-sv-1',
-    title: 'Ремонт 3-комнатной квартиры',
-    address: 'г Москва, ул. Садовая, д 22, кв 105',
-    area_sqm: 78,
-    repair_type: 'premium',
-    status: 'planning',
-    created_at: '2026-03-20',
-    updated_at: '2026-03-22',
-    clientName: 'Сидоров К.М.',
-    stagesTotal: 14,
-    stagesDone: 0,
-    pendingReview: 0,
-  },
-];
-
-const MOCK_ACTIVE: ProjectItem[] = [
-  {
-    id: 'sp-1',
-    client_id: '1',
-    supervisor_id: 'dev-sv-1',
-    title: 'Ремонт квартиры на Ленина 15',
-    address: 'г Москва, ул. Ленина, д 15, кв 42',
-    area_sqm: 54,
-    repair_type: 'standard',
-    status: 'in_progress',
-    created_at: '2026-02-15',
-    updated_at: '2026-03-05',
-    clientName: 'Иванов А.П.',
-    stagesTotal: 10,
-    stagesDone: 5,
-    pendingReview: 1,
-  },
-];
-
-const MOCK_COMPLETED: ProjectItem[] = [
-  {
-    id: 'sp-2',
-    client_id: '4',
-    supervisor_id: 'dev-sv-1',
-    title: 'Ремонт студии на Пушкина 8',
-    address: 'г Москва, ул. Пушкина, д 8, кв 12',
-    area_sqm: 32,
-    repair_type: 'cosmetic',
-    status: 'completed',
-    created_at: '2026-02-01',
-    updated_at: '2026-03-15',
-    clientName: 'Петрова М.С.',
-    stagesTotal: 7,
-    stagesDone: 7,
-    pendingReview: 0,
-  },
-];
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
@@ -121,10 +63,8 @@ const TABS: TabDef[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorHomeScreen({ navigation }: any) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
-  const isDev = user?.id?.startsWith('dev-');
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
 
   useEffect(() => {
@@ -132,10 +72,11 @@ export function SupervisorHomeScreen({ navigation }: any) {
   }, [user]);
 
   const [activeTab, setActiveTab] = useState<HomeTab>('active');
-  const [offeredProjects, setOfferedProjects] = useState<ProjectItem[]>(isDev ? MOCK_OFFERED : []);
-  const [activeProjects, setActiveProjects] = useState<ProjectItem[]>(isDev ? MOCK_ACTIVE : []);
-  const [completedProjects, setCompletedProjects] = useState<ProjectItem[]>(isDev ? MOCK_COMPLETED : []);
+  const [offeredProjects, setOfferedProjects] = useState<ProjectItem[]>([]);
+  const [activeProjects, setActiveProjects] = useState<ProjectItem[]>([]);
+  const [completedProjects, setCompletedProjects] = useState<ProjectItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -153,27 +94,29 @@ export function SupervisorHomeScreen({ navigation }: any) {
   // ─── Load data ─────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!user || isDev) return;
+    if (!user) return;
     try {
+      setLoadError(false);
       const all = await fetchSupervisorAllProjects(user.id);
 
-      const offered = all
-        .filter((p) => p.status === 'planning')
-        .map(enrichProject);
-      const active = all
-        .filter((p) => p.status === 'in_progress')
-        .map(enrichProject);
-      const completed = all
-        .filter((p) => p.status === 'completed')
-        .map(enrichProject);
+      const offered = await Promise.all(
+        all.filter((p) => p.status === 'planning').map(enrichProject),
+      );
+      const active = await Promise.all(
+        all.filter((p) => p.status === 'in_progress').map(enrichProject),
+      );
+      const completed = await Promise.all(
+        all.filter((p) => p.status === 'completed').map(enrichProject),
+      );
 
       setOfferedProjects(offered);
       setActiveProjects(active);
       setCompletedProjects(completed);
     } catch {
+      setLoadError(true);
       useToastStore.getState().show('Не удалось загрузить данные', 'error');
     }
-  }, [user, isDev]);
+  }, [user]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -196,7 +139,7 @@ export function SupervisorHomeScreen({ navigation }: any) {
           text: 'Принять',
           onPress: async () => {
             try {
-              if (!isDev) await supervisorAcceptProject(project.id);
+              await supervisorAcceptProject(project.id);
               // Move from offered → active
               setOfferedProjects((prev) => prev.filter((p) => p.id !== project.id));
               setActiveProjects((prev) => [
@@ -228,7 +171,7 @@ export function SupervisorHomeScreen({ navigation }: any) {
           style: 'destructive',
           onPress: async () => {
             try {
-              if (!isDev) await supervisorDeclineProject(project.id);
+              await supervisorDeclineProject(project.id);
               setOfferedProjects((prev) => prev.filter((p) => p.id !== project.id));
               hapticError();
               showToast('Вы отказались от проекта', 'info');
@@ -466,6 +409,17 @@ export function SupervisorHomeScreen({ navigation }: any) {
           onNotificationPress={() => navigation.navigate('NotificationsStack')}
         />
 
+        {/* Retry button on load error */}
+        {loadError && (
+          <Pressable
+            onPress={() => { setLoadError(false); loadData(); }}
+            style={styles.retryButton}
+          >
+            <Ionicons name="refresh-outline" size={15} color={colors.primary} />
+            <Text style={styles.retryText}>Повторить попытку</Text>
+          </Pressable>
+        )}
+
         {/* Stats */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { borderColor: offeredProjects.length > 0 ? colors.accent : colors.border }]}>
@@ -558,13 +512,31 @@ export function SupervisorHomeScreen({ navigation }: any) {
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-function enrichProject(p: Project): ProjectItem {
+async function enrichProject(p: Project): Promise<ProjectItem> {
+  // Fetch client name from profiles
+  const { data: clientProfile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('id', p.client_id)
+    .single();
+  const clientName = clientProfile?.name ?? 'Клиент';
+
+  // Fetch real stage counts for this project
+  const { data: stagesData } = await supabase
+    .from('stages')
+    .select('status')
+    .eq('project_id', p.id);
+
+  const stagesTotal = stagesData?.length ?? 0;
+  const stagesDone = stagesData?.filter((s) => s.status === 'approved').length ?? 0;
+  const pendingReview = stagesData?.filter((s) => s.status === 'done_by_master').length ?? 0;
+
   return {
     ...p,
-    clientName: p.title, // fallback — real implementation fetches client profile
-    stagesTotal: 14,
-    stagesDone: 0,
-    pendingReview: 0,
+    clientName,
+    stagesTotal,
+    stagesDone,
+    pendingReview,
   };
 }
 
@@ -572,7 +544,7 @@ function enrichProject(p: Project): ProjectItem {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
 
   // Stats row
@@ -583,12 +555,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radius.xl,
     padding: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    shadowColor: 'rgba(123,45,62,0.05)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -607,12 +579,12 @@ const styles = StyleSheet.create({
   // Tab bar
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radius.xl,
     padding: 4,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.85)',
     gap: 2,
   },
   tabItem: {
@@ -625,8 +597,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   tabItemActive: {
-    backgroundColor: colors.bgCard,
-    shadowColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: colors.white,
+    shadowColor: 'rgba(123,45,62,0.1)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -670,9 +642,9 @@ const styles = StyleSheet.create({
 
   // Offered card
   offeredCard: {
-    borderColor: colors.accent,
+    borderColor: 'rgba(197,165,90,0.25)',
     borderWidth: 1.5,
-    backgroundColor: colors.accentLight,
+    backgroundColor: 'rgba(197,165,90,0.04)',
   },
   newBadge: {
     backgroundColor: colors.accentLight,
@@ -692,7 +664,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: colors.accentLight,
+    backgroundColor: 'rgba(197,165,90,0.15)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -844,10 +816,10 @@ const styles = StyleSheet.create({
   inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255,255,255,0.8)',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
@@ -857,7 +829,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123,45,62,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -868,5 +840,19 @@ const styles = StyleSheet.create({
   inviteSubtitle: {
     ...typography.small,
     color: colors.textLight,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  retryText: {
+    ...typography.small,
+    color: colors.primary,
   },
 });

@@ -22,8 +22,7 @@ import {
   TextArea,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography, glass } from '../../theme';
-import { useTheme } from '../../theme/ThemeContext';
+import { colors, spacing, radius, typography } from '../../theme';
 import { useToastStore } from '../../store/toastStore';
 import { useTaskStore } from '../../store/taskStore';
 import { useAuthStore } from '../../store/authStore';
@@ -42,7 +41,6 @@ type Props = {
 };
 
 export function MasterTaskDetailScreen({ navigation, route }: Props) {
-  const { colors: themeColors, glass, isDark } = useTheme();
   const task = route.params?.task;
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
@@ -134,7 +132,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
               }
               await updateStatus(task.id, 'done_by_master');
               hapticSuccess();
-              showToast('Задача отправлена на проверку', 'success');
+              showToast('Этап отправлен супервайзеру на проверку', 'success');
             } catch {
               showToast('Ошибка при отправке', 'error');
             }
@@ -182,7 +180,7 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
       >
         {/* Back button */}
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color={colors.heading} />
+          <Ionicons name="chevron-back" size={22} color={colors.heading} />
         </Pressable>
 
         {/* Status + deadline */}
@@ -356,7 +354,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -432,7 +430,7 @@ const styles = StyleSheet.create({
   photoSection: {
     marginTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(0,0,0,0.05)',
     paddingTop: spacing.lg,
   },
   photoHeader: {
@@ -462,7 +460,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 2,
     right: 2,
-    backgroundColor: glass.fill.light,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 11,
   },
   photoAdd: {
@@ -470,11 +468,11 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: colors.borderHover,
+    borderColor: 'rgba(123, 45, 62, 0.2)',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: 'rgba(123, 45, 62, 0.03)',
   },
   photoAddText: {
     ...typography.caption,
@@ -484,10 +482,10 @@ const styles = StyleSheet.create({
   chatButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: glass.fill.regular,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: glass.border.light,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     gap: spacing.sm,
     marginTop: spacing.md,
@@ -500,7 +498,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(248, 245, 242, 0.95)',
   },
   waitingBanner: {
     flexDirection: 'row',
