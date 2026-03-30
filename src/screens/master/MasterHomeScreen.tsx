@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { trackTap } from '../../services/analyticsService';
 import { SPECIALIZATION_MAP, type SpecializationId } from '../../data/specializations';
 
+// MVP: JumpFinance hidden, restore post-MVP
 // Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
 // Set to true once the function is deployed and tested.
 const JUMP_FINANCE_ENABLED = false;

@@ -65,8 +65,10 @@ export function MasterNavigator() {
       <Stack.Screen name="MasterPortfolioEdit" component={MasterPortfolioEditScreen} options={{ headerShown: false, title: 'Портфолио' }} />
       {/* Pricing */}
       <Stack.Screen name="MasterPricing" component={MasterPricingScreen} options={{ headerShown: false, title: 'Расценки' }} />
-      {/* Verification */}
-      <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: t('nav.verification') }} />
+      {/* MVP: JumpFinance hidden, restore post-MVP */}
+      {__DEV__ && (
+        <Stack.Screen name="JumpFinance" component={JumpFinanceScreen} options={{ headerTitle: t('nav.verification') }} />
+      )}
       {/* Specializations */}
       <Stack.Screen name="EditSpecializations" component={EditSpecializationsScreen} options={{ headerShown: false, title: 'Специализации' }} />
       {/* Profile & settings */}

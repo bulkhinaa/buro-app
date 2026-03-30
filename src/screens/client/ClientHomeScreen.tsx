@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useObjectStore } from '../../store/objectStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useToastStore } from '../../store/toastStore';
 import {
   Project,
   PropertyObject,
@@ -63,15 +64,22 @@ export function ClientHomeScreen({ navigation }: Props) {
   const { projects, isLoading, loadProjects } = useProjectStore();
   const { objects, loadObjects } = useObjectStore();
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
+  const showToast = useToastStore((s) => s.show);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (user) useNotificationStore.getState().loadNotifications(user.id);
   }, [user]);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     if (user?.id) {
-      loadProjects(user.id);
-      loadObjects(user.id);
+      try {
+        setLoadError(false);
+        await Promise.all([loadProjects(user.id), loadObjects(user.id)]);
+      } catch {
+        setLoadError(true);
+        showToast(t('common.loadError') || 'Не удалось загрузить данные', 'error');
+      }
     }
   }, [user?.id]);
 
@@ -312,6 +320,19 @@ export function ClientHomeScreen({ navigation }: Props) {
           </>
         )}
 
+        {/* Retry button on load error */}
+        {loadError && (
+          <View style={[styles.padded, styles.errorContainer]}>
+            <Text style={styles.errorText}>{t('common.loadError') || 'Не удалось загрузить данные'}</Text>
+            <Button
+              title={t('common.retry') || 'Повторить'}
+              onPress={() => { setLoadError(false); refresh(); }}
+              variant="outline"
+              size="sm"
+            />
+          </View>
+        )}
+
         {/* Extra padding for glass tab bar */}
         <View style={{ height: 120 }} />
       </ScrollView>
@@ -487,6 +508,17 @@ function useClientHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: bo
         projectBudget: {
           ...typography.bodyBold,
           color: colors.gold,
+        },
+        // Error retry
+        errorContainer: {
+          alignItems: 'center',
+          paddingVertical: spacing.xl,
+          gap: spacing.md,
+        },
+        errorText: {
+          ...typography.body,
+          color: colors.textLight,
+          textAlign: 'center',
         },
         // Empty
         emptyCard: {

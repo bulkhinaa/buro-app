@@ -57,7 +57,7 @@ export const lightColors: ThemeColors = {
   bgGradientEnd: '#F8F5F2',
 
   text: '#4A4440',
-  textLight: '#7A7470',
+  textLight: '#6B6560',
   textBright: '#1A1A1A',
   heading: '#1A1A1A',
 
@@ -96,7 +96,7 @@ export const darkColors: ThemeColors = {
   bgGradientEnd: '#12121A',
 
   text: '#EEEAE6',
-  textLight: '#7A7685',
+  textLight: '#9590A0',
   textBright: '#FFFFFF',
   heading: '#EEEAE6',
 

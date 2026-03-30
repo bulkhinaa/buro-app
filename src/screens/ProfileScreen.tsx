@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useLanguageStore, LANGUAGES } from '../store/languageStore';
 
+// MVP: JumpFinance hidden, restore post-MVP
 // Jump Finance Edge Function is not deployed yet (missing JUMP_FINANCE_CLIENT_KEY secret).
 // Set to true once the function is deployed and tested.
 const JUMP_FINANCE_ENABLED = false;

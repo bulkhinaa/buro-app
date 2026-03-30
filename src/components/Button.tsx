@@ -22,6 +22,7 @@ interface ButtonProps {
   icon?: React.ReactNode;
   badge?: string;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 }
 
 export function Button({
@@ -35,6 +36,7 @@ export function Button({
   icon,
   badge,
   style,
+  accessibilityLabel,
 }: ButtonProps) {
   const { isDark, colors } = useTheme();
   const isDisabled = disabled || loading;
@@ -85,6 +87,8 @@ export function Button({
         onPress={onPress}
         disabled={isDisabled}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
         style={[fullWidth && styles.fullWidth, style]}
       >
         <LinearGradient
@@ -109,6 +113,8 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
       style={buttonStyle}
     >
       {content}
