@@ -159,14 +159,32 @@ export function LoginScreen() {
           if (__DEV__) { console.log('[YandexAuth] Step 4: Profile synced OK'); }
         } catch (profileErr: unknown) {
           if (__DEV__) { console.error('[YandexAuth] Step 4 FAILED - syncProfile:', profileErr); }
-          // Don't block login if profile sync fails
+          // Session is valid — force auth state with basic data so user can enter the app
+          const currentAuth = useAuthStore.getState();
+          if (!currentAuth.isAuthenticated && sessionData.user) {
+            useAuthStore.setState({
+              user: {
+                id: sessionData.user.id,
+                name: user_metadata?.name || '',
+                phone: user_metadata?.phone || '',
+                role: 'client',
+                created_at: new Date().toISOString(),
+                is_active: true,
+              },
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }
           showToast(t('auth.profileSyncWarning'), 'warning');
-          return;
         }
       }
 
-      const successUser = useAuthStore.getState().user;
-      trackForm('Login', 'login_success', { role: successUser?.role });
+      const authState = useAuthStore.getState();
+      if (!authState.isAuthenticated || !authState.user) {
+        showToast(t('auth.loginError'), 'error');
+        return;
+      }
+      trackForm('Login', 'login_success', { role: authState.user?.role });
       showToast(t('auth.loginSuccess'), 'success');
     } catch (e: unknown) {
       if (__DEV__) { console.error('[YandexAuth] FINAL ERROR:', e); }

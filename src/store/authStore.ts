@@ -130,9 +130,25 @@ export const useAuthStore = create<AuthState>((set) => ({
           isAuthenticated: true,
           isLoading: false,
         });
+      } else {
+        // Profile created but not readable — set auth with basic data
+        // Session is valid (OTP verified), user must enter the app
+        set({
+          user: {
+            id,
+            name: name || '',
+            phone: phone || '',
+            role: chosenRole,
+            created_at: new Date().toISOString(),
+            is_active: true,
+          },
+          isAuthenticated: true,
+          isLoading: false,
+        });
       }
-    } catch {
+    } catch (err) {
       set({ isLoading: false });
+      throw err;
     }
   },
 
