@@ -3,11 +3,12 @@ import { Platform } from 'react-native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileSetupScreen } from '../screens/auth/ProfileSetupScreen';
-import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createStackNavigator();
 
 export function AuthNavigator() {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

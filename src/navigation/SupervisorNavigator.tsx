@@ -16,11 +16,12 @@ import { AboutScreen } from '../screens/profile/AboutScreen';
 import { DocumentViewerScreen } from '../screens/profile/DocumentViewerScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
-import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createStackNavigator();
 
 export function SupervisorNavigator() {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

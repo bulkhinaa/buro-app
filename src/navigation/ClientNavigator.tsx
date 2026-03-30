@@ -25,7 +25,7 @@ import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { MasterMatchScreen } from '../screens/client/MasterMatchScreen';
 import { LanguageSelectScreen } from '../screens/LanguageSelectScreen';
-import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 import { useMasterStore } from '../store/masterStore';
 
 // Wrappers adapt onComplete prop for stack navigation
@@ -51,6 +51,7 @@ const Stack = createStackNavigator();
 
 export function ClientNavigator() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

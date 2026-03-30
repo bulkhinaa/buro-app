@@ -17,11 +17,12 @@ import { DocumentsScreen } from '../screens/profile/DocumentsScreen';
 import { AboutScreen } from '../screens/profile/AboutScreen';
 import { DocumentViewerScreen } from '../screens/profile/DocumentViewerScreen';
 import { NotificationsScreen } from '../screens/client/NotificationsScreen';
-import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createStackNavigator();
 
 export function AdminNavigator() {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

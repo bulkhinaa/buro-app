@@ -6,6 +6,7 @@ import { ScreenWrapper, EmptyStateIllustration } from '../../components';
 import { spacing, radius, typography } from '../../theme';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 import { useAuthStore } from '../../store/authStore';
 import {
   useNotificationStore,
@@ -44,8 +45,8 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export function NotificationsScreen() {
-  const { colors } = useTheme();
-  const styles = useNotificationsScreenStyles(colors);
+  const { colors, glass, isDark } = useTheme();
+  const styles = useNotificationsScreenStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const navigation = useNavigation<any>();
   const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
@@ -147,7 +148,7 @@ export function NotificationsScreen() {
   );
 }
 
-function useNotificationsScreenStyles(colors: ThemeColors) {
+function useNotificationsScreenStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
   return useMemo(
     () =>
       StyleSheet.create({
@@ -176,22 +177,22 @@ function useNotificationsScreenStyles(colors: ThemeColors) {
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: isDark ? glass.fill.light : glass.fill.light,
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: isDark ? glass.border.light : glass.border.light,
     // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.04)',
+    shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123, 45, 62, 0.04)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 1,
   },
   notificationUnread: {
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
-    borderColor: 'rgba(123, 45, 62, 0.15)',
+    backgroundColor: isDark ? glass.fill.tinted : glass.fill.tinted,
+    borderColor: colors.borderHover,
   },
   iconCircle: {
     width: 36,
@@ -242,7 +243,7 @@ function useNotificationsScreenStyles(colors: ThemeColors) {
     lineHeight: 22,
   },
 }),
-    [colors],
+    [colors, glass, isDark],
   );
 }
 
