@@ -116,5 +116,5 @@ export const darkGlass: GlassTokens = {
     Math.max(outerRadius - padding, 4),
 };
 
-/** Default export — dark glass (app default) */
-export const glass = darkGlass;
+/** Default export — light glass (app default) */
+export const glass = lightGlass;

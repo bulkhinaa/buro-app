@@ -111,7 +111,7 @@ export const darkColors: ThemeColors = {
   goldLight: '#F5D98A',
 };
 
-/** Default export — dark theme (app default) */
-export const colors = darkColors;
+/** Default export — light theme (app default) */
+export const colors = lightColors;
 
 export type ColorName = keyof ThemeColors;

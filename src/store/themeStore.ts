@@ -14,7 +14,7 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: 'dark',
+  theme: 'light',
   isLoaded: false,
 
   setTheme: async (theme: AppTheme) => {
@@ -30,7 +30,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
   init: async () => {
     const saved = await AsyncStorage.getItem(THEME_KEY);
-    const theme: AppTheme = saved === 'light' ? 'light' : 'dark';
+    const theme: AppTheme = saved === 'dark' ? 'dark' : 'light';
     set({ theme, isLoaded: true });
   },
 }));

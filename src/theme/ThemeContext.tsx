@@ -11,10 +11,10 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  isDark: true,
-  theme: 'dark',
-  colors: darkColors,
-  glass: darkGlass,
+  isDark: false,
+  theme: 'light',
+  colors: lightColors,
+  glass: lightGlass,
 });
 
 interface ThemeProviderProps {
