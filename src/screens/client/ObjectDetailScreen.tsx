@@ -441,7 +441,7 @@ function useObjectDetailScreenStyles(colors: ThemeColors) {
     textAlign: 'center',
     marginTop: spacing.xxxl,
   },
-});
+}),
     [colors],
   );
 }

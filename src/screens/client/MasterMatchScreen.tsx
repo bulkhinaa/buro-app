@@ -570,7 +570,7 @@ function useMasterMatchScreenStyles(colors: ThemeColors) {
     color: colors.textLight,
     textAlign: 'center',
   },
-});
+}),
     [colors],
   );
 }

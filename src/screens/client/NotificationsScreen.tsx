@@ -241,7 +241,7 @@ function useNotificationsScreenStyles(colors: ThemeColors) {
     textAlign: 'center',
     lineHeight: 22,
   },
-});
+}),
     [colors],
   );
 }

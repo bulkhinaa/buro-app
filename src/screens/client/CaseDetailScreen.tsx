@@ -695,7 +695,7 @@ function useCaseDetailScreenStyles(colors: ThemeColors) {
     top: 60,
     right: 20,
   },
-});
+}),
     [colors],
   );
 }

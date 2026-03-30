@@ -408,7 +408,7 @@ function useReviewScreenStyles(colors: ThemeColors) {
     ...typography.body,
     color: colors.textLight,
   },
-});
+}),
     [colors],
   );
 }

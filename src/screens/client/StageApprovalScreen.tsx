@@ -342,7 +342,7 @@ function useStageApprovalScreenStyles(colors: ThemeColors) {
     color: colors.textLight,
     lineHeight: 18,
   },
-});
+}),
     [colors],
   );
 }
