@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,8 @@ import {
   MasterSelectModal,
 } from '../../components';
 import type { DialogButton, MasterCandidate } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { Stage, PhotoReport } from '../../types';
 import {
@@ -35,6 +36,9 @@ import { uploadFile, generateFilePath } from '../../services/storageService';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
 import { trackTap } from '../../services/analyticsService';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const MAX_SUPERVISOR_PHOTOS = 10;
 
@@ -68,6 +72,8 @@ function formatDateTime(iso: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorStageDetailScreen({ route, navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorStageDetailStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -317,7 +323,6 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
               setStage((prev) => prev ? { ...prev, status: 'approved', approved_at: new Date().toISOString() } : prev);
               hapticSuccess();
               showToast('Этап принят. Клиент уведомлён.', 'success');
-              // navigation.goBack() is called after AppDialog closes (setTimeout in AppDialog)
               navigation.goBack();
             } catch (e) {
               showToast('Ошибка при принятии этапа', 'error');
@@ -830,444 +835,446 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 24,
-    gap: spacing.md,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-  },
+function useSupervisorStageDetailStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingBottom: 24,
+      gap: spacing.md,
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 80,
+    },
 
-  // Header
-  header: {
-    gap: spacing.sm,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  orderIndex: {
-    ...typography.caption,
-    color: colors.textLight,
-    fontWeight: '600',
-  },
-  title: {
-    ...typography.h2,
-    color: colors.heading,
-  },
-  description: {
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 22,
-  },
+    // Header
+    header: {
+      gap: spacing.sm,
+      paddingBottom: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    orderIndex: {
+      ...typography.caption,
+      color: colors.textLight,
+      fontWeight: '600',
+    },
+    title: {
+      ...typography.h2,
+      color: colors.heading,
+    },
+    description: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 22,
+    },
 
-  // Timeline
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    fontWeight: '600',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  timeLabel: {
-    ...typography.small,
-    color: colors.textLight,
-    width: 110,
-  },
-  timeValue: {
-    ...typography.smallBold,
-    color: colors.heading,
-    flex: 1,
-  },
+    // Timeline
+    sectionLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: spacing.sm,
+      fontWeight: '600',
+    },
+    timeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    timeLabel: {
+      ...typography.small,
+      color: colors.textLight,
+      width: 110,
+    },
+    timeValue: {
+      ...typography.smallBold,
+      color: colors.heading,
+      flex: 1,
+    },
 
-  // Sections
-  section: {
-    gap: spacing.sm,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-  sectionCount: {
-    ...typography.smallBold,
-    color: colors.textLight,
-  },
+    // Sections
+    section: {
+      gap: spacing.sm,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+    sectionCount: {
+      ...typography.smallBold,
+      color: colors.textLight,
+    },
 
-  // Photos
-  emptyPhotos: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-  },
-  emptyPhotosText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  photoRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  photoWrap: {
-    width: 180,
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  photo: {
-    width: 180,
-    height: 135,
-  },
-  photoCaption: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    position: 'absolute',
-    bottom: 22,
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  photoCaptionText: {
-    ...typography.caption,
-    color: colors.white,
-  },
-  photoDate: {
-    ...typography.caption,
-    color: colors.textLight,
-    padding: spacing.sm,
-  },
+    // Photos
+    emptyPhotos: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+    },
+    emptyPhotosText: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    photoRow: {
+      gap: spacing.md,
+      paddingBottom: spacing.xs,
+    },
+    photoWrap: {
+      width: 180,
+      borderRadius: radius.xl,
+      overflow: 'hidden',
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    photo: {
+      width: 180,
+      height: 135,
+    },
+    photoCaption: {
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      position: 'absolute',
+      bottom: 22,
+      left: 0,
+      right: 0,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+    },
+    photoCaptionText: {
+      ...typography.caption,
+      color: colors.white,
+    },
+    photoDate: {
+      ...typography.caption,
+      color: colors.textLight,
+      padding: spacing.sm,
+    },
 
-  // Full-screen photo
-  photoOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  photoFull: {
-    width: '100%',
-    height: '80%',
-  },
-  photoCloseBtn: {
-    position: 'absolute',
-    top: spacing.xl,
-    right: spacing.xl,
-  },
+    // Full-screen photo
+    photoOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.92)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 999,
+    },
+    photoFull: {
+      width: '100%',
+      height: '80%',
+    },
+    photoCloseBtn: {
+      position: 'absolute',
+      top: spacing.xl,
+      right: spacing.xl,
+    },
 
-  // Checklist
-  checklistNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(142,142,147,0.08)',
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  checklistNoteText: {
-    ...typography.small,
-    color: colors.textLight,
-    flex: 1,
-  },
-  checklistCard: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  checkRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: radius.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  checkboxDone: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
-  },
-  checkboxNa: {
-    backgroundColor: colors.textLight,
-    borderColor: colors.textLight,
-  },
-  naText: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 0.2,
-  },
-  checkText: {
-    ...typography.body,
-    color: colors.heading,
-    flex: 1,
-  },
-  checkTextDone: {
-    color: colors.textLight,
-    textDecorationLine: 'line-through',
-  },
-  checkTextNa: {
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
-  checkHint: {
-    ...typography.caption,
-    color: colors.border,
-    fontWeight: '600',
-  },
-  checklistWarning: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(255,149,0,0.08)',
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  checklistWarningText: {
-    ...typography.small,
-    color: colors.warning,
-    flex: 1,
-  },
+    // Checklist
+    checklistNote: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(142,142,147,0.08)',
+      borderRadius: radius.md,
+      padding: spacing.md,
+    },
+    checklistNoteText: {
+      ...typography.small,
+      color: colors.textLight,
+      flex: 1,
+    },
+    checklistCard: {
+      padding: 0,
+      overflow: 'hidden',
+    },
+    checkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    checkRowBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    checkbox: {
+      width: 26,
+      height: 26,
+      borderRadius: radius.sm,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    checkboxDone: {
+      backgroundColor: colors.success,
+      borderColor: colors.success,
+    },
+    checkboxNa: {
+      backgroundColor: colors.textLight,
+      borderColor: colors.textLight,
+    },
+    naText: {
+      fontSize: 8,
+      fontWeight: '700',
+      color: colors.white,
+      letterSpacing: 0.2,
+    },
+    checkText: {
+      ...typography.body,
+      color: colors.heading,
+      flex: 1,
+    },
+    checkTextDone: {
+      color: colors.textLight,
+      textDecorationLine: 'line-through',
+    },
+    checkTextNa: {
+      color: colors.textLight,
+      fontStyle: 'italic',
+    },
+    checkHint: {
+      ...typography.caption,
+      color: colors.border,
+      fontWeight: '600',
+    },
+    checklistWarning: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      backgroundColor: isDark ? 'rgba(255,179,71,0.08)' : 'rgba(255,149,0,0.08)',
+      borderRadius: radius.md,
+      padding: spacing.md,
+    },
+    checklistWarningText: {
+      ...typography.small,
+      color: colors.warning,
+      flex: 1,
+    },
 
-  // Checklist CRUD
-  checklistHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  editToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  editToggleText: {
-    ...typography.smallBold,
-    color: colors.primary,
-  },
-  checkRowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.md,
-  },
-  checkEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
-  },
-  checkEditInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.heading,
-    backgroundColor: colors.bgInput,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 0,
-  },
-  checkEditBtn: {
-    padding: spacing.xs,
-  },
-  addCheckRow: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  addCheckInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.heading,
-    paddingVertical: spacing.xs,
-    borderWidth: 0,
-  },
-  addCheckBtn: {
-    padding: spacing.xs,
-  },
+    // Checklist CRUD
+    checklistHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    editToggleBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    editToggleText: {
+      ...typography.smallBold,
+      color: colors.primary,
+    },
+    checkRowInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: spacing.md,
+    },
+    checkEditRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: spacing.sm,
+    },
+    checkEditInput: {
+      flex: 1,
+      ...typography.body,
+      color: colors.heading,
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderWidth: 0,
+    },
+    checkEditBtn: {
+      padding: spacing.xs,
+    },
+    addCheckRow: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+    addCheckInput: {
+      flex: 1,
+      ...typography.body,
+      color: colors.heading,
+      paddingVertical: spacing.xs,
+      borderWidth: 0,
+    },
+    addCheckBtn: {
+      padding: spacing.xs,
+    },
 
-  // Actions
-  actionsSection: {
-    gap: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  actionsSectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-  approveBtn: {
-    // uses default Button style
-  },
-  rejectBtn: {
-    borderColor: colors.danger,
-  },
-  rejectInputBlock: {
-    gap: spacing.sm,
-  },
-  rejectLabel: {
-    ...typography.smallBold,
-    color: colors.heading,
-  },
-  rejectInput: {
-    backgroundColor: colors.bgInput,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    ...typography.body,
-    color: colors.heading,
-    minHeight: 100,
-    borderWidth: 0,
-  },
-  rejectActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  rejectSubmitBtn: {
-    flex: 1,
-  },
-  cancelRejectBtn: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  cancelRejectText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
+    // Actions
+    actionsSection: {
+      gap: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    actionsSectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+    approveBtn: {
+      // uses default Button style
+    },
+    rejectBtn: {
+      borderColor: colors.danger,
+    },
+    rejectInputBlock: {
+      gap: spacing.sm,
+    },
+    rejectLabel: {
+      ...typography.smallBold,
+      color: colors.heading,
+    },
+    rejectInput: {
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      ...typography.body,
+      color: colors.heading,
+      minHeight: 100,
+      borderWidth: 0,
+    },
+    rejectActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    rejectSubmitBtn: {
+      flex: 1,
+    },
+    cancelRejectBtn: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+    },
+    cancelRejectText: {
+      ...typography.body,
+      color: colors.textLight,
+    },
 
-  // Decided state cards
-  decidedCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-    backgroundColor: 'rgba(52,199,89,0.06)',
-  },
-  decidedCardRejected: {
-    backgroundColor: 'rgba(255,59,48,0.06)',
-  },
-  decidedTitle: {
-    ...typography.bodyBold,
-    color: colors.success,
-  },
-  decidedDate: {
-    ...typography.small,
-    color: colors.textLight,
-  },
+    // Decided state cards
+    decidedCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+      backgroundColor: isDark ? 'rgba(62,220,132,0.06)' : 'rgba(52,199,89,0.06)',
+    },
+    decidedCardRejected: {
+      backgroundColor: isDark ? 'rgba(255,91,91,0.06)' : 'rgba(255,59,48,0.06)',
+    },
+    decidedTitle: {
+      ...typography.bodyBold,
+      color: colors.success,
+    },
+    decidedDate: {
+      ...typography.small,
+      color: colors.textLight,
+    },
 
-  // Assigned master
-  assignedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  assignedAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  assignedName: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  assignedSpec: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  assignedRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  assignedRatingText: {
-    ...typography.smallBold,
-    color: colors.heading,
-  },
+    // Assigned master
+    assignedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    assignedAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    assignedName: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    assignedSpec: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    assignedRating: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+    },
+    assignedRatingText: {
+      ...typography.smallBold,
+      color: colors.heading,
+    },
 
-  // Supervisor photo upload
-  svPhotoWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  svPhoto: {
-    width: 120,
-    height: 120,
-  },
-  svPhotoRemove: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 12,
-  },
-  uploadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  uploadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.lg,
-  },
-  uploadBtnText: {
-    ...typography.smallBold,
-    color: colors.primary,
-  },
+    // Supervisor photo upload
+    svPhotoWrap: {
+      width: 120,
+      height: 120,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    svPhoto: {
+      width: 120,
+      height: 120,
+    },
+    svPhotoRemove: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
+      borderRadius: 12,
+    },
+    uploadRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    uploadBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      paddingVertical: spacing.sm + 2,
+      paddingHorizontal: spacing.lg,
+    },
+    uploadBtnText: {
+      ...typography.smallBold,
+      color: colors.primary,
+    },
 
-  // Empty
-  emptyText: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-});
+    // Empty
+    emptyText: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+  }), [colors, glass, isDark]);
+}

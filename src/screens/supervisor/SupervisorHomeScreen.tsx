@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,8 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNotificationStore } from '../../store/notificationStore';
@@ -63,6 +64,8 @@ const TABS: TabDef[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorHomeScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorHomeStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
@@ -542,317 +545,322 @@ async function enrichProject(p: Project): Promise<ProjectItem> {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 100,
-  },
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    shadowColor: 'rgba(123,45,62,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statNum: {
-    ...typography.h1,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
+function useSupervisorHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingBottom: 100,
+    },
 
-  // Tab bar
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: radius.xl,
-    padding: 4,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-    gap: 2,
-  },
-  tabItem: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: radius.lg,
-    gap: 3,
-  },
-  tabItemActive: {
-    backgroundColor: colors.white,
-    shadowColor: 'rgba(123,45,62,0.1)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  tabLabelActive: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  tabCount: {
-    backgroundColor: colors.border,
-    borderRadius: radius.full,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  tabCountActive: {
-    backgroundColor: colors.primaryLight,
-  },
-  tabCountText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.textLight,
-  },
-  tabCountTextActive: {
-    color: colors.primary,
-  },
+    // Stats row
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.xl,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: glass.fill.regular,
+      borderRadius: radius.xl,
+      padding: spacing.md,
+      alignItems: 'center',
+      borderWidth: 1,
+      shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123,45,62,0.05)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    statNum: {
+      ...typography.h1,
+      marginBottom: 2,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
 
-  // Tab content
-  tabContent: {
-    gap: spacing.md,
-  },
+    // Tab bar
+    tabBar: {
+      flexDirection: 'row',
+      backgroundColor: glass.fill.regular,
+      borderRadius: radius.xl,
+      padding: 4,
+      marginBottom: spacing.lg,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      gap: 2,
+    },
+    tabItem: {
+      flex: 1,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.sm,
+      borderRadius: radius.lg,
+      gap: 3,
+    },
+    tabItemActive: {
+      backgroundColor: colors.bgCard,
+      shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123,45,62,0.1)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    tabLabel: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+    tabLabelActive: {
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    tabCount: {
+      backgroundColor: colors.border,
+      borderRadius: radius.full,
+      minWidth: 16,
+      height: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    },
+    tabCountActive: {
+      backgroundColor: colors.primaryLight,
+    },
+    tabCountText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textLight,
+    },
+    tabCountTextActive: {
+      color: colors.primary,
+    },
 
-  // Offered card
-  offeredCard: {
-    borderColor: 'rgba(197,165,90,0.25)',
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(197,165,90,0.04)',
-  },
-  newBadge: {
-    backgroundColor: colors.accentLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
-  newBadgeText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '700',
-  },
+    // Tab content
+    tabContent: {
+      gap: spacing.md,
+    },
 
-  // Active card
-  activeCard: {},
-  reviewBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(197,165,90,0.15)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  reviewBadgeText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '700',
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginVertical: spacing.sm,
-  },
-  progressText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-    minWidth: 70,
-    textAlign: 'right',
-  },
-  activeCardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  pendingReviewNote: {
-    ...typography.small,
-    color: colors.accent,
-    fontWeight: '500',
-  },
-  activeNote: {
-    ...typography.small,
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
+    // Offered card
+    offeredCard: {
+      borderColor: 'rgba(197,165,90,0.25)',
+      borderWidth: 1.5,
+      backgroundColor: 'rgba(197,165,90,0.04)',
+    },
+    newBadge: {
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
+    newBadgeText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '700',
+    },
 
-  // Completed card
-  completedCard: {
-    opacity: 0.75,
-  },
-  completedMeta: {
-    ...typography.small,
-    color: colors.textLight,
-    marginTop: spacing.xs,
-  },
+    // Active card
+    activeCard: {},
+    reviewBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      backgroundColor: 'rgba(197,165,90,0.15)',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    reviewBadgeText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    progressRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginVertical: spacing.sm,
+    },
+    progressText: {
+      ...typography.caption,
+      color: colors.primary,
+      fontWeight: '700',
+      minWidth: 70,
+      textAlign: 'right',
+    },
+    activeCardFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: spacing.xs,
+    },
+    pendingReviewNote: {
+      ...typography.small,
+      color: colors.accent,
+      fontWeight: '500',
+    },
+    activeNote: {
+      ...typography.small,
+      color: colors.textLight,
+      fontStyle: 'italic',
+    },
 
-  // Shared card parts
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  rightHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  clientName: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  cardTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  cardAddress: {
-    ...typography.small,
-    color: colors.textLight,
-    flex: 1,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  detailChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primaryLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
-  detailChipText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600',
-  },
+    // Completed card
+    completedCard: {
+      opacity: 0.75,
+    },
+    completedMeta: {
+      ...typography.small,
+      color: colors.textLight,
+      marginTop: spacing.xs,
+    },
 
-  // Offered actions
-  offeredActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  acceptBtn: {
-    flex: 1,
-    minWidth: 100,
-  },
-  declineBtn: {
-    flex: 1,
-    minWidth: 100,
-    borderColor: colors.danger,
-  },
-  viewDetailsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  viewDetailsText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
+    // Shared card parts
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    rightHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    clientName: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    cardTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    addressRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    cardAddress: {
+      ...typography.small,
+      color: colors.textLight,
+      flex: 1,
+    },
+    detailsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    detailChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.full,
+    },
+    detailChipText: {
+      ...typography.caption,
+      color: colors.primary,
+      fontWeight: '600',
+    },
 
-  // Empty state
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  emptySubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
+    // Offered actions
+    offeredActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    acceptBtn: {
+      flex: 1,
+      minWidth: 100,
+    },
+    declineBtn: {
+      flex: 1,
+      minWidth: 100,
+      borderColor: colors.danger,
+    },
+    viewDetailsBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    viewDetailsText: {
+      ...typography.small,
+      color: colors.textLight,
+    },
 
-  // Invite master
-  inviteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  inviteIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(123,45,62,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inviteTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  inviteSubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  retryText: {
-    ...typography.small,
-    color: colors.primary,
-  },
-});
+    // Empty state
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    emptySubtitle: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+
+    // Invite master
+    inviteRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: glass.fill.regular,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.lg,
+      gap: spacing.md,
+    },
+    inviteIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(123,45,62,0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    inviteTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    inviteSubtitle: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    retryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      alignSelf: 'center',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    retryText: {
+      ...typography.small,
+      color: colors.primary,
+    },
+  }), [colors, glass, isDark]);
+}

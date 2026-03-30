@@ -22,7 +22,8 @@ import {
   Checkbox,
   TextArea,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
@@ -41,6 +42,7 @@ import type {
 // Labels are now provided via i18n (labels.experience.*, labels.skillLevel.*, labels.priceType.*)
 import { useTranslation } from 'react-i18next';
 import { trackForm } from '../../services/analyticsService';
+import type { ThemeColors } from '../../theme/colors';
 
 const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
@@ -66,7 +68,7 @@ function normalizePhone(raw: string): string {
 }
 
 /**
- * Format 10-digit phone for display: "9991234567" → "+7 999 123-45-67"
+ * Format 10-digit phone for display: "9991234567" -> "+7 999 123-45-67"
  */
 function formatPhoneDisplay(digits: string): string {
   if (!digits || digits.length < 10) return digits;
@@ -100,8 +102,10 @@ export function MasterSetupScreen({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const showToast = useToastStore((s) => s.show);
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterSetupStyles(colors, isDark);
 
-  // Use auth data for name/city/phone — no need to ask again
+  // Use auth data for name/city/phone -- no need to ask again
   const name = setupDraft?.name || user?.name || '';
   const city = setupDraft?.city || user?.city || '';
   const phone = normalizePhone(setupDraft?.phone || user?.phone || '');
@@ -285,7 +289,7 @@ export function MasterSetupScreen({ onComplete }: Props) {
     );
   };
 
-  // ─── Step renderers ───
+  // --- Step renderers ---
 
   const renderStep2 = () => (
     <>
@@ -540,14 +544,14 @@ export function MasterSetupScreen({ onComplete }: Props) {
       {/* Summary */}
       <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>{t('master.setup.summaryTitle')}</Text>
-        <SummaryRow icon="person-outline" label={t('summary.name')} value={name || undefined} />
-        <SummaryRow icon="location-outline" label={t('summary.city')} value={city || undefined} />
-        <SummaryRow icon="call-outline" label={t('summary.phone')} value={phone ? formatPhoneDisplay(phone) : undefined} />
-        <SummaryRow icon="construct-outline" label={t('summary.specializations')} value={t('common.items', { count: specializations.length })} />
-        <SummaryRow icon="time-outline" label={t('summary.tenure')} value={t(`labels.experience.${experience}`)} />
-        <SummaryRow icon="trophy-outline" label={t('summary.level')} value={t(`labels.skillLevel.${skillLevel}`)} />
+        <SummaryRow icon="person-outline" label={t('summary.name')} value={name || undefined} colors={colors} />
+        <SummaryRow icon="location-outline" label={t('summary.city')} value={city || undefined} colors={colors} />
+        <SummaryRow icon="call-outline" label={t('summary.phone')} value={phone ? formatPhoneDisplay(phone) : undefined} colors={colors} />
+        <SummaryRow icon="construct-outline" label={t('summary.specializations')} value={t('common.items', { count: specializations.length })} colors={colors} />
+        <SummaryRow icon="time-outline" label={t('summary.tenure')} value={t(`labels.experience.${experience}`)} colors={colors} />
+        <SummaryRow icon="trophy-outline" label={t('summary.level')} value={t(`labels.skillLevel.${skillLevel}`)} colors={colors} />
         {portfolio.length > 0 && (
-          <SummaryRow icon="images-outline" label={t('summary.portfolio')} value={t('summary.portfolioCount', { count: portfolio.length })} />
+          <SummaryRow icon="images-outline" label={t('summary.portfolio')} value={t('summary.portfolioCount', { count: portfolio.length })} colors={colors} />
         )}
       </View>
     </>
@@ -639,330 +643,337 @@ export function MasterSetupScreen({ onComplete }: Props) {
   );
 }
 
-// ─── Summary row sub-component ───
+// --- Summary row sub-component ---
 
-function SummaryRow({ icon, label, value, emptyText }: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string; emptyText?: string }) {
+function SummaryRow({ icon, label, value, emptyText, colors }: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string; emptyText?: string; colors: ThemeColors }) {
   const isEmpty = !value || !value.trim();
   return (
-    <View style={styles.summaryRow}>
+    <View style={summaryRowStyles(colors).row}>
       <Ionicons name={icon} size={16} color={colors.textLight} />
-      <Text style={styles.summaryLabel} numberOfLines={1}>{label}</Text>
-      <Text style={[styles.summaryValue, isEmpty && styles.summaryValueEmpty]} numberOfLines={1}>
-        {isEmpty ? (emptyText || '—') : value}
+      <Text style={summaryRowStyles(colors).label} numberOfLines={1}>{label}</Text>
+      <Text style={[summaryRowStyles(colors).value, isEmpty && summaryRowStyles(colors).valueEmpty]} numberOfLines={1}>
+        {isEmpty ? (emptyText || '\u2014') : value}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    overflow: 'hidden' as const,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.md,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    padding: 0,
-  },
-  progressArea: {
-    flex: 1,
-    marginHorizontal: spacing.md,
-  },
-  stepLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.huge,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginBottom: spacing.xxl,
-  },
-  formSection: {
-    gap: spacing.sm,
-    zIndex: 20,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.md,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  specCategory: {
-    marginBottom: spacing.xl,
-  },
-  selectedCount: {
-    ...typography.small,
-    color: colors.primary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-  },
-  // Level cards
-  levelCardsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  levelCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    alignItems: 'center',
-    minHeight: 140,
-    // Glass shadow
-    shadowColor: 'rgba(0, 0, 0, 0.06)',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  levelCardSelected: {
-    borderColor: 'rgba(123, 45, 62, 0.2)',
-    backgroundColor: colors.primaryLight,
-  },
-  levelIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  levelIconCircleSelected: {
-    backgroundColor: 'rgba(123, 45, 62, 0.1)',
-  },
-  levelLabel: {
-    ...typography.smallBold,
-    color: colors.heading,
-    textAlign: 'center',
-    marginBottom: 2,
-  },
-  levelLabelSelected: {
-    color: colors.primary,
-  },
-  levelDesc: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  levelCheck: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-  },
-  // Portfolio
-  portfolioItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  portfolioItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  portfolioItemTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    flex: 1,
-  },
-  portfolioItemDesc: {
-    ...typography.small,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  portfolioPhotoHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  portfolioPhotoHint: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  addProjectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.15)',
-    borderStyle: 'dashed',
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-  },
-  addProjectText: {
-    ...typography.bodyBold,
-    color: colors.primary,
-  },
-  addProjectForm: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  addProjectActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  // Pricing
-  pricingRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  pricingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  pricingLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  pricingInputRow: {
-    gap: spacing.sm,
-  },
-  pricingInput: {
-    backgroundColor: colors.bgInput,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...typography.body,
-    color: colors.text,
-  },
-  pricingTypeChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  pricingHint: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  // Agreement
-  certSection: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.lg,
-    padding: spacing.xxl,
-    marginBottom: spacing.xxl,
-    gap: spacing.sm,
-  },
-  certTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  certHint: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  agreementRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  agreementRowError: {
-    borderColor: colors.danger,
-    backgroundColor: 'rgba(255, 59, 48, 0.05)',
-  },
-  fieldError: {
-    ...typography.small,
-    color: colors.danger,
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  agreementText: {
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  // Summary
-  summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.xl,
-  },
-  summaryTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  summaryLabel: {
-    ...typography.small,
-    color: colors.textLight,
-    width: 115,
-  },
-  summaryValue: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    flex: 1,
-    textAlign: 'right',
-  },
-  summaryValueEmpty: {
-    ...typography.body,
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
-  // Bottom bar
-  bottomBar: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-});
+function summaryRowStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    label: {
+      ...typography.small,
+      color: colors.textLight,
+      width: 115,
+    },
+    value: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      flex: 1,
+      textAlign: 'right',
+    },
+    valueEmpty: {
+      ...typography.body,
+      color: colors.textLight,
+      fontStyle: 'italic',
+    },
+  });
+}
+
+function useMasterSetupStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      overflow: 'hidden' as const,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.xs,
+      paddingBottom: spacing.md,
+    },
+    backButton: {
+      width: 44,
+      height: 44,
+      padding: 0,
+    },
+    progressArea: {
+      flex: 1,
+      marginHorizontal: spacing.md,
+    },
+    stepLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: spacing.xs,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.huge,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      marginBottom: spacing.xxl,
+    },
+    formSection: {
+      gap: spacing.sm,
+      zIndex: 20,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.md,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    specCategory: {
+      marginBottom: spacing.xl,
+    },
+    selectedCount: {
+      ...typography.small,
+      color: colors.primary,
+      textAlign: 'center',
+      marginTop: spacing.md,
+    },
+    // Level cards
+    levelCardsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    levelCard: {
+      flex: 1,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.xl,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.lg,
+      alignItems: 'center',
+      minHeight: 140,
+      // Glass shadow
+      shadowColor: 'rgba(0, 0, 0, 0.06)',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 1,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    levelCardSelected: {
+      borderColor: isDark ? 'rgba(123, 45, 62, 0.5)' : 'rgba(123, 45, 62, 0.2)',
+      backgroundColor: colors.primaryLight,
+    },
+    levelIconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.8)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    levelIconCircleSelected: {
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.2)' : 'rgba(123, 45, 62, 0.1)',
+    },
+    levelLabel: {
+      ...typography.smallBold,
+      color: colors.heading,
+      textAlign: 'center',
+      marginBottom: 2,
+    },
+    levelLabelSelected: {
+      color: colors.primary,
+    },
+    levelDesc: {
+      ...typography.caption,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+    levelCheck: {
+      position: 'absolute',
+      top: spacing.sm,
+      right: spacing.sm,
+    },
+    // Portfolio
+    portfolioItem: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    portfolioItemHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.xs,
+    },
+    portfolioItemTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      flex: 1,
+    },
+    portfolioItemDesc: {
+      ...typography.small,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    portfolioPhotoHintRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    portfolioPhotoHint: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    addProjectButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.15)' : 'rgba(123, 45, 62, 0.06)',
+      borderRadius: radius.lg,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(123, 45, 62, 0.3)' : 'rgba(123, 45, 62, 0.15)',
+      borderStyle: 'dashed',
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+    },
+    addProjectText: {
+      ...typography.bodyBold,
+      color: colors.primary,
+    },
+    addProjectForm: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    addProjectActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    // Pricing
+    pricingRow: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    pricingHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    pricingLabel: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    pricingInputRow: {
+      gap: spacing.sm,
+    },
+    pricingInput: {
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      ...typography.body,
+      color: colors.text,
+    },
+    pricingTypeChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    pricingHint: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginTop: spacing.sm,
+    },
+    // Agreement
+    certSection: {
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.lg,
+      padding: spacing.xxl,
+      marginBottom: spacing.xxl,
+      gap: spacing.sm,
+    },
+    certTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    certHint: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+    agreementRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: spacing.sm,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    agreementRowError: {
+      borderColor: colors.danger,
+      backgroundColor: 'rgba(255, 59, 48, 0.05)',
+    },
+    fieldError: {
+      ...typography.small,
+      color: colors.danger,
+      marginTop: spacing.xs,
+      marginBottom: spacing.lg,
+    },
+    agreementText: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 22,
+    },
+    // Summary
+    summaryCard: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.xl,
+    },
+    summaryTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.lg,
+    },
+    // Bottom bar
+    bottomBar: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+    },
+  }), [colors, isDark]);
+}

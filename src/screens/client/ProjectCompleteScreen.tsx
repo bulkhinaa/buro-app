@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, CellIndicator } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function ProjectCompleteScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
   const {
     area = '54 м²',
     cost = '870 000 ₽',
@@ -22,8 +24,8 @@ export function ProjectCompleteScreen({ navigation, route }: Props) {
     <ScreenWrapper>
       <View style={styles.center}>
         <Ionicons name="trophy-outline" size={80} color={colors.primary} style={{ marginBottom: spacing.xxl }} />
-        <Text style={styles.title}>Поздравляем!</Text>
-        <Text style={styles.subtitle}>Ваш ремонт завершён</Text>
+        <Text style={[styles.title, { color: colors.heading }]}>Поздравляем!</Text>
+        <Text style={[styles.subtitle, { color: colors.textLight }]}>Ваш ремонт завершён</Text>
 
         <Card style={styles.summaryCard}>
           <CellIndicator variant="row" label="Площадь" value={area} />
@@ -64,16 +66,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: spacing.huge,
   },
-  // emoji style removed — now using Ionicons inline
   title: {
     ...typography.h1,
-    color: colors.heading,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
     ...typography.h3,
-    color: colors.textLight,
     textAlign: 'center',
     marginBottom: spacing.xxxl,
   },

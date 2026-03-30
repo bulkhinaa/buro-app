@@ -13,12 +13,14 @@ import {
   PhotoGallery,
   SystemButton,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useProjectStore } from '../../store/projectStore';
 import { useAuthStore } from '../../store/authStore';
 import { fetchProfile } from '../../services/projectService';
 import {
   Project,
+  PhotoReport,
   REPAIR_TYPE_LABELS,
   RENOVATION_SCOPE_LABELS,
   PROJECT_STATUS_LABELS,
@@ -37,21 +39,25 @@ import { trackTap } from '../../services/analyticsService';
 type ViewMode = 'accordion' | 'timeline';
 type SectionTab = 'stages' | 'photos';
 
+// Mock photo reports for dev users
+const MOCK_PHOTOS: Record<string, PhotoReport[]> = {
+  'stg-5': [
+    { id: 'ph-1', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1581093806997-124204d9fa9d?w=600', comment: 'Грунтовка нанесена', created_at: '2026-03-11T10:00:00Z' },
+    { id: 'ph-2', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600', comment: 'Маяки установлены', created_at: '2026-03-12T14:00:00Z' },
+    { id: 'ph-3', stage_id: 'stg-5', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600', comment: 'Штукатурка нанесена', created_at: '2026-03-18T16:00:00Z' },
+  ],
+  'stg-1': [
+    { id: 'ph-4', stage_id: 'stg-1', uploaded_by: 'master-1', url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600', comment: 'Демонтаж завершён', created_at: '2026-03-05T12:00:00Z' },
+  ],
+};
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
   route: any;
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  new: '#C5A55A',
-  planning: '#FF9500',
-  in_progress: colors.success,
-  completed: colors.success,
-  cancelled: colors.danger,
-};
-
 export function ProjectDetailScreen({ navigation, route }: Props) {
+  const { colors, glass, isDark } = useTheme();
   const { projectId, project: routeProject } = (route.params || {}) as {
     projectId: string;
     project?: Project;
@@ -59,8 +65,6 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
   const { user } = useAuthStore();
   const { stages, loadStages, projects } = useProjectStore();
 
-  // Prefer store project (has all fields including scope array) over route params
-  // Route params may lose array fields on web due to URL serialization
   const storeProject = projects.find((p) => p.id === projectId);
   const project = storeProject ?? routeProject;
   const [supervisorName, setSupervisorName] = useState('Загрузка...');
@@ -71,12 +75,11 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
     if (projectId) loadStages(projectId);
   }, [projectId]);
 
-  // Fetch supervisor profile
   useEffect(() => {
     if (!project?.supervisor_id) return;
 
-    const isDev = project.supervisor_id.startsWith('dev-') || user?.id.startsWith('dev-');
-    if (isDev) {
+    const devUser = project.supervisor_id.startsWith('dev-') || user?.id.startsWith('dev-');
+    if (devUser) {
       setSupervisorName('Михаил К.');
       return;
     }
@@ -97,7 +100,6 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
       : 0;
   const allStagesApproved = totalStages > 0 && completedCount === totalStages;
 
-  // Collect unique master IDs from stages for ReviewScreen
   const mastersFromStages = useMemo(() => {
     const seen = new Set<string>();
     return stages
@@ -105,7 +107,6 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
       .map((s) => ({ id: s.master_id!, name: s.master_id!, specialization: s.title }));
   }, [stages]);
 
-  // Generate breakdown for cost/time data per stage
   const stageBreakdown = useMemo(() => {
     if (project?.repair_type && project?.area_sqm) {
       return getStageBreakdown(project.repair_type, project.area_sqm);
@@ -120,17 +121,23 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
       ? estimateTimelineDays(project.repair_type, project.area_sqm)
       : 0;
 
-  // Scope chips (filter out 'full' — show individual rooms)
   const scopeItems: RenovationScope[] = (project?.scope || []).filter(
     (s): s is RenovationScope => s !== 'full',
   );
 
-  // Calculate scope renovation area
   const scopeArea = useMemo(() => {
     if (!project?.repair_type || !project?.area_sqm || scopeItems.length === 0) return 0;
     const result = estimateScopedCost(project.repair_type, project.area_sqm, project.scope || []);
     return result.scopeArea;
   }, [project?.repair_type, project?.area_sqm, scopeItems.length]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    new: colors.accent,
+    planning: colors.warning,
+    in_progress: colors.success,
+    completed: colors.success,
+    cancelled: colors.danger,
+  };
 
   return (
     <ScreenWrapper scroll={false} edges={[]}>
@@ -142,42 +149,57 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
         <View style={styles.heroHeader}>
           <SystemButton type="back" onPress={() => navigation.goBack()} />
         </View>
-        <View style={styles.heroCard}>
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.65)',
+              borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.8)',
+              shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(123, 45, 62, 0.08)',
+            },
+          ]}
+        >
           <View style={styles.heroTop}>
-            <View style={styles.heroBadge}>
+            <View
+              style={[
+                styles.heroBadge,
+                {
+                  backgroundColor: isDark ? colors.primaryLight : 'rgba(123, 45, 62, 0.08)',
+                },
+              ]}
+            >
               <View style={[
                 styles.heroBadgeDot,
                 { backgroundColor: STATUS_COLORS[project?.status || 'new'] || colors.accent },
               ]} />
-              <Text style={styles.heroBadgeText}>
+              <Text style={[styles.heroBadgeText, { color: colors.heading }]}>
                 {PROJECT_STATUS_LABELS[project?.status || 'new']}
               </Text>
             </View>
             {progress > 0 && (
-              <Text style={styles.heroPercent}>{progress}%</Text>
+              <Text style={[styles.heroPercent, { color: colors.primary }]}>{progress}%</Text>
             )}
           </View>
 
-          <Text style={styles.heroTitle} numberOfLines={2}>
+          <Text style={[styles.heroTitle, { color: colors.heading }]} numberOfLines={2}>
             {project?.title || 'Загрузка...'}
           </Text>
 
           {project?.address ? (
             <View style={styles.heroAddressRow}>
               <Ionicons name="location-outline" size={14} color={colors.textLight} />
-              <Text style={styles.heroAddress} numberOfLines={1}>
+              <Text style={[styles.heroAddress, { color: colors.textLight }]} numberOfLines={1}>
                 {project.address}
               </Text>
             </View>
           ) : null}
 
-          {/* Key dates — prefer real start_date / estimated_completion, fall back to calculated */}
           {(project?.start_date || project?.created_at || timelineDays > 0) && (
             <View style={styles.heroDates}>
               {(project?.start_date || project?.created_at) && (
                 <View style={styles.heroDateItem}>
                   <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
-                  <Text style={styles.heroDateText}>
+                  <Text style={[styles.heroDateText, { color: colors.textLight }]}>
                     {new Date(project.start_date || project!.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 </View>
@@ -198,7 +220,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           {hasDbStages && (
             <View style={styles.heroProgress}>
               <ProgressBar progress={progress / 100} height={6} />
-              <Text style={styles.heroProgressText}>
+              <Text style={[styles.heroProgressText, { color: colors.textLight }]}>
                 {completedCount} из {totalStages} этапов
               </Text>
             </View>
@@ -207,28 +229,26 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
 
         {/* ─── B. Info card ─── */}
         <Card style={styles.infoCard}>
-          {/* Budget row */}
           {project?.budget_min != null && project?.budget_max != null && (
             <View style={styles.budgetRow}>
-              <Text style={styles.budgetLabel}>Бюджет</Text>
-              <Text style={styles.budgetValue}>
+              <Text style={[styles.budgetLabel, { color: colors.textLight }]}>Бюджет</Text>
+              <Text style={[styles.budgetValue, { color: colors.primary }]}>
                 {formatRubles(project.budget_min)} – {formatRubles(project.budget_max)}
               </Text>
             </View>
           )}
 
-          {/* Details row */}
           <View style={styles.detailsRow}>
             {project?.area_sqm != null && (
               <View style={styles.detailItem}>
                 <Ionicons name="resize-outline" size={16} color={colors.textLight} />
-                <Text style={styles.detailText}>{project.area_sqm} м²</Text>
+                <Text style={[styles.detailText, { color: colors.text }]}>{project.area_sqm} м²</Text>
               </View>
             )}
             {project?.repair_type && (
               <View style={styles.detailItem}>
                 <Ionicons name="construct-outline" size={16} color={colors.textLight} />
-                <Text style={styles.detailText}>
+                <Text style={[styles.detailText, { color: colors.text }]}>
                   {REPAIR_TYPE_LABELS[project.repair_type]}
                 </Text>
               </View>
@@ -243,14 +263,13 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
             )}
           </View>
 
-          {/* Scope chips with area */}
           {scopeItems.length > 0 && (
             <>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <View style={styles.scopeHeader}>
-                <Text style={styles.scopeTitle}>Помещения</Text>
+                <Text style={[styles.scopeTitle, { color: colors.textLight }]}>Помещения</Text>
                 {scopeArea > 0 && scopeArea < (project?.area_sqm ?? 0) && (
-                  <Text style={styles.scopeArea}>~{scopeArea} м²</Text>
+                  <Text style={[styles.scopeArea, { color: colors.accent }]}>~{scopeArea} м²</Text>
                 )}
               </View>
               <View style={styles.scopeRow}>
@@ -266,12 +285,12 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
         {project?.supervisor_id && (
           <Card style={styles.supervisorCard}>
             <View style={styles.supervisorRow}>
-              <View style={styles.supervisorAvatar}>
+              <View style={[styles.supervisorAvatar, { backgroundColor: colors.primary }]}>
                 <Ionicons name="person" size={20} color={colors.white} />
               </View>
               <View style={styles.supervisorInfo}>
-                <Text style={styles.supervisorLabel}>Ваш супервайзер</Text>
-                <Text style={styles.supervisorName}>{supervisorName}</Text>
+                <Text style={[styles.supervisorLabel, { color: colors.textLight }]}>Ваш супервайзер</Text>
+                <Text style={[styles.supervisorName, { color: colors.heading }]}>{supervisorName}</Text>
                 <LabelMaster level="expert" />
               </View>
               <Button
@@ -288,9 +307,25 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
         {/* ─── E. Stages / Photos ─── */}
         <View style={styles.stagesSection}>
           {/* Section tabs */}
-          <View style={styles.sectionTabs}>
+          <View
+            style={[
+              styles.sectionTabs,
+              {
+                backgroundColor: isDark ? glass.fill.subtle : 'rgba(0,0,0,0.04)',
+              },
+            ]}
+          >
             <Pressable
-              style={[styles.sectionTab, sectionTab === 'stages' && styles.sectionTabActive]}
+              style={[
+                styles.sectionTab,
+                sectionTab === 'stages' && [
+                  styles.sectionTabActive,
+                  {
+                    backgroundColor: isDark ? colors.bgElevated : colors.white,
+                    shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)',
+                  },
+                ],
+              ]}
               onPress={() => setSectionTab('stages')}
             >
               <Ionicons
@@ -298,12 +333,21 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                 size={16}
                 color={sectionTab === 'stages' ? colors.primary : colors.textLight}
               />
-              <Text style={[styles.sectionTabText, sectionTab === 'stages' && styles.sectionTabTextActive]}>
+              <Text style={[styles.sectionTabText, { color: colors.textLight }, sectionTab === 'stages' && { color: colors.primary }]}>
                 Этапы
               </Text>
             </Pressable>
             <Pressable
-              style={[styles.sectionTab, sectionTab === 'photos' && styles.sectionTabActive]}
+              style={[
+                styles.sectionTab,
+                sectionTab === 'photos' && [
+                  styles.sectionTabActive,
+                  {
+                    backgroundColor: isDark ? colors.bgElevated : colors.white,
+                    shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)',
+                  },
+                ],
+              ]}
               onPress={() => setSectionTab('photos')}
             >
               <Ionicons
@@ -311,7 +355,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                 size={16}
                 color={sectionTab === 'photos' ? colors.primary : colors.textLight}
               />
-              <Text style={[styles.sectionTabText, sectionTab === 'photos' && styles.sectionTabTextActive]}>
+              <Text style={[styles.sectionTabText, { color: colors.textLight }, sectionTab === 'photos' && { color: colors.primary }]}>
                 Фото
               </Text>
             </Pressable>
@@ -320,18 +364,24 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           {sectionTab === 'photos' ? (
             <PhotoGallery
               stages={stages}
-              photosByStage={{}}
+              photosByStage={user?.id.startsWith('dev-') ? MOCK_PHOTOS : {}}
             />
           ) : (
           <>
           <View style={styles.stagesHeader}>
-            <Text style={styles.sectionTitle}>Этапы ремонта</Text>
+            <Text style={[styles.sectionTitle, { color: colors.heading }]}>Этапы ремонта</Text>
             <View style={styles.stagesHeaderRight}>
-              {/* View mode toggle */}
               {hasDbStages && (
-                <View style={styles.viewToggle}>
+                <View
+                  style={[
+                    styles.viewToggle,
+                    {
+                      backgroundColor: isDark ? glass.fill.subtle : 'rgba(0,0,0,0.05)',
+                    },
+                  ]}
+                >
                   <Pressable
-                    style={[styles.viewToggleBtn, viewMode === 'accordion' && styles.viewToggleBtnActive]}
+                    style={[styles.viewToggleBtn, viewMode === 'accordion' && { backgroundColor: colors.primary }]}
                     onPress={() => setViewMode('accordion')}
                   >
                     <Ionicons
@@ -341,7 +391,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                     />
                   </Pressable>
                   <Pressable
-                    style={[styles.viewToggleBtn, viewMode === 'timeline' && styles.viewToggleBtnActive]}
+                    style={[styles.viewToggleBtn, viewMode === 'timeline' && { backgroundColor: colors.primary }]}
                     onPress={() => setViewMode('timeline')}
                   >
                     <Ionicons
@@ -352,8 +402,8 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                   </Pressable>
                 </View>
               )}
-              <View style={styles.stagesCountBadge}>
-                <Text style={styles.stagesCountText}>
+              <View style={[styles.stagesCountBadge, { backgroundColor: colors.primaryLight }]}>
+                <Text style={[styles.stagesCountText, { color: colors.primary }]}>
                   {hasDbStages ? totalStages : stageBreakdown.length} этапов
                 </Text>
               </View>
@@ -377,7 +427,6 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                 }}
               />
             ) : (
-              // Accordion view — real stages from database
               stages.map((stage) => {
                 const breakdown = stageBreakdown.find(
                   (b) => b.orderIndex === stage.order_index,
@@ -411,19 +460,7 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
                 );
               })
             )
-          ) : project?.status === 'new' && stageBreakdown.length === 0 ? (
-            // Empty state — new project awaiting supervisor assignment
-            <View style={styles.awaitingSupervisorCard}>
-              <Ionicons name="time-outline" size={28} color={colors.textLight} />
-              <View style={styles.awaitingSupervisorTextBlock}>
-                <Text style={styles.awaitingSupervisorTitle}>Ждём назначения супервайзера</Text>
-                <Text style={styles.awaitingSupervisorSubtitle}>
-                  Обычно это занимает до 24 часов. Мы уведомим вас, когда супервайзер будет назначен.
-                </Text>
-              </View>
-            </View>
           ) : (
-            // Preview stages from breakdown (no DB stages yet)
             stageBreakdown.map((item) => (
               <StageAccordion
                 key={item.orderIndex}
@@ -440,13 +477,22 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
           )}
 
           {/* Disclaimer */}
-          <View style={styles.disclaimerRow}>
+          <View
+            style={[
+              styles.disclaimerRow,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(240, 201, 93, 0.1)'
+                  : 'rgba(197, 165, 90, 0.08)',
+              },
+            ]}
+          >
             <Ionicons
               name="information-circle-outline"
               size={16}
               color={colors.textLight}
             />
-            <Text style={styles.disclaimerText}>
+            <Text style={[styles.disclaimerText, { color: colors.textLight }]}>
               Примерный план и стоимость. Точную смету составит супервайзер после осмотра объекта
             </Text>
           </View>
@@ -482,9 +528,17 @@ export function ProjectDetailScreen({ navigation, route }: Props) {
               icon={<Ionicons name="chatbubble-outline" size={18} color={colors.white} />}
             />
           ) : (
-            <View style={styles.pendingSupervisorCard}>
+            <View
+              style={[
+                styles.pendingSupervisorCard,
+                {
+                  backgroundColor: isDark ? glass.fill.regular : 'rgba(255,255,255,0.65)',
+                  borderColor: isDark ? glass.border.regular : 'rgba(255,255,255,0.8)',
+                },
+              ]}
+            >
               <Ionicons name="time-outline" size={20} color={colors.textLight} />
-              <Text style={styles.pendingSupervisorText}>Супервайзер будет назначен — обычно до 24 часов</Text>
+              <Text style={[styles.pendingSupervisorText, { color: colors.textLight }]}>Супервайзер будет назначен в ближайшее время</Text>
             </View>
           )}
         </View>
@@ -503,17 +557,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   pendingSupervisorText: {
     flex: 1,
     fontSize: 14,
-    color: colors.textLight,
   },
 
   // ─── Hero ───
@@ -522,13 +573,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   heroCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
     padding: spacing.xl,
     marginBottom: spacing.lg,
-    shadowColor: 'rgba(123, 45, 62, 0.08)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -543,7 +591,6 @@ const styles = StyleSheet.create({
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 1,
@@ -556,16 +603,13 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     ...typography.caption,
-    color: colors.heading,
     fontWeight: '600',
   },
   heroPercent: {
     ...typography.h3,
-    color: colors.primary,
   },
   heroTitle: {
     ...typography.h1,
-    color: colors.heading,
     marginBottom: spacing.xs,
   },
   heroAddressRow: {
@@ -576,7 +620,6 @@ const styles = StyleSheet.create({
   },
   heroAddress: {
     ...typography.small,
-    color: colors.textLight,
     flex: 1,
   },
   heroDates: {
@@ -591,14 +634,12 @@ const styles = StyleSheet.create({
   },
   heroDateText: {
     ...typography.small,
-    color: colors.textLight,
   },
   heroProgress: {
     gap: spacing.xs,
   },
   heroProgressText: {
     ...typography.small,
-    color: colors.textLight,
   },
 
   // ─── Info card ───
@@ -613,11 +654,9 @@ const styles = StyleSheet.create({
   },
   budgetLabel: {
     ...typography.body,
-    color: colors.textLight,
   },
   budgetValue: {
     ...typography.h3,
-    color: colors.primary,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -631,11 +670,9 @@ const styles = StyleSheet.create({
   },
   detailText: {
     ...typography.body,
-    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
     marginVertical: spacing.md,
   },
   scopeHeader: {
@@ -646,11 +683,9 @@ const styles = StyleSheet.create({
   },
   scopeTitle: {
     ...typography.smallBold,
-    color: colors.textLight,
   },
   scopeArea: {
     ...typography.smallBold,
-    color: colors.accent,
   },
   scopeRow: {
     flexDirection: 'row',
@@ -670,7 +705,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -680,19 +714,16 @@ const styles = StyleSheet.create({
   },
   supervisorLabel: {
     ...typography.caption,
-    color: colors.textLight,
     marginBottom: 2,
   },
   supervisorName: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginBottom: spacing.xs,
   },
 
   // ─── Section tabs ───
   sectionTabs: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.04)',
     borderRadius: radius.lg,
     padding: 3,
     marginBottom: spacing.lg,
@@ -707,8 +738,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg - 3,
   },
   sectionTabActive: {
-    backgroundColor: colors.white,
-    shadowColor: 'rgba(0,0,0,0.08)',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,
     shadowRadius: 4,
@@ -716,10 +745,6 @@ const styles = StyleSheet.create({
   },
   sectionTabText: {
     ...typography.smallBold,
-    color: colors.textLight,
-  },
-  sectionTabTextActive: {
-    color: colors.primary,
   },
 
   // ─── Stages ───
@@ -734,7 +759,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.heading,
   },
   stagesHeaderRight: {
     flexDirection: 'row',
@@ -743,7 +767,6 @@ const styles = StyleSheet.create({
   },
   viewToggle: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: radius.md,
     padding: 2,
   },
@@ -752,25 +775,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.md - 2,
   },
-  viewToggleBtnActive: {
-    backgroundColor: colors.primary,
-  },
   stagesCountBadge: {
-    backgroundColor: colors.primaryLight,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
   stagesCountText: {
     ...typography.smallBold,
-    color: colors.primary,
   },
 
   // Disclaimer
   disclaimerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(197, 165, 90, 0.08)',
     borderRadius: radius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -779,57 +796,11 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     ...typography.small,
-    color: colors.textLight,
     flex: 1,
-  },
-
-  // ─── Awaiting supervisor empty state ───
-  awaitingSupervisorCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  awaitingSupervisorTextBlock: {
-    flex: 1,
-  },
-  awaitingSupervisorTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  awaitingSupervisorSubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-    lineHeight: 20,
   },
 
   // ─── CTA ───
   ctaSection: {
     marginBottom: spacing.xxl,
-  },
-  waitingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(197, 165, 90, 0.08)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  waitingText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 22,
   },
 });

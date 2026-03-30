@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, Button, AppDialog, SystemButton } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
 import { useAdminStore } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
@@ -17,6 +18,9 @@ import {
   fetchProjectStages,
 } from '../../services/projectService';
 
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
 interface ProjectDetail extends Project {
   client_name?: string;
   client_phone?: string;
@@ -24,6 +28,8 @@ interface ProjectDetail extends Project {
 }
 
 export function AdminRequestDetailScreen({ route, navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminRequestDetailStyles(colors, glass, isDark);
   const { projectId } = route.params;
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -34,7 +40,6 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
   const [stagesCount, setStagesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogMessage, setDialogMessage] = useState('');
@@ -84,7 +89,6 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
             supervisor_name: sv.name,
             status: 'planning',
           });
-          // Update store
           useAdminStore.getState().setProjects(
             useAdminStore.getState().projects.map((p) =>
               p.id === project.id
@@ -139,6 +143,14 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
     );
   }
 
+  const InfoRow = ({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) => (
+    <View style={styles.infoRow}>
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+
   return (
     <ScreenWrapper style={styles.container}>
       <View style={styles.backRow}>
@@ -146,78 +158,40 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Project header */}
         <View style={styles.headerRow}>
           <Text style={styles.title}>{project.title}</Text>
           <StatusBadge status={project.status} type="project" />
         </View>
 
-        {/* Info cards */}
         <Card style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Информация о проекте</Text>
-
           <InfoRow icon="location-outline" label="Адрес" value={project.address} />
           <InfoRow icon="resize-outline" label="Площадь" value={`${project.area_sqm} м²`} />
-          <InfoRow
-            icon="construct-outline"
-            label="Тип ремонта"
-            value={REPAIR_TYPE_LABELS[project.repair_type]}
-          />
+          <InfoRow icon="construct-outline" label="Тип ремонта" value={REPAIR_TYPE_LABELS[project.repair_type]} />
           {project.budget_min && project.budget_max ? (
-            <InfoRow
-              icon="card-outline"
-              label="Бюджет"
-              value={`${project.budget_min.toLocaleString('ru-RU')} – ${project.budget_max.toLocaleString('ru-RU')} ₽`}
-            />
+            <InfoRow icon="card-outline" label="Бюджет" value={`${project.budget_min.toLocaleString('ru-RU')} – ${project.budget_max.toLocaleString('ru-RU')} ₽`} />
           ) : null}
-          <InfoRow
-            icon="calendar-outline"
-            label="Создан"
-            value={new Date(project.created_at).toLocaleDateString('ru-RU', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          />
+          <InfoRow icon="calendar-outline" label="Создан" value={new Date(project.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })} />
           {stagesCount > 0 && (
-            <InfoRow
-              icon="list-outline"
-              label="Этапы"
-              value={`${stagesCount} этапов`}
-            />
+            <InfoRow icon="list-outline" label="Этапы" value={`${stagesCount} этапов`} />
           )}
         </Card>
 
-        {/* Client info */}
         <Card style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Клиент</Text>
-          <InfoRow
-            icon="person-outline"
-            label="Имя"
-            value={project.client_name || 'Не указано'}
-          />
-          <InfoRow
-            icon="call-outline"
-            label="Телефон"
-            value={project.client_phone || 'Не указан'}
-          />
+          <InfoRow icon="person-outline" label="Имя" value={project.client_name || 'Не указано'} />
+          <InfoRow icon="call-outline" label="Телефон" value={project.client_phone || 'Не указан'} />
         </Card>
 
-        {/* Supervisor info */}
         <Card style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Супервайзер</Text>
           {project.supervisor_name ? (
-            <InfoRow
-              icon="shield-checkmark-outline"
-              label="Назначен"
-              value={project.supervisor_name}
-            />
+            <InfoRow icon="shield-checkmark-outline" label="Назначен" value={project.supervisor_name} />
           ) : (
             <Text style={styles.noSupervisor}>Не назначен</Text>
           )}
         </Card>
 
-        {/* Actions */}
         <View style={styles.actions}>
           {!project.supervisor_id && project.status === 'new' && (
             <Button
@@ -227,33 +201,15 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
               icon={<Ionicons name="person-add-outline" size={18} color={colors.white} />}
             />
           )}
-
           {project.status === 'new' && (
-            <Button
-              title="Отклонить заявку"
-              onPress={() => handleChangeStatus('cancelled', 'Отклонить')}
-              variant="outline"
-              fullWidth
-            />
+            <Button title="Отклонить заявку" onPress={() => handleChangeStatus('cancelled', 'Отклонить')} variant="outline" fullWidth />
           )}
-
           {project.status === 'in_progress' && (
-            <Button
-              title="Завершить проект"
-              onPress={() => handleChangeStatus('completed', 'Завершить')}
-              fullWidth
-            />
+            <Button title="Завершить проект" onPress={() => handleChangeStatus('completed', 'Завершить')} fullWidth />
           )}
-
           {project.status === 'cancelled' && (
-            <Button
-              title="Восстановить заявку"
-              onPress={() => handleChangeStatus('new', 'Восстановить')}
-              variant="outline"
-              fullWidth
-            />
+            <Button title="Восстановить заявку" onPress={() => handleChangeStatus('new', 'Восстановить')} variant="outline" fullWidth />
           )}
-
           {(project.status === 'in_progress' || project.status === 'planning') && (
             <Button
               title="Оплата"
@@ -277,87 +233,20 @@ export function AdminRequestDetailScreen({ route, navigation }: any) {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
+function useAdminRequestDetailStyles(colors: ThemeColors, _glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: { paddingBottom: 24 },
+    backRow: { flexDirection: 'row', marginTop: spacing.sm, marginBottom: spacing.md },
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 100 },
+    loadingText: { ...typography.body, color: colors.textLight },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg, gap: spacing.md },
+    title: { ...typography.h2, color: colors.heading, flex: 1 },
+    infoCard: { marginBottom: spacing.md },
+    sectionTitle: { ...typography.bodyBold, color: colors.heading, marginBottom: spacing.md },
+    infoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+    infoLabel: { ...typography.small, color: colors.textLight, width: 80 },
+    infoValue: { ...typography.body, color: colors.heading, flex: 1 },
+    noSupervisor: { ...typography.body, color: colors.textLight, fontStyle: 'italic' },
+    actions: { gap: spacing.md, marginTop: spacing.lg, marginBottom: spacing.xxl },
+  }), [colors]);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 24,
-  },
-  backRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.heading,
-    flex: 1,
-  },
-  infoCard: {
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  infoLabel: {
-    ...typography.small,
-    color: colors.textLight,
-    width: 80,
-  },
-  infoValue: {
-    ...typography.body,
-    color: colors.heading,
-    flex: 1,
-  },
-  noSupervisor: {
-    ...typography.body,
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
-  actions: {
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
-  },
-});

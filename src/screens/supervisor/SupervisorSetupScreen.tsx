@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,17 @@ import {
   ProgressBar,
   AddressInput,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useSupervisorStore } from '../../store/supervisorStore';
 import { hapticSuccess } from '../../utils/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackForm } from '../../services/analyticsService';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 export const SUPERVISOR_SETUP_KEY = 'supervisor_setup_complete';
 
@@ -57,6 +61,8 @@ type Props = {
 };
 
 export function SupervisorSetupScreen({ onComplete, onBack }: Props) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorSetupStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const saveSetupData = useSupervisorStore((s) => s.saveSetupData);
@@ -132,10 +138,8 @@ export function SupervisorSetupScreen({ onComplete, onBack }: Props) {
     if (!user) return;
     setLoading(true);
     try {
-      // Always persist locally as cache
       await AsyncStorage.setItem(SUPERVISOR_SETUP_KEY, 'true');
 
-      // Save to Supabase for real users (dev-* users skip this)
       if (!user.id.startsWith('dev-')) {
         await saveSetupData(user.id, {
           experience,
@@ -228,7 +232,7 @@ export function SupervisorSetupScreen({ onComplete, onBack }: Props) {
               value={address}
               onChangeText={setAddress}
             />
-            <Text style={[styles.hintText, { color: colors.textLight }]}>
+            <Text style={styles.hintText}>
               Клиенты и мастера увидят ваш район, не точный адрес
             </Text>
           </>
@@ -320,83 +324,86 @@ export function SupervisorSetupScreen({ onComplete, onBack }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  progressRow: {
-    gap: spacing.xs,
-    marginBottom: spacing.xxl,
-  },
-  progressText: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xxl,
-  },
-  stepTitle: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  stepSubtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    lineHeight: 22,
-    marginBottom: spacing.xxl,
-  },
-  label: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chipGroupError: {
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: radius.lg,
-    padding: spacing.sm,
-  },
-  chipErrorText: {
-    ...typography.small,
-    color: colors.danger,
-    marginTop: spacing.xs,
-    marginLeft: spacing.xs,
-  },
-  summaryCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(52, 199, 89, 0.06)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    gap: spacing.md,
-    marginTop: spacing.xxl,
-    alignItems: 'center',
-  },
-  summaryText: {
-    flex: 1,
-  },
-  summaryTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 2,
-  },
-  summarySubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  hintText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingTop: spacing.md,
-  },
-});
+function useSupervisorSetupStyles(colors: ThemeColors, _glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    progressRow: {
+      gap: spacing.xs,
+      marginBottom: spacing.xxl,
+    },
+    progressText: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xxl,
+    },
+    stepTitle: {
+      ...typography.h1,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    stepSubtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      lineHeight: 22,
+      marginBottom: spacing.xxl,
+    },
+    label: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.sm,
+      marginTop: spacing.lg,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    chipGroupError: {
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: radius.lg,
+      padding: spacing.sm,
+    },
+    chipErrorText: {
+      ...typography.small,
+      color: colors.danger,
+      marginTop: spacing.xs,
+      marginLeft: spacing.xs,
+    },
+    summaryCard: {
+      flexDirection: 'row',
+      backgroundColor: isDark ? 'rgba(62,220,132,0.06)' : 'rgba(52, 199, 89, 0.06)',
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      gap: spacing.md,
+      marginTop: spacing.xxl,
+      alignItems: 'center',
+    },
+    summaryText: {
+      flex: 1,
+    },
+    summaryTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: 2,
+    },
+    summarySubtitle: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    hintText: {
+      fontSize: 12,
+      marginTop: 4,
+      color: colors.textLight,
+    },
+    bottomRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      paddingTop: spacing.md,
+    },
+  }), [colors, isDark]);
+}

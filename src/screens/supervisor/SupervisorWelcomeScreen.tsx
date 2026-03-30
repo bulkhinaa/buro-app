@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { hapticLight } from '../../utils/haptics';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 interface SlideConfig {
   id: string;
@@ -57,12 +61,18 @@ type Props = {
 };
 
 export function SupervisorWelcomeScreen({ onComplete }: Props) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorWelcomeStyles(colors, glass, isDark);
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
   const slide = SLIDES[currentIndex];
+
+  const gradientColors = isDark
+    ? ['#0E0E16', '#0A0A10', '#12121A'] as const
+    : ['#F3EDE8', '#EDE5DF', '#F8F5F2'] as const;
 
   const goToSlide = useCallback((nextIndex: number) => {
     if (Platform.OS === 'web') {
@@ -100,7 +110,7 @@ export function SupervisorWelcomeScreen({ onComplete }: Props) {
 
   return (
     <LinearGradient
-      colors={['#F3EDE8', '#EDE5DF', '#F8F5F2']}
+      colors={gradientColors as unknown as string[]}
       style={[styles.container, { paddingTop: insets.top + spacing.lg }]}
     >
       {/* Skip button */}
@@ -157,100 +167,102 @@ export function SupervisorWelcomeScreen({ onComplete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.xl,
-  },
-  topRow: {
-    alignItems: 'flex-end',
-    marginBottom: spacing.xxl,
-  },
-  skipText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  slideContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconWrapper: {
-    marginBottom: spacing.xxl,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    textAlign: 'center',
-    marginBottom: spacing.xxl,
-  },
-  painCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 59, 48, 0.06)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    alignSelf: 'stretch',
-  },
-  painText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 22,
-  },
-  solutionCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(52, 199, 89, 0.06)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    alignSelf: 'stretch',
-  },
-  solutionText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-    lineHeight: 22,
-  },
-  bottom: {
-    gap: spacing.xl,
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    backgroundColor: colors.primary,
-    width: 24,
-  },
-  nextBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-  },
-  nextBtnText: {
-    ...typography.bodyBold,
-    color: colors.white,
-    fontSize: 16,
-  },
-});
+function useSupervisorWelcomeStyles(colors: ThemeColors, _glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: spacing.xl,
+    },
+    topRow: {
+      alignItems: 'flex-end',
+      marginBottom: spacing.xxl,
+    },
+    skipText: {
+      ...typography.body,
+      color: colors.textLight,
+    },
+    slideContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    iconWrapper: {
+      marginBottom: spacing.xxl,
+    },
+    iconCircle: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+      textAlign: 'center',
+      marginBottom: spacing.xxl,
+    },
+    painCard: {
+      flexDirection: 'row',
+      backgroundColor: isDark ? 'rgba(255,91,91,0.08)' : 'rgba(255, 59, 48, 0.06)',
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+      alignSelf: 'stretch',
+    },
+    painText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+      lineHeight: 22,
+    },
+    solutionCard: {
+      flexDirection: 'row',
+      backgroundColor: isDark ? 'rgba(62,220,132,0.08)' : 'rgba(52, 199, 89, 0.06)',
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      alignSelf: 'stretch',
+    },
+    solutionText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+      lineHeight: 22,
+    },
+    bottom: {
+      gap: spacing.xl,
+    },
+    dots: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.border,
+    },
+    dotActive: {
+      backgroundColor: colors.primary,
+      width: 24,
+    },
+    nextBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primary,
+      borderRadius: radius.xl,
+      paddingVertical: spacing.lg,
+    },
+    nextBtnText: {
+      ...typography.bodyBold,
+      color: colors.white,
+      fontSize: 16,
+    },
+  }), [colors, isDark]);
+}

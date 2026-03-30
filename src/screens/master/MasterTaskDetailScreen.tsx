@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
@@ -22,12 +22,15 @@ import {
   TextArea,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useToastStore } from '../../store/toastStore';
 import { useTaskStore } from '../../store/taskStore';
 import { useAuthStore } from '../../store/authStore';
 import { STAGE_STATUS_LABELS } from '../../types';
 import { trackTap } from '../../services/analyticsService';
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const MAX_PHOTOS = 5;
 
@@ -43,6 +46,8 @@ type Props = {
 export function MasterTaskDetailScreen({ navigation, route }: Props) {
   const task = route.params?.task;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterTaskDetailStyles(colors, isDark);
   const showToast = useToastStore((s) => s.show);
   const { user } = useAuthStore();
   const { updateStatus, addPhoto, removePhoto, getPhotos, clearPhotos, tasks, uploadPhotos } = useTaskStore();
@@ -342,179 +347,181 @@ export function MasterTaskDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgGradientEnd,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.xl,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  deadline: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  projectTitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginBottom: spacing.xl,
-  },
-  rejectionCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.dangerLight,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.2)',
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  rejectionContent: {
-    flex: 1,
-  },
-  rejectionTitle: {
-    ...typography.bodyBold,
-    color: colors.danger,
-    marginBottom: spacing.xs,
-  },
-  rejectionReason: {
-    ...typography.body,
-    color: colors.text,
-  },
-  infoCard: {
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  infoText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.md,
-  },
-  descriptionText: {
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  // Photo report styles
-  photoSection: {
-    marginTop: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    paddingTop: spacing.lg,
-  },
-  photoHeader: {
-    marginBottom: spacing.md,
-  },
-  photoTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  photoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  photoItem: {
-    width: 90,
-    height: 90,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  photoImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: radius.md,
-  },
-  photoRemove: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 11,
-  },
-  photoAdd: {
-    width: 90,
-    height: 90,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.2)',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(123, 45, 62, 0.03)',
-  },
-  photoAddText: {
-    ...typography.caption,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  chatButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  chatButtonText: {
-    ...typography.bodyBold,
-    color: colors.primary,
-    flex: 1,
-  },
-  bottomBar: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    backgroundColor: 'rgba(248, 245, 242, 0.95)',
-  },
-  waitingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-  },
-  waitingText: {
-    ...typography.bodyBold,
-    color: colors.warning,
-  },
-  errorText: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: spacing.huge,
-  },
-});
+function useMasterTaskDetailStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bgGradientEnd,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.xl,
+    },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.7)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.lg,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    deadline: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    projectTitle: {
+      ...typography.body,
+      color: colors.textLight,
+      marginBottom: spacing.xl,
+    },
+    rejectionCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.dangerLight,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 59, 48, 0.2)',
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      gap: spacing.md,
+    },
+    rejectionContent: {
+      flex: 1,
+    },
+    rejectionTitle: {
+      ...typography.bodyBold,
+      color: colors.danger,
+      marginBottom: spacing.xs,
+    },
+    rejectionReason: {
+      ...typography.body,
+      color: colors.text,
+    },
+    infoCard: {
+      marginBottom: spacing.md,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    infoText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.md,
+    },
+    descriptionText: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 22,
+    },
+    // Photo report styles
+    photoSection: {
+      marginTop: spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+      paddingTop: spacing.lg,
+    },
+    photoHeader: {
+      marginBottom: spacing.md,
+    },
+    photoTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    photoGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    photoItem: {
+      width: 90,
+      height: 90,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+    },
+    photoImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: radius.md,
+    },
+    photoRemove: {
+      position: 'absolute',
+      top: 2,
+      right: 2,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
+      borderRadius: 11,
+    },
+    photoAdd: {
+      width: 90,
+      height: 90,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(123, 45, 62, 0.4)' : 'rgba(123, 45, 62, 0.2)',
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.1)' : 'rgba(123, 45, 62, 0.03)',
+    },
+    photoAddText: {
+      ...typography.caption,
+      color: colors.primary,
+      marginTop: 2,
+    },
+    chatButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.lg,
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    chatButtonText: {
+      ...typography.bodyBold,
+      color: colors.primary,
+      flex: 1,
+    },
+    bottomBar: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      backgroundColor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(248, 245, 242, 0.95)',
+    },
+    waitingBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.lg,
+    },
+    waitingText: {
+      ...typography.bodyBold,
+      color: colors.warning,
+    },
+    errorText: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginTop: spacing.huge,
+    },
+  }), [colors, isDark]);
+}

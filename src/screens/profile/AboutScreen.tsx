@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, CellIndicator } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 export function AboutScreen() {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAboutStyles(colors, glass, isDark);
+
   return (
     <ScreenWrapper scroll={false}>
       <ScrollView
@@ -72,76 +78,65 @@ export function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingTop: spacing.sm,
-  },
-  identitySection: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.1)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  appName: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  appVersion: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  descriptionCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.xl,
-    marginBottom: spacing.xxl,
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  description: {
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  linksCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.xs,
-    marginBottom: spacing.xxl,
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  legalText: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-});
+function useAboutStyles(colors: ThemeColors, glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    content: {
+      paddingTop: spacing.sm,
+    },
+    identitySection: {
+      alignItems: 'center',
+      marginBottom: spacing.xxl,
+    },
+    logoCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: glass.fill.light,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.lg,
+      ...glass.shadow,
+    },
+    appName: {
+      ...typography.h1,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    appVersion: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    descriptionCard: {
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      padding: spacing.xl,
+      marginBottom: spacing.xxl,
+      ...glass.shadow,
+    },
+    description: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    linksCard: {
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      padding: spacing.xs,
+      marginBottom: spacing.xxl,
+      ...glass.shadow,
+    },
+    legalText: {
+      ...typography.caption,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+  }), [colors, glass, _isDark]);
+}

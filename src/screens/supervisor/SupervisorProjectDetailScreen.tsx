@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { Project, Stage, REPAIR_TYPE_LABELS, STAGE_STATUS_LABELS } from '../../types';
 import {
@@ -29,36 +30,19 @@ import {
 import { formatRubles } from '../../utils/calculator';
 import { hapticSuccess } from '../../utils/haptics';
 
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 type Tab = 'object' | 'stages';
 
-// ─── Status colors ────────────────────────────────────────────────────────────
-
-function getStageStatusColor(status: Stage['status']): string {
-  switch (status) {
-    case 'approved': return colors.success;
-    case 'in_progress': return colors.primary;
-    case 'done_by_master': return colors.accent;
-    case 'rejected': return colors.danger;
-    default: return colors.textLight;
-  }
-}
-
-function getStageStatusIcon(status: Stage['status']): string {
-  switch (status) {
-    case 'approved': return 'checkmark-circle';
-    case 'in_progress': return 'play-circle';
-    case 'done_by_master': return 'hourglass';
-    case 'rejected': return 'close-circle';
-    default: return 'ellipse-outline';
-  }
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorProjectDetailScreen({ route, navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorProjectDetailStyles(colors, glass, isDark);
   const { user } = useAuthStore();
 
   const projectId: string = route?.params?.projectId;
@@ -81,6 +65,17 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
     setDialogButtons(buttons);
     setDialogVisible(true);
   };
+
+  // ─── Status colors ──────────────────────────────────────────────────────
+  const getStageStatusColor = useCallback((status: Stage['status']): string => {
+    switch (status) {
+      case 'approved': return colors.success;
+      case 'in_progress': return colors.primary;
+      case 'done_by_master': return colors.accent;
+      case 'rejected': return colors.danger;
+      default: return colors.textLight;
+    }
+  }, [colors]);
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
@@ -216,7 +211,15 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
     const isDone = stage.status === 'approved';
     const isReview = stage.status === 'done_by_master';
     const statusColor = getStageStatusColor(stage.status);
-    const statusIcon = getStageStatusIcon(stage.status);
+    const statusIcon = (() => {
+      switch (stage.status) {
+        case 'approved': return 'checkmark-circle';
+        case 'in_progress': return 'play-circle';
+        case 'done_by_master': return 'hourglass';
+        case 'rejected': return 'close-circle';
+        default: return 'ellipse-outline';
+      }
+    })();
 
     return (
       <Pressable
@@ -429,258 +432,260 @@ export function SupervisorProjectDetailScreen({ route, navigation }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  header: {
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  projectTitle: {
-    ...typography.h2,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  projectAddress: {
-    ...typography.small,
-    color: colors.textLight,
-  },
+function useSupervisorProjectDetailStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    header: {
+      paddingBottom: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      marginBottom: spacing.md,
+    },
+    projectTitle: {
+      ...typography.h2,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    projectAddress: {
+      ...typography.small,
+      color: colors.textLight,
+    },
 
-  // Tabs
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: radius.xl,
-    padding: 4,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-  },
-  tabItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: radius.lg,
-    gap: spacing.xs,
-  },
-  tabItemActive: {
-    backgroundColor: colors.white,
-    shadowColor: 'rgba(123,45,62,0.1)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  tabLabel: {
-    ...typography.smallBold,
-    color: colors.textLight,
-  },
-  tabLabelActive: {
-    color: colors.primary,
-  },
-  tabBadge: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.full,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  tabBadgeText: {
-    ...typography.caption,
-    color: colors.white,
-    fontWeight: '700',
-  },
+    // Tabs
+    tabBar: {
+      flexDirection: 'row',
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      padding: 4,
+      marginBottom: spacing.lg,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+    },
+    tabItem: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.sm,
+      borderRadius: radius.lg,
+      gap: spacing.xs,
+    },
+    tabItemActive: {
+      backgroundColor: isDark ? colors.bgElevated : colors.white,
+      shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123,45,62,0.1)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    tabLabel: {
+      ...typography.smallBold,
+      color: colors.textLight,
+    },
+    tabLabelActive: {
+      color: colors.primary,
+    },
+    tabBadge: {
+      backgroundColor: colors.accent,
+      borderRadius: radius.full,
+      minWidth: 18,
+      height: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 5,
+    },
+    tabBadgeText: {
+      ...typography.caption,
+      color: colors.white,
+      fontWeight: '700',
+    },
 
-  // Scroll
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  tabContent: {
-    gap: spacing.md,
-  },
+    // Scroll
+    scrollContent: {
+      paddingBottom: 24,
+    },
+    tabContent: {
+      gap: spacing.md,
+    },
 
-  // Progress card
-  progressCard: {
-    gap: spacing.sm,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(197,165,90,0.12)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
-  reviewBadgeText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  progressText: {
-    ...typography.smallBold,
-    color: colors.primary,
-    minWidth: 60,
-    textAlign: 'right',
-  },
+    // Progress card
+    progressCard: {
+      gap: spacing.sm,
+    },
+    progressHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    reviewBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
+    reviewBadgeText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '600',
+    },
+    progressRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    progressText: {
+      ...typography.smallBold,
+      color: colors.primary,
+      minWidth: 60,
+      textAlign: 'right',
+    },
 
-  // Object info
-  cardSectionTitle: {
-    ...typography.smallBold,
-    color: colors.textLight,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  infoText: {
-    ...typography.body,
-    color: colors.heading,
-    flex: 1,
-  },
+    // Object info
+    cardSectionTitle: {
+      ...typography.smallBold,
+      color: colors.textLight,
+      marginBottom: spacing.sm,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    infoText: {
+      ...typography.body,
+      color: colors.heading,
+      flex: 1,
+    },
 
-  // Stage list
-  stageSummaryRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-  },
-  stageSummaryItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  stageSummaryNum: {
-    ...typography.h2,
-    fontWeight: '700',
-  },
-  stageSummaryLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
+    // Stage list
+    stageSummaryRow: {
+      flexDirection: 'row',
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+    },
+    stageSummaryItem: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 2,
+    },
+    stageSummaryNum: {
+      ...typography.h2,
+      fontWeight: '700',
+    },
+    stageSummaryLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
 
-  stageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-    gap: spacing.md,
-    shadowColor: 'rgba(123,45,62,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  stageCardDone: {
-    opacity: 0.65,
-    backgroundColor: 'rgba(52,199,89,0.04)',
-  },
-  stageCardReview: {
-    borderColor: 'rgba(197,165,90,0.3)',
-    backgroundColor: 'rgba(197,165,90,0.06)',
-  },
-  stageNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stageNumberText: {
-    ...typography.smallBold,
-    fontSize: 13,
-  },
-  stageInfo: {
-    flex: 1,
-    gap: 3,
-  },
-  stageTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  stageTitleDone: {
-    color: colors.textLight,
-    textDecorationLine: 'line-through',
-  },
-  stageMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  stageStatus: {
-    ...typography.caption,
-    fontWeight: '600',
-  },
-  stageDot: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  stageDeadline: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  reviewIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(197,165,90,0.15)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
-  reviewIndicatorText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '700',
-  },
+    stageCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      gap: spacing.md,
+      shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123,45,62,0.05)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 1,
+    },
+    stageCardDone: {
+      opacity: 0.65,
+      backgroundColor: isDark ? 'rgba(62,220,132,0.06)' : 'rgba(52,199,89,0.04)',
+    },
+    stageCardReview: {
+      borderColor: isDark ? 'rgba(240,201,93,0.25)' : 'rgba(197,165,90,0.3)',
+      backgroundColor: isDark ? 'rgba(240,201,93,0.06)' : 'rgba(197,165,90,0.06)',
+    },
+    stageNumber: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stageNumberText: {
+      ...typography.smallBold,
+      fontSize: 13,
+    },
+    stageInfo: {
+      flex: 1,
+      gap: 3,
+    },
+    stageTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    stageTitleDone: {
+      color: colors.textLight,
+      textDecorationLine: 'line-through',
+    },
+    stageMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    stageStatus: {
+      ...typography.caption,
+      fontWeight: '600',
+    },
+    stageDot: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    stageDeadline: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    reviewIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.full,
+    },
+    reviewIndicatorText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '700',
+    },
 
-  // Empty
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyText: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  emptySubtext: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
+    // Empty
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyText: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    emptySubtext: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
 
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: spacing.huge,
-  },
-});
+    // Loading
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: spacing.huge,
+    },
+  }), [colors, glass, isDark]);
+}

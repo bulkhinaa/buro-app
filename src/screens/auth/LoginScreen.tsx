@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
@@ -47,6 +48,8 @@ export function LoginScreen() {
   const { setUser, syncProfile } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const { t } = useTranslation();
+  const { colors, glass, isDark } = useTheme();
+  const styles = useLoginStyles(colors, glass, isDark);
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
   // ── Also capture invite code from URL (?invite=ABC123) ──
@@ -368,135 +371,144 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: spacing.huge,
-  },
-  logoCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-    shadowColor: 'rgba(123, 45, 62, 0.1)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  buttons: {
-    paddingHorizontal: spacing.xxl,
-    gap: spacing.md,
-  },
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
-  // ── Official Yandex ID button ──
-  yandexButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    height: 52,
-    paddingHorizontal: 20,
-    gap: 10,
-  },
-  yandexButtonPressed: {
-    opacity: 0.85,
-  },
-  yandexButtonDisabled: {
-    opacity: 0.6,
-  },
-  yandexLogo: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FC3F1D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  yandexLogoText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 20,
-    marginTop: -1,
-  },
-  yandexButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+function useLoginStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          justifyContent: 'center',
+          paddingBottom: 40,
+        },
+        header: {
+          alignItems: 'center',
+          marginBottom: spacing.huge,
+        },
+        logoCircle: {
+          width: 88,
+          height: 88,
+          borderRadius: 44,
+          backgroundColor: isDark ? glass.fill.regular : glass.fill.light,
+          borderWidth: 1,
+          borderColor: isDark ? glass.border.regular : glass.border.light,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: spacing.xl,
+          shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123, 45, 62, 0.1)',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 1,
+          shadowRadius: 16,
+          elevation: 4,
+        },
+        title: {
+          ...typography.h1,
+          color: colors.heading,
+          marginBottom: spacing.sm,
+        },
+        subtitle: {
+          ...typography.body,
+          color: colors.textLight,
+          textAlign: 'center',
+          lineHeight: 22,
+        },
+        buttons: {
+          paddingHorizontal: spacing.xxl,
+          gap: spacing.md,
+        },
 
-  // ── Consent checkbox (LEGAL-07) ──
-  consentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  consentIcon: {
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  consentText: {
-    ...typography.small,
-    color: colors.textLight,
-    flex: 1,
-    lineHeight: 18,
-  },
-  consentTextError: {
-    color: colors.danger,
-  },
-  consentLink: {
-    color: colors.primary,
-    textDecorationLine: 'underline',
-  },
-  devSection: {
-    marginTop: spacing.xxl,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-  },
-  devTitle: {
-    ...typography.caption,
-    color: colors.primary,
-    marginBottom: spacing.sm,
-  },
-  devButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  devButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  devButtonText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-});
+        // Yandex ID button — brand colors adapt to theme
+        yandexButton: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isDark ? '#FFFFFF' : '#000000',
+          borderRadius: 12,
+          height: 52,
+          paddingHorizontal: 20,
+          gap: 10,
+        },
+        yandexButtonPressed: {
+          opacity: 0.85,
+        },
+        yandexButtonDisabled: {
+          opacity: 0.6,
+        },
+        yandexLogo: {
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: '#FC3F1D',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        yandexLogoText: {
+          color: '#FFFFFF',
+          fontSize: 17,
+          fontWeight: '700',
+          lineHeight: 20,
+          marginTop: -1,
+        },
+        yandexButtonText: {
+          color: isDark ? '#000000' : '#FFFFFF',
+          fontSize: 16,
+          fontWeight: '600',
+        },
+
+        // ── Consent checkbox (LEGAL-07) ──
+        consentRow: {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          marginTop: spacing.md,
+          gap: spacing.sm,
+        },
+        consentIcon: {
+          marginTop: 1,
+          flexShrink: 0,
+        },
+        consentText: {
+          ...typography.small,
+          color: colors.textLight,
+          flex: 1,
+          lineHeight: 18,
+        },
+        consentTextError: {
+          color: colors.danger,
+        },
+        consentLink: {
+          color: colors.primary,
+          textDecorationLine: 'underline',
+        },
+        devSection: {
+          marginTop: spacing.xxl,
+          paddingHorizontal: spacing.xxl,
+          alignItems: 'center',
+        },
+        devTitle: {
+          ...typography.caption,
+          color: colors.primary,
+          marginBottom: spacing.sm,
+        },
+        devButtons: {
+          flexDirection: 'row',
+          gap: spacing.sm,
+        },
+        devButton: {
+          paddingVertical: 8,
+          paddingHorizontal: 14,
+          borderRadius: radius.xl,
+          borderWidth: 1,
+          borderColor: isDark ? glass.border.light : 'rgba(255, 255, 255, 0.8)',
+          backgroundColor: isDark ? glass.fill.light : 'rgba(255, 255, 255, 0.5)',
+        },
+        devButtonText: {
+          ...typography.caption,
+          color: colors.primary,
+          fontWeight: '600',
+        },
+      }),
+    [colors, glass, isDark],
+  );
+}

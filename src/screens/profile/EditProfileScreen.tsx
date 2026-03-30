@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { hapticSuccess } from '../../utils/haptics';
 import {
   View,
@@ -12,10 +12,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Input, Button, CityPicker } from '../../components';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -23,6 +26,8 @@ type Props = {
 
 export function EditProfileScreen({ navigation }: Props) {
   const { user, saveProfile } = useAuthStore();
+  const { colors, glass, isDark } = useTheme();
+  const styles = useEditProfileStyles(colors, glass, isDark);
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -134,60 +139,62 @@ export function EditProfileScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxxl,
-  },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  cameraCircle: {
-    position: 'absolute',
-    bottom: 24,
-    right: '50%',
-    marginRight: -48,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  changePhotoText: {
-    ...typography.small,
-    color: colors.primary,
-    marginTop: spacing.sm,
-  },
-  form: {
-    marginBottom: spacing.xl,
-    zIndex: 100,
-    elevation: 100,
-  },
-});
+function useEditProfileStyles(colors: ThemeColors, glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      marginTop: spacing.xl,
+      marginBottom: spacing.xxxl,
+    },
+    avatar: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarImage: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      borderWidth: 2,
+      borderColor: glass.border.light,
+    },
+    avatarText: {
+      fontSize: 36,
+      fontWeight: '700',
+      color: colors.white,
+    },
+    cameraCircle: {
+      position: 'absolute',
+      bottom: 24,
+      right: '50%',
+      marginRight: -48,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.white,
+    },
+    changePhotoText: {
+      ...typography.small,
+      color: colors.primary,
+      marginTop: spacing.sm,
+    },
+    form: {
+      marginBottom: spacing.xl,
+      zIndex: 100,
+      elevation: 100,
+    },
+  }), [colors, glass, _isDark]);
+}

@@ -5,11 +5,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SearchInput, GlassChip, Toggle, AppDialog } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAdminStore, type AdminUser, type UserFilter } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { fetchAllUsers, toggleUserActive } from '../../services/projectService';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
+const ADMIN_PURPLE = '#7C3AED';
 
 const FILTER_OPTIONS: { key: UserFilter; label: string }[] = [
   { key: 'all', label: 'Все' },
@@ -19,13 +25,6 @@ const FILTER_OPTIONS: { key: UserFilter; label: string }[] = [
   { key: 'admin', label: 'Админы' },
 ];
 
-const ROLE_COLORS: Record<string, string> = {
-  client: colors.primary,
-  master: colors.success,
-  supervisor: colors.gold,
-  admin: colors.adminPurple,
-};
-
 const ROLE_LABELS: Record<string, string> = {
   client: 'Клиент',
   master: 'Мастер',
@@ -34,6 +33,16 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function AdminUsersScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminUsersStyles(colors, glass, isDark);
+
+  const ROLE_COLORS: Record<string, string> = useMemo(() => ({
+    client: colors.primary,
+    master: colors.success,
+    supervisor: colors.gold,
+    admin: ADMIN_PURPLE,
+  }), [colors]);
+
   const nav = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -65,7 +74,6 @@ export function AdminUsersScreen({ navigation }: any) {
 
   const [loading, setLoading] = useState(false);
 
-  // Dialog state for block confirmation
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogMessage, setDialogMessage] = useState('');
@@ -84,7 +92,7 @@ export function AdminUsersScreen({ navigation }: any) {
       const data = await fetchAllUsers();
       setUsers(data as AdminUser[]);
     } catch {
-      // On error, keep whatever is already in store
+      // keep whatever is already in store
     } finally {
       setLoading(false);
     }
@@ -115,7 +123,6 @@ export function AdminUsersScreen({ navigation }: any) {
   const handleToggleActive = (targetUser: AdminUser) => {
     const newActive = !targetUser.is_active;
 
-    // Blocking requires confirmation; activating is instant
     if (!newActive) {
       showDialog(
         'Заблокировать пользователя?',
@@ -140,14 +147,12 @@ export function AdminUsersScreen({ navigation }: any) {
     >
       <Card style={[styles.card, !item.is_active && styles.cardInactive]}>
         <View style={styles.cardRow}>
-          {/* Avatar */}
           <View style={[styles.avatar, { backgroundColor: `${ROLE_COLORS[item.role]}15` }]}>
             <Text style={[styles.avatarText, { color: ROLE_COLORS[item.role] }]}>
               {item.name.charAt(0).toUpperCase()}
             </Text>
           </View>
 
-          {/* Info */}
           <View style={styles.cardInfo}>
             <View style={styles.nameRow}>
               <Text style={styles.cardName} numberOfLines={1}>
@@ -175,7 +180,6 @@ export function AdminUsersScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Toggle */}
           <Toggle
             value={item.is_active}
             onValueChange={() => handleToggleActive(item)}
@@ -265,106 +269,108 @@ export function AdminUsersScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 100,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  header: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  filters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.sm,
-  },
-  cardInactive: {
-    opacity: 0.6,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  cardName: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  cardPhone: {
-    ...typography.small,
-    color: colors.textLight,
-    marginTop: 1,
-  },
-  roleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  roleBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  ratingText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-});
+function useAdminUsersStyles(colors: ThemeColors, _glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      paddingBottom: 100,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    header: {
+      marginTop: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      marginTop: 2,
+    },
+    filters: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    card: {
+      marginBottom: spacing.sm,
+    },
+    cardInactive: {
+      opacity: 0.6,
+    },
+    cardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    cardInfo: {
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    cardName: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    cardPhone: {
+      ...typography.small,
+      color: colors.textLight,
+      marginTop: 1,
+    },
+    roleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    roleBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
+    },
+    roleBadgeText: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+    },
+    ratingText: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+  }), [colors]);
+}

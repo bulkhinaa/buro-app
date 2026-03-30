@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { useAuthStore } from '../../store/authStore';
 import {
   useNotificationStore,
@@ -11,21 +13,21 @@ import {
   type NotificationType,
 } from '../../store/notificationStore';
 
-// Icon config per notification type
-const NOTIFICATION_ICONS: Record<
+// Icon config per notification type — icons only, bg resolved at render time
+const NOTIFICATION_ICON_KEYS: Record<
   NotificationType,
-  { icon: keyof typeof Ionicons.glyphMap; bg: string }
+  { icon: keyof typeof Ionicons.glyphMap; bgKey: 'primaryLight' | 'successLight' | 'dangerLight' | 'accentLight' }
 > = {
-  new_task: { icon: 'clipboard-outline', bg: colors.primaryLight },
-  task_approved: { icon: 'checkmark-circle-outline', bg: colors.successLight },
-  task_rejected: { icon: 'alert-circle-outline', bg: colors.dangerLight },
-  new_message: { icon: 'chatbubble-outline', bg: colors.accentLight },
-  stage_started: { icon: 'play-outline', bg: colors.primaryLight },
-  stage_completed: { icon: 'flag-outline', bg: colors.successLight },
-  master_offer: { icon: 'hand-left-outline', bg: colors.accentLight },
-  master_accepted: { icon: 'checkmark-done-outline', bg: colors.successLight },
-  master_declined: { icon: 'close-circle-outline', bg: colors.dangerLight },
-  schedule_reminder: { icon: 'calendar-outline', bg: colors.primaryLight },
+  new_task: { icon: 'clipboard-outline', bgKey: 'primaryLight' },
+  task_approved: { icon: 'checkmark-circle-outline', bgKey: 'successLight' },
+  task_rejected: { icon: 'alert-circle-outline', bgKey: 'dangerLight' },
+  new_message: { icon: 'chatbubble-outline', bgKey: 'accentLight' },
+  stage_started: { icon: 'play-outline', bgKey: 'primaryLight' },
+  stage_completed: { icon: 'flag-outline', bgKey: 'successLight' },
+  master_offer: { icon: 'hand-left-outline', bgKey: 'accentLight' },
+  master_accepted: { icon: 'checkmark-done-outline', bgKey: 'successLight' },
+  master_declined: { icon: 'close-circle-outline', bgKey: 'dangerLight' },
+  schedule_reminder: { icon: 'calendar-outline', bgKey: 'primaryLight' },
 };
 
 function formatTimeAgo(dateStr: string): string {
@@ -42,6 +44,8 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export function NotificationsScreen() {
+  const { colors } = useTheme();
+  const styles = useNotificationsScreenStyles(colors);
   const { user } = useAuthStore();
   const navigation = useNavigation<any>();
   const { notifications, loadNotifications, markAsRead, markAllAsRead, unreadCount } =
@@ -89,7 +93,7 @@ export function NotificationsScreen() {
   };
 
   const renderNotification = ({ item }: { item: AppNotification }) => {
-    const iconConfig = NOTIFICATION_ICONS[item.type] || NOTIFICATION_ICONS.new_message;
+    const iconConfig = NOTIFICATION_ICON_KEYS[item.type] || NOTIFICATION_ICON_KEYS.new_message;
 
     return (
       <Pressable onPress={() => handleNotificationPress(item)}>
@@ -99,7 +103,7 @@ export function NotificationsScreen() {
             !item.is_read && styles.notificationUnread,
           ]}
         >
-          <View style={[styles.iconCircle, { backgroundColor: iconConfig.bg }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors[iconConfig.bgKey] }]}>
             <Ionicons name={iconConfig.icon} size={18} color={colors.primary} />
           </View>
           <View style={styles.notificationContent}>
@@ -143,7 +147,10 @@ export function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function useNotificationsScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -235,3 +242,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
+    [colors],
+  );
+}
+

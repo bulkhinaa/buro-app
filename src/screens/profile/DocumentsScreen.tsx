@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, CellIndicator } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const BASE_URL = 'https://bulkhinaa.github.io/buro-app';
 
@@ -49,6 +52,8 @@ const DOCUMENTS: DocItem[] = [
 
 export function DocumentsScreen() {
   const navigation = useNavigation<any>();
+  const { colors, glass, isDark } = useTheme();
+  const styles = useDocumentsStyles(colors, glass, isDark);
 
   const handleOpenDoc = (uri: string, title: string) => {
     navigation.navigate('DocumentViewer', { uri, title });
@@ -96,40 +101,37 @@ export function DocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingTop: spacing.sm,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginBottom: spacing.xxl,
-    lineHeight: 22,
-  },
-  docsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.xs,
-    marginBottom: spacing.xxl,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  infoBlock: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  infoText: {
-    ...typography.small,
-    color: colors.textLight,
-    flex: 1,
-    lineHeight: 18,
-  },
-});
+function useDocumentsStyles(colors: ThemeColors, glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    content: {
+      paddingTop: spacing.sm,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      marginBottom: spacing.xxl,
+      lineHeight: 22,
+    },
+    docsCard: {
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      padding: spacing.xs,
+      marginBottom: spacing.xxl,
+      ...glass.shadow,
+    },
+    infoBlock: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.sm,
+    },
+    infoText: {
+      ...typography.small,
+      color: colors.textLight,
+      flex: 1,
+      lineHeight: 18,
+    },
+  }), [colors, glass, _isDark]);
+}

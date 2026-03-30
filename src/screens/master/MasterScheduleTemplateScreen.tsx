@@ -3,16 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, Button, GlassView } from '../../components';
-import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import {
   useScheduleStore,
@@ -22,6 +22,7 @@ import {
   getWeekStart,
 } from '../../store/scheduleStore';
 import { useToastStore } from '../../store/toastStore';
+import type { ThemeColors } from '../../theme/colors';
 
 /**
  * MasterScheduleTemplateScreen — define default working hours template
@@ -30,6 +31,8 @@ import { useToastStore } from '../../store/toastStore';
 export function MasterScheduleTemplateScreen() {
   const navigation = useNavigation();
   const { user } = useAuthStore();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterScheduleTemplateStyles(colors, isDark);
   const { template, fetchTemplate, saveTemplate, applyTemplate } = useScheduleStore();
   const showToast = useToastStore((s) => s.show);
 
@@ -133,9 +136,9 @@ export function MasterScheduleTemplateScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.title}>Задать шаблон</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -146,24 +149,24 @@ export function MasterScheduleTemplateScreen() {
 
         {/* Presets */}
         <View style={styles.presets}>
-          <TouchableOpacity
+          <Pressable
             style={styles.presetBtn}
             onPress={() => applyPreset('weekdays')}
           >
             <Text style={styles.presetText}>Пн-Пт 9-17</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={styles.presetBtn}
             onPress={() => applyPreset('all')}
           >
             <Text style={styles.presetText}>Все дни 9-17</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={[styles.presetBtn, styles.presetClear]}
             onPress={() => applyPreset('clear')}
           >
             <Text style={[styles.presetText, styles.presetClearText]}>Очистить</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Template grid */}
@@ -172,13 +175,13 @@ export function MasterScheduleTemplateScreen() {
           <View style={styles.gridHeaderRow}>
             <View style={styles.hourCol} />
             {DAY_LABELS_SHORT.map((label, dayIdx) => (
-              <TouchableOpacity
+              <Pressable
                 key={dayIdx}
                 style={styles.dayHeaderCell}
                 onPress={() => toggleDay(dayIdx)}
               >
                 <Text style={styles.dayHeaderText}>{label}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
@@ -191,14 +194,13 @@ export function MasterScheduleTemplateScreen() {
               {[0, 1, 2, 3, 4, 5, 6].map((day) => {
                 const isWorking = workingSlots.has(`${day}-${hour}`);
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={`${day}-${hour}`}
                     style={[
                       styles.gridCell,
                       isWorking && styles.gridCellWorking,
                     ]}
                     onPress={() => toggleSlot(day, hour)}
-                    activeOpacity={0.7}
                   />
                 );
               })}
@@ -235,114 +237,116 @@ export function MasterScheduleTemplateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.heading,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  presets: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  presetBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
-  },
-  presetText: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  presetClear: {
-    backgroundColor: colors.dangerLight,
-  },
-  presetClearText: {
-    color: colors.danger,
-  },
-  gridContainer: {
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.bgCard,
-  },
-  gridHeaderRow: {
-    flexDirection: 'row',
-    height: 28,
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  hourCol: {
-    width: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayHeaderCell: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayHeaderText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.heading,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    height: 32,
-  },
-  hourText: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textLight,
-  },
-  gridCell: {
-    flex: 1,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0,0,0,0.06)',
-    backgroundColor: 'rgba(123,45,62,0.04)',
-  },
-  gridCellWorking: {
-    backgroundColor: colors.primary,
-  },
-  stats: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  saveBtn: {
-    marginBottom: spacing.md,
-  },
-  applyBtn: {
-    marginBottom: spacing.md,
-  },
-});
+function useMasterScheduleTemplateStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.heading,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: spacing.lg,
+    },
+    presets: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    presetBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      backgroundColor: colors.primaryLight,
+    },
+    presetText: {
+      ...typography.caption,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    presetClear: {
+      backgroundColor: colors.dangerLight,
+    },
+    presetClearText: {
+      color: colors.danger,
+    },
+    gridContainer: {
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      backgroundColor: colors.bgCard,
+    },
+    gridHeaderRow: {
+      flexDirection: 'row',
+      height: 28,
+      alignItems: 'center',
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    hourCol: {
+      width: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayHeaderCell: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayHeaderText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.heading,
+    },
+    gridRow: {
+      flexDirection: 'row',
+      height: 32,
+    },
+    hourText: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.textLight,
+    },
+    gridCell: {
+      flex: 1,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+      backgroundColor: isDark ? 'rgba(123,45,62,0.1)' : 'rgba(123,45,62,0.04)',
+    },
+    gridCellWorking: {
+      backgroundColor: colors.primary,
+    },
+    stats: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginTop: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    saveBtn: {
+      marginBottom: spacing.md,
+    },
+    applyBtn: {
+      marginBottom: spacing.md,
+    },
+  }), [colors, isDark]);
+}

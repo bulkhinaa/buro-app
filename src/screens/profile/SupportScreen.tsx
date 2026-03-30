@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,8 +16,11 @@ import {
   CellIndicator,
   CellFaq,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useToastStore } from '../../store/toastStore';
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const FAQ_DATA = [
   {
@@ -51,6 +54,8 @@ export function SupportScreen() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const showToast = useToastStore((s) => s.show);
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupportStyles(colors, glass, isDark);
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -127,30 +132,27 @@ export function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  content: {
-    paddingTop: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  contactCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.xs,
-    marginBottom: spacing.xxl,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-});
+function useSupportStyles(colors: ThemeColors, glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    content: {
+      paddingTop: spacing.sm,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.lg,
+    },
+    contactCard: {
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      padding: spacing.xs,
+      marginBottom: spacing.xxl,
+      ...glass.shadow,
+    },
+  }), [colors, glass, _isDark]);
+}

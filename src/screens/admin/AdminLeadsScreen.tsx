@@ -3,11 +3,15 @@ import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, GlassChip, SystemButton } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAdminStore, type Lead, type LeadFilter } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { fetchAllLeads, updateLeadStatus } from '../../services/projectService';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const FILTER_OPTIONS: { key: LeadFilter; label: string }[] = [
   { key: 'all', label: 'Все' },
@@ -17,13 +21,6 @@ const FILTER_OPTIONS: { key: LeadFilter; label: string }[] = [
   { key: 'rejected', label: 'Отклонённые' },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  new: colors.primary,
-  contacted: colors.gold,
-  converted: colors.success,
-  rejected: colors.danger,
-};
-
 const STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
   contacted: 'Связались',
@@ -32,6 +29,16 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function AdminLeadsScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminLeadsStyles(colors, glass, isDark);
+
+  const STATUS_COLORS: Record<string, string> = useMemo(() => ({
+    new: colors.primary,
+    contacted: colors.gold,
+    converted: colors.success,
+    rejected: colors.danger,
+  }), [colors]);
+
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id.startsWith('dev-');
@@ -57,7 +64,7 @@ export function AdminLeadsScreen({ navigation }: any) {
       const data = await fetchAllLeads();
       setLeads(data as Lead[]);
     } catch {
-      // On error, keep whatever is already in store
+      // keep whatever is already in store
     } finally {
       setLoading(false);
     }
@@ -127,36 +134,17 @@ export function AdminLeadsScreen({ navigation }: any) {
         </Text>
       ) : null}
 
-      {/* Actions */}
       {item.status === 'new' && (
         <View style={styles.actions}>
-          <Button
-            title="Связались"
-            onPress={() => handleUpdateStatus(item, 'contacted')}
-            size="sm"
-          />
-          <Button
-            title="Отклонить"
-            onPress={() => handleUpdateStatus(item, 'rejected')}
-            variant="ghost"
-            size="sm"
-          />
+          <Button title="Связались" onPress={() => handleUpdateStatus(item, 'contacted')} size="sm" />
+          <Button title="Отклонить" onPress={() => handleUpdateStatus(item, 'rejected')} variant="ghost" size="sm" />
         </View>
       )}
 
       {item.status === 'contacted' && (
         <View style={styles.actions}>
-          <Button
-            title="Создать проект"
-            onPress={() => handleUpdateStatus(item, 'converted')}
-            size="sm"
-          />
-          <Button
-            title="Отклонить"
-            onPress={() => handleUpdateStatus(item, 'rejected')}
-            variant="ghost"
-            size="sm"
-          />
+          <Button title="Создать проект" onPress={() => handleUpdateStatus(item, 'converted')} size="sm" />
+          <Button title="Отклонить" onPress={() => handleUpdateStatus(item, 'rejected')} variant="ghost" size="sm" />
         </View>
       )}
     </Card>
@@ -177,28 +165,14 @@ export function AdminLeadsScreen({ navigation }: any) {
       </View>
 
       <Text style={styles.title}>Лиды с лендинга</Text>
-      <Text style={styles.subtitle}>
-        Заявки с формы на сайте
-      </Text>
+      <Text style={styles.subtitle}>Заявки с формы на сайте</Text>
 
       <View style={styles.filters}>
         {FILTER_OPTIONS.map((opt) => {
-          const count =
-            opt.key === 'all'
-              ? allLeads.length
-              : statusCounts[opt.key] || 0;
+          const count = opt.key === 'all' ? allLeads.length : statusCounts[opt.key] || 0;
           return (
-            <Pressable
-              key={opt.key}
-              onPress={() => {
-                setFilter(opt.key);
-                hapticLight();
-              }}
-            >
-              <GlassChip
-                label={`${opt.label}${count > 0 ? ` (${count})` : ''}`}
-                active={filter === opt.key}
-              />
+            <Pressable key={opt.key} onPress={() => { setFilter(opt.key); hapticLight(); }}>
+              <GlassChip label={`${opt.label}${count > 0 ? ` (${count})` : ''}`} active={filter === opt.key} />
             </Pressable>
           );
         })}
@@ -206,16 +180,9 @@ export function AdminLeadsScreen({ navigation }: any) {
 
       {leads.length === 0 ? (
         <Card style={styles.emptyCard}>
-          <Ionicons
-            name="megaphone-outline"
-            size={48}
-            color={colors.primary}
-            style={{ marginBottom: spacing.md }}
-          />
+          <Ionicons name="megaphone-outline" size={48} color={colors.primary} style={{ marginBottom: spacing.md }} />
           <Text style={styles.emptyText}>Нет лидов</Text>
-          <Text style={styles.emptySubtext}>
-            Лиды с лендинга появятся здесь
-          </Text>
+          <Text style={styles.emptySubtext}>Лиды с лендинга появятся здесь</Text>
         </Card>
       ) : (
         <FlatList
@@ -230,97 +197,26 @@ export function AdminLeadsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 100,
-  },
-  backRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginTop: 2,
-    marginBottom: spacing.lg,
-  },
-  filters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    ...typography.small,
-    fontWeight: '600',
-    flex: 1,
-  },
-  cardDate: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  cardName: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 2,
-  },
-  cardPhone: {
-    ...typography.body,
-    color: colors.primary,
-    marginBottom: spacing.sm,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: 4,
-  },
-  detailText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  message: {
-    ...typography.small,
-    color: colors.text,
-    marginTop: spacing.sm,
-    fontStyle: 'italic',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  emptySubtext: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-});
+function useAdminLeadsStyles(colors: ThemeColors, _glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: { paddingBottom: 100 },
+    backRow: { flexDirection: 'row', marginTop: spacing.sm, marginBottom: spacing.md },
+    title: { ...typography.h1, color: colors.heading },
+    subtitle: { ...typography.body, color: colors.textLight, marginTop: 2, marginBottom: spacing.lg },
+    filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+    card: { marginBottom: spacing.md },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
+    statusDot: { width: 8, height: 8, borderRadius: 4 },
+    statusText: { ...typography.small, fontWeight: '600', flex: 1 },
+    cardDate: { ...typography.small, color: colors.textLight },
+    cardName: { ...typography.bodyBold, color: colors.heading, marginBottom: 2 },
+    cardPhone: { ...typography.body, color: colors.primary, marginBottom: spacing.sm },
+    detailRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: 4 },
+    detailText: { ...typography.small, color: colors.textLight },
+    message: { ...typography.small, color: colors.text, marginTop: spacing.sm, fontStyle: 'italic' },
+    actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+    emptyCard: { alignItems: 'center', paddingVertical: spacing.xxl },
+    emptyText: { ...typography.h3, color: colors.heading, marginBottom: spacing.xs },
+    emptySubtext: { ...typography.body, color: colors.textLight, textAlign: 'center' },
+  }), [colors]);
+}

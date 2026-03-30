@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { ScreenWrapper, Card, Button, Input } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
 import { supabase } from '../../lib/supabase';
+import type { ThemeColors } from '../../theme/colors';
 
 const SMZ_URL = 'https://smz.tbank.ru/';
 
@@ -34,6 +36,8 @@ const PENDING_STEPS = [
 ];
 
 export function JumpFinanceScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = useJumpFinanceStyles(colors, isDark);
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const updateProfile = useMasterStore((s) => s.updateProfile);
@@ -147,7 +151,7 @@ export function JumpFinanceScreen({ navigation }: any) {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        {/* ── None — start verification ── */}
+        {/* -- None — start verification -- */}
         {status === 'none' && (
           <>
             <View style={styles.iconCircle}>
@@ -202,7 +206,7 @@ export function JumpFinanceScreen({ navigation }: any) {
           </>
         )}
 
-        {/* ── Pending — waiting for verification ── */}
+        {/* -- Pending — waiting for verification -- */}
         {status === 'pending' && (
           <>
             <View style={[styles.statusBanner, styles.pendingBanner]}>
@@ -250,7 +254,7 @@ export function JumpFinanceScreen({ navigation }: any) {
           </>
         )}
 
-        {/* ── Approved — verified ── */}
+        {/* -- Approved — verified -- */}
         {status === 'approved' && (
           <>
             <View style={[styles.statusBanner, styles.approvedBanner]}>
@@ -280,7 +284,7 @@ export function JumpFinanceScreen({ navigation }: any) {
           </>
         )}
 
-        {/* ── Rejected — verification failed ── */}
+        {/* -- Rejected — verification failed -- */}
         {status === 'rejected' && (
           <>
             <View style={[styles.statusBanner, styles.rejectedBanner]}>
@@ -354,199 +358,201 @@ export function JumpFinanceScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingTop: spacing.xxl,
-  },
-  iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  description: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing.xxl,
-    paddingHorizontal: spacing.lg,
-  },
-  requirementsCard: {
-    width: '100%',
-    marginBottom: spacing.xl,
-  },
-  requirementsTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.md,
-  },
-  requirementIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  requirementText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-  },
-  innInputContainer: {
-    width: '100%',
-    marginBottom: spacing.sm,
-  },
-  stepsCard: {
-    width: '100%',
-    marginBottom: spacing.xl,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.md,
-  },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumber: {
-    ...typography.bodyBold,
-    color: '#fff',
-    fontSize: 14,
-  },
-  stepText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-  },
-  statusBanner: {
-    width: '100%',
-    alignItems: 'center',
-    borderRadius: radius.xl,
-    padding: spacing.xxl,
-    marginBottom: spacing.xxl,
-    borderWidth: 1,
-  },
-  pendingBanner: {
-    backgroundColor: 'rgba(255, 149, 0, 0.06)',
-    borderColor: 'rgba(255, 149, 0, 0.2)',
-  },
-  approvedBanner: {
-    backgroundColor: 'rgba(52, 199, 89, 0.06)',
-    borderColor: 'rgba(52, 199, 89, 0.2)',
-  },
-  rejectedBanner: {
-    backgroundColor: 'rgba(255, 59, 48, 0.06)',
-    borderColor: 'rgba(255, 59, 48, 0.2)',
-  },
-  statusTitle: {
-    ...typography.h2,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  statusText: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  badgeCard: {
-    width: '100%',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  badgeText: {
-    ...typography.bodyBold,
-    color: colors.success,
-    flex: 1,
-  },
-  actionButton: {
-    marginTop: spacing.md,
-  },
-  smzButton: {
-    marginTop: spacing.sm,
-  },
-  // Bottom Sheet styles
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetContainer: {
-    height: Dimensions.get('window').height * 0.85,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: 'hidden',
-  },
-  sheetHandle: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  sheetHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  sheetTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  sheetCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  webViewContainer: {
-    flex: 1,
-  },
-  webViewLoading: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-  },
-});
+function useJumpFinanceStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      paddingTop: spacing.xxl,
+    },
+    iconCircle: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.2)' : 'rgba(123, 45, 62, 0.08)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xl,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+      textAlign: 'center',
+      marginBottom: spacing.md,
+    },
+    description: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: spacing.xxl,
+      paddingHorizontal: spacing.lg,
+    },
+    requirementsCard: {
+      width: '100%',
+      marginBottom: spacing.xl,
+    },
+    requirementsTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.lg,
+    },
+    requirementRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+      gap: spacing.md,
+    },
+    requirementIconCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.15)' : 'rgba(123, 45, 62, 0.06)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    requirementText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+    },
+    innInputContainer: {
+      width: '100%',
+      marginBottom: spacing.sm,
+    },
+    stepsCard: {
+      width: '100%',
+      marginBottom: spacing.xl,
+    },
+    stepRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+      gap: spacing.md,
+    },
+    stepCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepNumber: {
+      ...typography.bodyBold,
+      color: '#fff',
+      fontSize: 14,
+    },
+    stepText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+    },
+    statusBanner: {
+      width: '100%',
+      alignItems: 'center',
+      borderRadius: radius.xl,
+      padding: spacing.xxl,
+      marginBottom: spacing.xxl,
+      borderWidth: 1,
+    },
+    pendingBanner: {
+      backgroundColor: 'rgba(255, 149, 0, 0.06)',
+      borderColor: 'rgba(255, 149, 0, 0.2)',
+    },
+    approvedBanner: {
+      backgroundColor: 'rgba(52, 199, 89, 0.06)',
+      borderColor: 'rgba(52, 199, 89, 0.2)',
+    },
+    rejectedBanner: {
+      backgroundColor: 'rgba(255, 59, 48, 0.06)',
+      borderColor: 'rgba(255, 59, 48, 0.2)',
+    },
+    statusTitle: {
+      ...typography.h2,
+      marginTop: spacing.lg,
+      marginBottom: spacing.sm,
+      textAlign: 'center',
+    },
+    statusText: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    badgeCard: {
+      width: '100%',
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    badgeText: {
+      ...typography.bodyBold,
+      color: colors.success,
+      flex: 1,
+    },
+    actionButton: {
+      marginTop: spacing.md,
+    },
+    smzButton: {
+      marginTop: spacing.sm,
+    },
+    // Bottom Sheet styles
+    sheetOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    sheetBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    sheetContainer: {
+      height: Dimensions.get('window').height * 0.85,
+      backgroundColor: colors.white,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      overflow: 'hidden',
+    },
+    sheetHandle: {
+      alignItems: 'center',
+      paddingVertical: 10,
+    },
+    sheetHandleBar: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+    },
+    sheetHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    },
+    sheetTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    sheetCloseBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    webViewContainer: {
+      flex: 1,
+    },
+    webViewLoading: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.white,
+    },
+  }), [colors, isDark]);
+}

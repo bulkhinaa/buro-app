@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Input, TextArea, Button } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
 import type { PortfolioProject } from '../../types';
+import type { ThemeColors } from '../../theme/colors';
 
 const MAX_PHOTOS = 5;
 
 export function MasterPortfolioEditScreen({ navigation, route }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = useMasterPortfolioEditStyles(colors, isDark);
   const projectId = route?.params?.projectId as string | undefined;
   const profile = useMasterStore((s) => s.profile);
   const addPortfolioProject = useMasterStore((s) => s.addPortfolioProject);
@@ -175,69 +179,71 @@ export function MasterPortfolioEditScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.lg,
-  },
-  headerTitle: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xxl,
-  },
-  photosLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.md,
-  },
-  photosScroll: {
-    marginHorizontal: -spacing.xl,
-  },
-  photosContent: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  photoWrapper: {
-    position: 'relative',
-  },
-  photoThumb: {
-    width: 100,
-    height: 100,
-    borderRadius: radius.md,
-  },
-  photoRemove: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-  },
-  addPhotoButton: {
-    width: 100,
-    height: 100,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(123, 45, 62, 0.15)',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(123, 45, 62, 0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  addPhotoText: {
-    ...typography.caption,
-    color: colors.primary,
-  },
-  bottomBar: {
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.5)',
-  },
-});
+function useMasterPortfolioEditStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.lg,
+    },
+    headerTitle: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xxl,
+    },
+    photosLabel: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.md,
+    },
+    photosScroll: {
+      marginHorizontal: -spacing.xl,
+    },
+    photosContent: {
+      paddingHorizontal: spacing.xl,
+      gap: spacing.md,
+    },
+    photoWrapper: {
+      position: 'relative',
+    },
+    photoThumb: {
+      width: 100,
+      height: 100,
+      borderRadius: radius.md,
+    },
+    photoRemove: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 10,
+    },
+    addPhotoButton: {
+      width: 100,
+      height: 100,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(123, 45, 62, 0.4)' : 'rgba(123, 45, 62, 0.15)',
+      borderStyle: 'dashed',
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.1)' : 'rgba(123, 45, 62, 0.04)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+    },
+    addPhotoText: {
+      ...typography.caption,
+      color: colors.primary,
+    },
+    bottomBar: {
+      paddingVertical: spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
+    },
+  }), [colors, isDark]);
+}

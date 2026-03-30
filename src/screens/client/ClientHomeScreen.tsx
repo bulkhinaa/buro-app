@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,8 @@ import {
   SkeletonCard,
   SharedHeader,
 } from '../../components';
-import { colors, spacing, radius, typography, useSerifFont } from '../../theme';
+import { spacing, radius, typography, useSerifFont } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useObjectStore } from '../../store/objectStore';
@@ -56,6 +57,8 @@ const HOW_IT_WORKS_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
 export function ClientHomeScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const serifFont = useSerifFont();
+  const { colors, glass, isDark } = useTheme();
+  const styles = useClientHomeStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const { projects, isLoading, loadProjects } = useProjectStore();
   const { objects, loadObjects } = useObjectStore();
@@ -316,185 +319,193 @@ export function ClientHomeScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  padded: {
-    paddingHorizontal: spacing.xl,
-  },
-  // Hero Banner
-  heroBanner: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    marginBottom: spacing.xxl,
-  },
-  heroTitle: {
-    ...typography.h2,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  heroSubtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    lineHeight: 22,
-  },
-  // Section titles
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionLink: {
-    ...typography.body,
-    color: colors.primary,
-  },
-  // How it works
-  howItWorksScroll: {
-    paddingLeft: spacing.xl,
-    paddingRight: spacing.xl + 8,
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-  },
-  howItWorksCard: {
-    width: 240,
-    padding: spacing.lg,
-  },
-  howItWorksIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  howItWorksTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  howItWorksText: {
-    ...typography.small,
-    color: colors.textLight,
-    lineHeight: 18,
-  },
-  // My Objects
-  objectsScroll: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-  },
-  objectCard: {
-    width: OBJECT_CARD_WIDTH,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.08)',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  objectLayoutThumb: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    marginRight: spacing.md,
-  },
-  objectInfo: {
-    flex: 1,
-  },
-  objectAddress: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 2,
-  },
-  objectMeta: {
-    ...typography.small,
-    color: colors.textLight,
-    marginBottom: spacing.xs,
-  },
-  objectProjects: {
-    ...typography.small,
-    color: colors.primary,
-  },
-  objectDots: {
-    flexDirection: 'row',
-    gap: 4,
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
-  // My Projects (backward compat for projects without objects)
-  projectCard: {
-    marginBottom: spacing.lg,
-  },
-  projectHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  projectDate: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  projectTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  projectAddress: {
-    ...typography.body,
-    color: colors.textLight,
-    marginBottom: spacing.md,
-  },
-  projectMeta: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  projectBudget: {
-    ...typography.bodyBold,
-    color: colors.gold,
-  },
-  // Empty
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.huge,
-    marginTop: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.h2,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-});
+function useClientHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
+        scroll: {
+          flex: 1,
+        },
+        padded: {
+          paddingHorizontal: spacing.xl,
+        },
+        // Hero Banner
+        heroBanner: {
+          borderLeftWidth: 3,
+          borderLeftColor: colors.primary,
+          marginBottom: spacing.xxl,
+        },
+        heroTitle: {
+          ...typography.h2,
+          color: colors.heading,
+          marginBottom: spacing.sm,
+        },
+        heroSubtitle: {
+          ...typography.body,
+          color: colors.textLight,
+          lineHeight: 22,
+        },
+        // Section titles
+        sectionTitle: {
+          ...typography.h3,
+          color: colors.heading,
+          marginBottom: spacing.lg,
+        },
+        sectionHeaderRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        },
+        sectionLink: {
+          ...typography.body,
+          color: colors.primary,
+        },
+        // How it works
+        howItWorksScroll: {
+          paddingLeft: spacing.xl,
+          paddingRight: spacing.xl + 8,
+          gap: spacing.md,
+          marginBottom: spacing.xxl,
+        },
+        howItWorksCard: {
+          width: 240,
+          padding: spacing.lg,
+        },
+        howItWorksIconCircle: {
+          width: 48,
+          height: 48,
+          borderRadius: 24,
+          backgroundColor: colors.primaryLight,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: spacing.md,
+        },
+        howItWorksTitle: {
+          ...typography.bodyBold,
+          color: colors.heading,
+          marginBottom: spacing.xs,
+        },
+        howItWorksText: {
+          ...typography.small,
+          color: colors.textLight,
+          lineHeight: 18,
+        },
+        // My Objects
+        objectsScroll: {
+          paddingHorizontal: spacing.xl,
+          gap: spacing.md,
+          marginBottom: spacing.xxl,
+        },
+        objectCard: {
+          width: OBJECT_CARD_WIDTH,
+          backgroundColor: isDark ? glass.fill.light : 'rgba(255, 255, 255, 0.6)',
+          borderRadius: radius.xl,
+          borderWidth: 1,
+          borderColor: isDark ? glass.border.light : 'rgba(255, 255, 255, 0.85)',
+          padding: spacing.lg,
+          flexDirection: 'row',
+          alignItems: 'center',
+          shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(123, 45, 62, 0.08)',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 1,
+          shadowRadius: 10,
+          elevation: 3,
+        },
+        objectLayoutThumb: {
+          width: 70,
+          height: 70,
+          backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.5)',
+          borderRadius: radius.lg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+          marginRight: spacing.md,
+        },
+        objectInfo: {
+          flex: 1,
+        },
+        objectAddress: {
+          ...typography.bodyBold,
+          color: colors.heading,
+          marginBottom: 2,
+        },
+        objectMeta: {
+          ...typography.small,
+          color: colors.textLight,
+          marginBottom: spacing.xs,
+        },
+        objectProjects: {
+          ...typography.small,
+          color: colors.primary,
+        },
+        objectDots: {
+          flexDirection: 'row',
+          gap: 4,
+          position: 'absolute',
+          top: spacing.md,
+          right: spacing.md,
+        },
+        statusDot: {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+        },
+
+        // My Projects (backward compat for projects without objects)
+        projectCard: {
+          marginBottom: spacing.lg,
+        },
+        projectHeader: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing.md,
+        },
+        projectDate: {
+          ...typography.small,
+          color: colors.textLight,
+        },
+        projectTitle: {
+          ...typography.h3,
+          color: colors.heading,
+          marginBottom: spacing.xs,
+        },
+        projectAddress: {
+          ...typography.body,
+          color: colors.textLight,
+          marginBottom: spacing.md,
+        },
+        projectMeta: {
+          flexDirection: 'row',
+          gap: spacing.sm,
+          marginBottom: spacing.sm,
+        },
+        projectBudget: {
+          ...typography.bodyBold,
+          color: colors.gold,
+        },
+        // Empty
+        emptyCard: {
+          alignItems: 'center',
+          paddingVertical: spacing.huge,
+          marginTop: spacing.sm,
+        },
+        emptyTitle: {
+          ...typography.h2,
+          color: colors.heading,
+          marginBottom: spacing.sm,
+        },
+        emptyText: {
+          ...typography.body,
+          color: colors.textLight,
+          textAlign: 'center',
+          lineHeight: 22,
+        },
+      }),
+    [colors, glass, isDark],
+  );
+}

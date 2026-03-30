@@ -1,12 +1,19 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SharedHeader } from '../../components';
 import { hapticLight } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useAdminStore } from '../../store/adminStore';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
+// Admin purple fallback (not in ThemeColors)
+const ADMIN_PURPLE = '#7C3AED';
 
 interface QuickAction {
   icon: keyof typeof Ionicons.glyphMap;
@@ -15,14 +22,17 @@ interface QuickAction {
   color: string;
 }
 
-const QUICK_ACTIONS: QuickAction[] = [
-  { icon: 'document-text-outline', label: 'Заявки', route: 'AdminRequests', color: colors.primary },
-  { icon: 'megaphone-outline', label: 'Лиды', route: 'AdminLeads', color: colors.gold },
-  { icon: 'people-outline', label: 'Пользователи', route: 'AdminUsers', color: colors.success },
-  { icon: 'book-outline', label: 'База знаний', route: 'AdminTemplates', color: colors.adminPurple },
-];
-
 export function AdminHomeScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminHomeStyles(colors, glass, isDark);
+
+  const QUICK_ACTIONS: QuickAction[] = useMemo(() => [
+    { icon: 'document-text-outline', label: 'Заявки', route: 'AdminRequests', color: colors.primary },
+    { icon: 'megaphone-outline', label: 'Лиды', route: 'AdminLeads', color: colors.gold },
+    { icon: 'people-outline', label: 'Пользователи', route: 'AdminUsers', color: colors.success },
+    { icon: 'book-outline', label: 'База знаний', route: 'AdminTemplates', color: ADMIN_PURPLE },
+  ], [colors]);
+
   const user = useAuthStore((s) => s.user);
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.is_read).length);
   const stats = useAdminStore((s) => s.stats);
@@ -60,24 +70,28 @@ export function AdminHomeScreen({ navigation }: any) {
               label="Новых заявок"
               color={colors.primary}
               onPress={() => navigation.navigate('AdminRequests')}
+              styles={styles}
             />
             <StatCard
               number={stats.activeProjects}
               label="Активных"
               color={colors.gold}
               onPress={() => navigation.navigate('AdminRequests')}
+              styles={styles}
             />
             <StatCard
               number={stats.totalMasters}
               label="Мастеров"
               color={colors.success}
               onPress={() => navigation.navigate('AdminUsers')}
+              styles={styles}
             />
             <StatCard
               number={stats.totalSupervisors}
               label="Супервайзеров"
-              color={colors.adminPurple}
+              color={ADMIN_PURPLE}
               onPress={() => navigation.navigate('AdminUsers')}
+              styles={styles}
             />
           </View>
         )}
@@ -109,10 +123,10 @@ export function AdminHomeScreen({ navigation }: any) {
         {/* Summary cards */}
         <Text style={styles.sectionTitle}>Сводка</Text>
         <Card style={styles.summaryCard}>
-          <SummaryRow label="Всего проектов" value={stats.totalProjects} />
-          <SummaryRow label="Завершённых" value={stats.completedProjects} />
-          <SummaryRow label="Клиентов" value={stats.totalClients} />
-          <SummaryRow label="Лидов с лендинга" value={stats.totalLeads} />
+          <SummaryRow label="Всего проектов" value={stats.totalProjects} styles={styles} />
+          <SummaryRow label="Завершённых" value={stats.completedProjects} styles={styles} />
+          <SummaryRow label="Клиентов" value={stats.totalClients} styles={styles} />
+          <SummaryRow label="Лидов с лендинга" value={stats.totalLeads} styles={styles} />
         </Card>
       </ScrollView>
     </ScreenWrapper>
@@ -124,11 +138,13 @@ function StatCard({
   label,
   color,
   onPress,
+  styles,
 }: {
   number: number;
   label: string;
   color: string;
   onPress?: () => void;
+  styles: ReturnType<typeof useAdminHomeStyles>;
 }) {
   return (
     <Pressable
@@ -147,7 +163,7 @@ function StatCard({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: number }) {
+function SummaryRow({ label, value, styles }: { label: string; value: number; styles: ReturnType<typeof useAdminHomeStyles> }) {
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -156,103 +172,105 @@ function SummaryRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 100,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxl,
-    marginBottom: spacing.xxl,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-  },
-  statCard: {
-    width: '47%',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: 20,
-    padding: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: 'rgba(123, 45, 62, 0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statCardPressed: {
-    opacity: 0.85,
-  },
-  statNumber: {
-    ...typography.h1,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  actionsGrid: {
-    gap: spacing.sm,
-    marginBottom: spacing.xxl,
-  },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    gap: spacing.md,
-    shadowColor: 'rgba(123, 45, 62, 0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  actionCardPressed: {
-    opacity: 0.85,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    flex: 1,
-  },
-  summaryCard: {
-    marginBottom: spacing.xxl,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  summaryLabel: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  summaryValue: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-});
+function useAdminHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      paddingBottom: 100,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xxl,
+      marginBottom: spacing.xxl,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+      marginBottom: spacing.xxl,
+    },
+    statCard: {
+      width: '47%',
+      backgroundColor: glass.fill.light,
+      borderRadius: 20,
+      padding: spacing.lg,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.05)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    statCardPressed: {
+      opacity: 0.85,
+    },
+    statNumber: {
+      ...typography.h1,
+      marginBottom: 2,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.lg,
+    },
+    actionsGrid: {
+      gap: spacing.sm,
+      marginBottom: spacing.xxl,
+    },
+    actionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      gap: spacing.md,
+      shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.05)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    actionCardPressed: {
+      opacity: 0.85,
+    },
+    actionIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionLabel: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      flex: 1,
+    },
+    summaryCard: {
+      marginBottom: spacing.xxl,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+    },
+    summaryLabel: {
+      ...typography.body,
+      color: colors.textLight,
+    },
+    summaryValue: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+  }), [colors, glass, isDark]);
+}

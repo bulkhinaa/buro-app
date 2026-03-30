@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, Input, AppDialog } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const BASE_URL = 'https://bulkhinaa.github.io/buro-app/';
 
@@ -78,6 +82,8 @@ const MOCK_INVITES: Invite[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SupervisorInvitesScreen() {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useSupervisorInvitesStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.show);
   const isDev = user?.id?.startsWith('dev-');
@@ -135,7 +141,6 @@ export function SupervisorInvitesScreen() {
       const code = generateCode();
 
       if (isDev) {
-        // Local mock
         const newInvite: Invite = {
           id: `inv-${Date.now()}`,
           code,
@@ -156,7 +161,6 @@ export function SupervisorInvitesScreen() {
         });
         if (error) throw error;
 
-        // Send invite email if email provided
         if (inviteEmail.trim()) {
           try {
             await supabase.functions.invoke('send-email', {
@@ -170,14 +174,13 @@ export function SupervisorInvitesScreen() {
               },
             });
           } catch {
-            // Non-critical — invite still created
+            // Non-critical
           }
         }
 
         await loadInvites();
       }
 
-      // Share link
       const inviteUrl = `${BASE_URL}?invite=${code}`;
       const inviteText = `Присоединяйся к платформе «Бюро ремонтов» как мастер!\n\nРегистрируйся: ${inviteUrl}`;
 
@@ -228,10 +231,10 @@ export function SupervisorInvitesScreen() {
     const expired = isExpired(item);
     const status = expired ? 'expired' : item.status;
 
-    const statusConfig = {
-      pending: { label: 'Ожидание', color: colors.accent, bg: 'rgba(197,165,90,0.12)' },
-      accepted: { label: 'Принято', color: colors.success, bg: 'rgba(52,199,89,0.12)' },
-      expired: { label: 'Истекло', color: colors.textLight, bg: 'rgba(136,136,136,0.12)' },
+    const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+      pending: { label: 'Ожидание', color: colors.accent, bg: colors.accentLight },
+      accepted: { label: 'Принято', color: colors.success, bg: colors.successLight },
+      expired: { label: 'Истекло', color: colors.textLight, bg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(136,136,136,0.12)' },
     };
 
     const cfg = statusConfig[status];
@@ -239,17 +242,14 @@ export function SupervisorInvitesScreen() {
     return (
       <Card style={[styles.inviteCard, expired && styles.expiredCard]}>
         <View style={styles.cardTop}>
-          {/* Code */}
           <View style={styles.codeBox}>
             <Text style={styles.codeText}>{item.code}</Text>
           </View>
-          {/* Status badge */}
           <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
             <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
           </View>
         </View>
 
-        {/* Contact info */}
         {(item.invited_email || item.invited_phone) && (
           <View style={styles.contactRow}>
             {item.invited_email && (
@@ -267,7 +267,6 @@ export function SupervisorInvitesScreen() {
           </View>
         )}
 
-        {/* Footer */}
         <View style={styles.cardFooter}>
           <Text style={styles.dateText}>
             {formatDate(item.created_at)}
@@ -392,137 +391,139 @@ export function SupervisorInvitesScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-    marginTop: spacing.md,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-  },
-  statNum: {
-    ...typography.h1,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
+function useSupervisorInvitesStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+      marginTop: spacing.md,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      padding: spacing.md,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: glass.border.light,
+    },
+    statNum: {
+      ...typography.h1,
+      marginBottom: 2,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
 
-  formCard: {
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  formTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  formHint: {
-    ...typography.caption,
-    color: colors.textLight,
-    lineHeight: 18,
-  },
+    formCard: {
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    formTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    formActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    formHint: {
+      ...typography.caption,
+      color: colors.textLight,
+      lineHeight: 18,
+    },
 
-  listContent: {
-    paddingBottom: 24,
-    gap: spacing.sm,
-  },
+    listContent: {
+      paddingBottom: 24,
+      gap: spacing.sm,
+    },
 
-  inviteCard: {},
-  expiredCard: {
-    opacity: 0.6,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  codeBox: {
-    backgroundColor: 'rgba(123,45,62,0.08)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.md,
-  },
-  codeText: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: 2,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
-  statusText: {
-    ...typography.caption,
-    fontWeight: '700',
-  },
+    inviteCard: {},
+    expiredCard: {
+      opacity: 0.6,
+    },
+    cardTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    codeBox: {
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.md,
+    },
+    codeText: {
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary,
+      letterSpacing: 2,
+    },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
+    statusText: {
+      ...typography.caption,
+      fontWeight: '700',
+    },
 
-  contactRow: {
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  contactText: {
-    ...typography.small,
-    color: colors.text,
-  },
+    contactRow: {
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    contactItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    contactText: {
+      ...typography.small,
+      color: colors.text,
+    },
 
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateText: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  shareBtnText: {
-    ...typography.small,
-    color: colors.primary,
-    fontWeight: '600',
-  },
+    cardFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dateText: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    shareBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    shareBtnText: {
+      ...typography.small,
+      color: colors.primary,
+      fontWeight: '600',
+    },
 
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  emptySubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-});
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    emptySubtitle: {
+      ...typography.small,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+  }), [colors, glass, isDark]);
+}

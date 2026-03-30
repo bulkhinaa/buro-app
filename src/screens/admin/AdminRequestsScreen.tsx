@@ -5,12 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, SearchInput, GlassChip, Button, AppDialog } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess, hapticLight } from '../../utils/haptics';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { Project, REPAIR_TYPE_LABELS, PROJECT_STATUS_LABELS } from '../../types';
 import { useAdminStore, type ProjectFilter } from '../../store/adminStore';
 import { fetchAllProjects, assignSupervisor, updateProjectStatus, fetchUsersByRole } from '../../services/projectService';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 const FILTER_OPTIONS: { key: ProjectFilter; label: string }[] = [
   { key: 'all', label: 'Все' },
@@ -22,6 +26,8 @@ const FILTER_OPTIONS: { key: ProjectFilter; label: string }[] = [
 ];
 
 export function AdminRequestsScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminRequestsStyles(colors, glass, isDark);
   const nav = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -51,7 +57,6 @@ export function AdminRequestsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [supervisors, setSupervisors] = useState<{ id: string; name: string }[]>([]);
 
-  // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogMessage, setDialogMessage] = useState('');
@@ -74,7 +79,7 @@ export function AdminRequestsScreen({ navigation }: any) {
       setProjects(projectsData);
       setSupervisors(svData.map((sv) => ({ id: sv.id, name: sv.name || 'Без имени' })));
     } catch {
-      // On error, keep whatever is already in store (could be empty)
+      // keep whatever is already in store
     } finally {
       setLoading(false);
     }
@@ -90,7 +95,6 @@ export function AdminRequestsScreen({ navigation }: any) {
       onPress: async () => {
         try {
           if (!isDev) await assignSupervisor(project.id, sv.id);
-          // Update local state
           setProjects(
             useAdminStore.getState().projects.map((p) =>
               p.id === project.id
@@ -260,82 +264,84 @@ export function AdminRequestsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 100,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  header: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  filters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  cardDate: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  cardTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 2,
-  },
-  cardAddress: {
-    ...typography.small,
-    color: colors.textLight,
-    marginBottom: spacing.xs,
-  },
-  cardBudget: {
-    ...typography.small,
-    color: colors.gold,
-    marginBottom: spacing.md,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  emptySubtext: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-});
+function useAdminRequestsStyles(colors: ThemeColors, _glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      paddingBottom: 100,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    header: {
+      marginTop: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      marginTop: 2,
+    },
+    filters: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    card: {
+      marginBottom: spacing.md,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    cardDate: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    cardTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: 2,
+    },
+    cardAddress: {
+      ...typography.small,
+      color: colors.textLight,
+      marginBottom: spacing.xs,
+    },
+    cardBudget: {
+      ...typography.small,
+      color: colors.gold,
+      marginBottom: spacing.md,
+    },
+    cardActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    emptySubtext: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+  }), [colors]);
+}

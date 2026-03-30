@@ -15,7 +15,8 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { RepairType } from '../../types';
@@ -23,6 +24,9 @@ import { getStageBreakdown, StageBreakdownItem } from '../../data/stageBreakdown
 import { STAGE_DEPENDENCIES } from '../../data/stageDependencies';
 import { hapticSuccess } from '../../utils/haptics';
 import { saveProjectStagePlan } from '../../services/projectService';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -64,10 +68,14 @@ function DatePickerRow({
   label,
   date,
   onDateChange,
+  colors,
+  dateStyles,
 }: {
   label: string;
   date: Date;
   onDateChange: (date: Date) => void;
+  colors: ThemeColors;
+  dateStyles: ReturnType<typeof useDatePickerStyles>;
 }) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -90,9 +98,9 @@ function DatePickerRow({
             fontSize: 15,
             padding: '8px 12px',
             borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.8)',
-            backgroundColor: 'rgba(255,255,255,0.65)',
-            color: '#1a1a2e',
+            border: `1px solid ${colors.border}`,
+            backgroundColor: colors.bgInput,
+            color: colors.heading,
             fontFamily: 'inherit',
             outline: 'none',
           }}
@@ -129,41 +137,43 @@ function DatePickerRow({
   );
 }
 
-const dateStyles = StyleSheet.create({
-  row: {
-    gap: spacing.xs,
-  },
-  label: {
-    ...typography.smallBold,
-    color: colors.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  stepperBtn: {
-    padding: spacing.xs,
-  },
-  dateValue: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-  },
-  dateText: {
-    ...typography.body,
-    color: colors.heading,
-  },
-});
+function useDatePickerStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    row: {
+      gap: spacing.xs,
+    },
+    label: {
+      ...typography.smallBold,
+      color: colors.textLight,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    stepperRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    stepperBtn: {
+      padding: spacing.xs,
+    },
+    dateValue: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.lg,
+      paddingVertical: spacing.sm + 2,
+      paddingHorizontal: spacing.md,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+    },
+    dateText: {
+      ...typography.body,
+      color: colors.heading,
+    },
+  }), [colors, glass, isDark]);
+}
 
 // ─── Calculate stage plan with dependencies ─────────────────────────────────────
 
@@ -171,20 +181,12 @@ function calculateStagePlan(
   stages: StageBreakdownItem[],
   projectStartDate: Date,
 ): StagePlanItem[] {
-  // Map orderIndex to stage for quick lookup
   const stageMap = new Map<number, StageBreakdownItem>();
   stages.forEach((s) => stageMap.set(s.orderIndex, s));
 
-  // Calculate dates respecting dependencies
   const result: StagePlanItem[] = [];
-  const endDates = new Map<number, Date>(); // orderIndex → end date
+  const endDates = new Map<number, Date>();
 
-  // We need to map between original (1-14) order indices and filtered indices
-  // The dependencies use original order indices from stageDependencies.ts
-  // But getStageBreakdown re-indexes them 1..N for filtered set
-  // We need to find the original order index for each stage by title matching
-
-  // Build title → original index mapping from STAGE_DEPENDENCIES keys
   const STAGE_TITLES_ORIGINAL: Record<string, number> = {
     'Демонтаж': 1,
     'Электрика (черновая)': 2,
@@ -202,22 +204,18 @@ function calculateStagePlan(
     'Финальная уборка': 14,
   };
 
-  // Map each stage to its original index
   const stagesWithOrigIdx = stages.map((s) => ({
     ...s,
     origIndex: STAGE_TITLES_ORIGINAL[s.title] ?? s.orderIndex,
   }));
 
-  // Set of original indices present in filtered list
   const presentIndices = new Set(stagesWithOrigIdx.map((s) => s.origIndex));
 
-  // Calculate start/end dates in order
   for (const stage of stagesWithOrigIdx) {
     const dep = STAGE_DEPENDENCIES[stage.origIndex];
     let startDate = new Date(projectStartDate);
 
     if (dep && dep.must_after.length > 0) {
-      // Find the latest end date among all dependencies that are in our filtered set
       const relevantDeps = dep.must_after.filter((d) => presentIndices.has(d));
       for (const depIdx of relevantDeps) {
         const depEnd = endDates.get(depIdx);
@@ -230,7 +228,6 @@ function calculateStagePlan(
     const endDate = addDays(startDate, stage.days);
     endDates.set(stage.origIndex, endDate);
 
-    // Determine parallel stages
     const parallelWith: number[] = [];
     if (dep) {
       for (const parIdx of dep.can_parallel_with) {
@@ -253,9 +250,24 @@ function calculateStagePlan(
   return result;
 }
 
+// ─── Helper ─────────────────────────────────────────────────────────────────────
+
+function formatRublesShort(amount: number): string {
+  if (amount >= 1_000_000) {
+    return `${(amount / 1_000_000).toFixed(1)} млн`;
+  }
+  if (amount >= 1_000) {
+    return `${Math.round(amount / 1_000)} тыс`;
+  }
+  return `${amount} ₽`;
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export function SupervisorStagePlanScreen({ route, navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useStagePlanStyles(colors, glass, isDark);
+  const dateStyles = useDatePickerStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -264,7 +276,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   const repairType: RepairType = route?.params?.repairType ?? 'standard';
   const areaSqm: number = route?.params?.areaSqm ?? 54;
 
-  // Project start date — default tomorrow
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -280,19 +291,16 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   const [dialogMessage, setDialogMessage] = useState('');
   const [dialogButtons, setDialogButtons] = useState<DialogButton[]>([]);
 
-  // Get stages from template
   const rawStages = useMemo(
     () => getStageBreakdown(repairType, areaSqm),
     [repairType, areaSqm],
   );
 
-  // Calculate plan with dates
   const stagePlan = useMemo(
     () => calculateStagePlan(rawStages, startDate),
     [rawStages, startDate],
   );
 
-  // Total days
   const totalDays = useMemo(() => {
     if (stagePlan.length === 0) return 0;
     const lastEnd = stagePlan.reduce((latest, s) => (s.endDate > latest ? s.endDate : latest), stagePlan[0].endDate);
@@ -305,11 +313,8 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
     return stagePlan.reduce((latest, s) => (s.endDate > latest ? s.endDate : latest), stagePlan[0].endDate);
   }, [stagePlan, startDate]);
 
-  // Total cost range
   const totalCostMin = rawStages.reduce((sum, s) => sum + s.costMin, 0);
   const totalCostMax = rawStages.reduce((sum, s) => sum + s.costMax, 0);
-
-  // ─── Save plan ──────────────────────────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
     setDialogTitle('Сохранить план?');
@@ -323,7 +328,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
           setSaving(true);
           try {
             if (isDev) {
-              // Simulate save for dev users
               await new Promise((r) => setTimeout(r, 500));
             } else {
               await saveProjectStagePlan(
@@ -342,7 +346,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
             hapticSuccess();
             showToast('План этапов сохранён', 'success');
 
-            // Navigate back
             setTimeout(() => {
               navigation.goBack();
             }, 50);
@@ -358,33 +361,25 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
     setDialogVisible(true);
   }, [stagePlan, totalDays, startDate, estimatedEnd, isDev, projectId, navigation, showToast]);
 
-  // ─── Render stage card ──────────────────────────────────────────────────────
-
   const renderStageCard = (stage: StagePlanItem, idx: number) => {
-    // Color based on position in timeline
-    const progressPercent = idx / stagePlan.length;
     const isParallel = stage.isParallel;
 
     return (
       <View key={`stage-${idx}`} style={styles.stageRow}>
         {/* Timeline connector */}
         <View style={styles.timelineCol}>
-          {/* Top line */}
           {idx > 0 && <View style={styles.timelineLineTop} />}
-          {/* Dot */}
           <View style={[
             styles.timelineDot,
             isParallel && styles.timelineDotParallel,
           ]}>
             <Text style={styles.timelineDotText}>{idx + 1}</Text>
           </View>
-          {/* Bottom line */}
           {idx < stagePlan.length - 1 && <View style={styles.timelineLineBottom} />}
         </View>
 
         {/* Stage card */}
         <View style={[styles.stageCard, isParallel && styles.stageCardParallel]}>
-          {/* Header: title + days */}
           <View style={styles.stageHeader}>
             <Text style={styles.stageTitle} numberOfLines={1}>{stage.title}</Text>
             <View style={styles.daysBadge}>
@@ -392,7 +387,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
             </View>
           </View>
 
-          {/* Dates */}
           <View style={styles.stageDates}>
             <View style={styles.stageDateItem}>
               <Ionicons name="play-outline" size={12} color={colors.success} />
@@ -405,7 +399,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
             </View>
           </View>
 
-          {/* Cost */}
           <View style={styles.stageCost}>
             <Ionicons name="cash-outline" size={12} color={colors.textLight} />
             <Text style={styles.stageCostText}>
@@ -413,7 +406,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
             </Text>
           </View>
 
-          {/* Parallel indicator */}
           {isParallel && (
             <View style={styles.parallelBadge}>
               <Ionicons name="git-branch-outline" size={12} color={colors.accent} />
@@ -421,7 +413,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
             </View>
           )}
 
-          {/* Description */}
           <Text style={styles.stageDesc} numberOfLines={2}>{stage.description}</Text>
         </View>
       </View>
@@ -434,7 +425,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Summary card */}
         <Card style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
@@ -459,7 +449,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
           </View>
         </Card>
 
-        {/* Start date picker */}
         <Card style={styles.dateCard}>
           <DatePickerRow
             label="Дата начала работ"
@@ -471,6 +460,8 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
                 showToast('Нельзя выбрать прошедшую дату', 'warning');
               }
             }}
+            colors={colors}
+            dateStyles={dateStyles}
           />
           <View style={styles.endDateRow}>
             <Ionicons name="flag" size={14} color={colors.success} />
@@ -480,14 +471,12 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
           </View>
         </Card>
 
-        {/* Stages timeline */}
         <View style={styles.timelineSection}>
           <Text style={styles.sectionTitle}>Этапы работ</Text>
           {stagePlan.map((stage, idx) => renderStageCard(stage, idx))}
         </View>
       </ScrollView>
 
-      {/* Bottom bar: save button */}
       <View style={styles.bottomBar}>
         <Button
           title="Сохранить план"
@@ -509,222 +498,206 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   );
 }
 
-// ─── Helper ─────────────────────────────────────────────────────────────────────
-
-function formatRublesShort(amount: number): string {
-  if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(1)} млн`;
-  }
-  if (amount >= 1_000) {
-    return `${Math.round(amount / 1_000)} тыс`;
-  }
-  return `${amount} ₽`;
-}
-
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 24,
-    gap: spacing.lg,
-  },
+function useStagePlanStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingBottom: 24,
+      gap: spacing.lg,
+    },
 
-  // Summary
-  summaryCard: {
-    gap: spacing.md,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  summaryTitle: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  summaryNum: {
-    ...typography.h2,
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
+    summaryCard: {
+      gap: spacing.md,
+    },
+    summaryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    summaryTitle: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+    summaryGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    summaryItem: {
+      alignItems: 'center',
+      gap: 2,
+    },
+    summaryNum: {
+      ...typography.h2,
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    summaryLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
 
-  // Date picker card
-  dateCard: {
-    gap: spacing.md,
-  },
-  endDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-  },
-  endDateText: {
-    ...typography.body,
-    color: colors.heading,
-    fontWeight: '600',
-  },
+    dateCard: {
+      gap: spacing.md,
+    },
+    endDateRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingTop: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    },
+    endDateText: {
+      ...typography.body,
+      color: colors.heading,
+      fontWeight: '600',
+    },
 
-  // Timeline section
-  timelineSection: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
+    timelineSection: {
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
 
-  // Stage row with timeline
-  stageRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  timelineCol: {
-    width: 36,
-    alignItems: 'center',
-  },
-  timelineLineTop: {
-    width: 2,
-    flex: 1,
-    backgroundColor: 'rgba(123,45,62,0.15)',
-    marginBottom: -1,
-  },
-  timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  timelineDotParallel: {
-    backgroundColor: colors.accent,
-  },
-  timelineDotText: {
-    ...typography.caption,
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 11,
-  },
-  timelineLineBottom: {
-    width: 2,
-    flex: 1,
-    backgroundColor: 'rgba(123,45,62,0.15)',
-    marginTop: -1,
-  },
+    stageRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    timelineCol: {
+      width: 36,
+      alignItems: 'center',
+    },
+    timelineLineTop: {
+      width: 2,
+      flex: 1,
+      backgroundColor: isDark ? 'rgba(232,87,122,0.15)' : 'rgba(123,45,62,0.15)',
+      marginBottom: -1,
+    },
+    timelineDot: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1,
+    },
+    timelineDotParallel: {
+      backgroundColor: colors.accent,
+    },
+    timelineDotText: {
+      ...typography.caption,
+      color: colors.white,
+      fontWeight: '700',
+      fontSize: 11,
+    },
+    timelineLineBottom: {
+      width: 2,
+      flex: 1,
+      backgroundColor: isDark ? 'rgba(232,87,122,0.15)' : 'rgba(123,45,62,0.15)',
+      marginTop: -1,
+    },
 
-  // Stage card
-  stageCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.85)',
-    padding: spacing.md,
-    gap: spacing.xs + 2,
-    shadowColor: 'rgba(123,45,62,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 1,
-    marginBottom: spacing.xs,
-  },
-  stageCardParallel: {
-    borderColor: 'rgba(197,165,90,0.3)',
-    backgroundColor: 'rgba(197,165,90,0.05)',
-  },
-  stageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  stageTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    flex: 1,
-  },
-  daysBadge: {
-    backgroundColor: 'rgba(123,45,62,0.1)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  daysBadgeText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  stageDates: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  stageDateItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  stageDateText: {
-    ...typography.small,
-    color: colors.text,
-  },
-  stageCost: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  stageCostText: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  parallelBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(197,165,90,0.12)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  parallelText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  stageDesc: {
-    ...typography.small,
-    color: colors.textLight,
-    lineHeight: 18,
-  },
+    stageCard: {
+      flex: 1,
+      backgroundColor: glass.fill.light,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: glass.border.light,
+      padding: spacing.md,
+      gap: spacing.xs + 2,
+      shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123,45,62,0.05)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 1,
+      marginBottom: spacing.xs,
+    },
+    stageCardParallel: {
+      borderColor: isDark ? 'rgba(240,201,93,0.25)' : 'rgba(197,165,90,0.3)',
+      backgroundColor: isDark ? 'rgba(240,201,93,0.05)' : 'rgba(197,165,90,0.05)',
+    },
+    stageHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    stageTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      flex: 1,
+    },
+    daysBadge: {
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    daysBadgeText: {
+      ...typography.caption,
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    stageDates: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    stageDateItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+    },
+    stageDateText: {
+      ...typography.small,
+      color: colors.text,
+    },
+    stageCost: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    stageCostText: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    parallelBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      alignSelf: 'flex-start',
+      backgroundColor: colors.accentLight,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    parallelText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '600',
+    },
+    stageDesc: {
+      ...typography.small,
+      color: colors.textLight,
+      lineHeight: 18,
+    },
 
-  // Bottom bar
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
-    backgroundColor: 'rgba(243,237,232,0.95)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.8)',
-  },
-});
+    bottomBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
+      backgroundColor: isDark ? 'rgba(10,10,16,0.95)' : 'rgba(243,237,232,0.95)',
+      borderTopWidth: 1,
+      borderTopColor: glass.border.light,
+    },
+  }), [colors, glass, isDark]);
+}

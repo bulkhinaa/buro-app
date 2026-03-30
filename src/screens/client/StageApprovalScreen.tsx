@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
 import {
   View,
@@ -19,7 +19,9 @@ import {
   SystemButton,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTaskStore } from '../../store/taskStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -40,6 +42,8 @@ type Props = {
 };
 
 export function StageApprovalScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useStageApprovalScreenStyles(colors);
   const {
     stageId,
     stageTitle = 'Штукатурка стен',
@@ -242,7 +246,10 @@ export function StageApprovalScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function useStageApprovalScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     marginTop: spacing.sm,
@@ -336,3 +343,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+    [colors],
+  );
+}
+

@@ -1,24 +1,27 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper, Button, GlassView, AppDialog } from '../../components';
-import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
+import type { ThemeColors } from '../../theme/colors';
 
 export function MasterOfferDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterOfferDetailStyles(colors, isDark);
   const showToast = useToastStore((s) => s.show);
 
   const {
@@ -145,9 +148,9 @@ export function MasterOfferDetailScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.title}>Предложение</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -209,72 +212,74 @@ export function MasterOfferDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.heading,
-  },
-  offerCard: {
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-  matchBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  matchText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  projectTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  stageLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  infoText: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  actions: {
-    gap: spacing.md,
-  },
-  acceptBtn: {
-    marginBottom: 0,
-  },
-});
+function useMasterOfferDetailStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.xl,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.heading,
+    },
+    offerCard: {
+      padding: spacing.xl,
+      marginBottom: spacing.xl,
+    },
+    matchBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      alignSelf: 'flex-start',
+      marginBottom: spacing.md,
+    },
+    matchText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    projectTitle: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    stageLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.primary,
+      marginBottom: spacing.md,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    infoText: {
+      fontSize: 14,
+      color: colors.text,
+    },
+    actions: {
+      gap: spacing.md,
+    },
+    acceptBtn: {
+      marginBottom: 0,
+    },
+  }), [colors, isDark]);
+}

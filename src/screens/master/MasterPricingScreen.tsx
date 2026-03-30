@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Chip } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 import { hapticSuccess } from '../../utils/haptics';
 import { getSpecializationsByCategory } from '../../data/specializations';
 import type { MasterPricing, PriceType } from '../../types';
+import type { ThemeColors } from '../../theme/colors';
 
 const webInputReset = Platform.OS === 'web'
   ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
@@ -28,6 +30,8 @@ const PRICE_TYPES: { value: PriceType; label: string }[] = [
 ];
 
 export function MasterPricingScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = useMasterPricingStyles(colors, isDark);
   const profile = useMasterStore((s) => s.profile);
   const updatePricing = useMasterStore((s) => s.updatePricing);
   const showToast = useToastStore((s) => s.show);
@@ -144,95 +148,97 @@ export function MasterPricingScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.lg,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    ...typography.h3,
-    color: colors.heading,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xxl,
-  },
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: 'rgba(123, 45, 62, 0.06)',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  infoText: {
-    ...typography.small,
-    color: colors.text,
-    flex: 1,
-  },
-  pricingRow: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  pricingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  pricingLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  pricingInputRow: {
-    gap: spacing.sm,
-  },
-  pricingInput: {
-    backgroundColor: colors.bgInput,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...typography.body,
-    color: colors.text,
-  },
-  pricingTypeChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: spacing.huge,
-  },
-  emptyText: {
-    ...typography.h3,
-    color: colors.heading,
-    marginTop: spacing.lg,
-  },
-  emptySubtext: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
-  bottomBar: {
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.5)',
-  },
-});
+function useMasterPricingStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    flex: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.lg,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      ...typography.h3,
+      color: colors.heading,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xxl,
+    },
+    infoBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.15)' : 'rgba(123, 45, 62, 0.06)',
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+    },
+    infoText: {
+      ...typography.small,
+      color: colors.text,
+      flex: 1,
+    },
+    pricingRow: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.6)',
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.85)',
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    pricingHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    pricingLabel: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    pricingInputRow: {
+      gap: spacing.sm,
+    },
+    pricingInput: {
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      ...typography.body,
+      color: colors.text,
+    },
+    pricingTypeChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: spacing.huge,
+    },
+    emptyText: {
+      ...typography.h3,
+      color: colors.heading,
+      marginTop: spacing.lg,
+    },
+    emptySubtext: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginTop: spacing.xs,
+    },
+    bottomBar: {
+      paddingVertical: spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)',
+    },
+  }), [colors, isDark]);
+}

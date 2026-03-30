@@ -11,9 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, ProgressBar, GlassView } from '../../components';
 import { WeekGrid } from '../../components/WeekGrid';
-import { colors } from '../../theme/colors';
 import { spacing, radius } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import {
   useScheduleStore,
@@ -23,6 +23,7 @@ import {
   DAY_LABELS_SHORT,
 } from '../../store/scheduleStore';
 import type { ScheduleSlotStatus } from '../../types';
+import type { ThemeColors } from '../../theme/colors';
 
 const MONTH_NAMES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -32,6 +33,8 @@ const MONTH_NAMES = [
 export function MasterScheduleScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterScheduleStyles(colors, isDark);
   const {
     slots,
     isLoading,
@@ -207,7 +210,7 @@ export function MasterScheduleScreen() {
         {/* Legend */}
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: 'rgba(123,45,62,0.08)' }]} />
+            <View style={[styles.legendDot, { backgroundColor: isDark ? 'rgba(123,45,62,0.15)' : 'rgba(123,45,62,0.08)' }]} />
             <Text style={styles.legendText}>Свободен</Text>
           </View>
           <View style={styles.legendItem}>
@@ -251,135 +254,137 @@ export function MasterScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  weekNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  navArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  weekLabel: {
-    ...typography.button,
-    fontWeight: '700',
-    color: colors.heading,
-  },
-  todayBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
-    marginBottom: spacing.md,
-  },
-  todayBtnText: {
-    ...typography.smallBold,
-    color: colors.primary,
-  },
-  monthOverview: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  monthRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  monthWeek: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-  },
-  monthWeekActive: {
-    backgroundColor: colors.primary,
-  },
-  monthWeekText: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  monthWeekTextActive: {
-    color: '#FFFFFF',
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-  },
-  legendText: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  occupancyCard: {
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  occupancyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  occupancyLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  occupancyValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  occupancyDetail: {
-    ...typography.caption,
-    color: colors.textLight,
-    marginTop: spacing.xs,
-  },
-});
+function useMasterScheduleStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    headerBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    weekNav: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    navArrow: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    weekLabel: {
+      ...typography.button,
+      fontWeight: '700',
+      color: colors.heading,
+    },
+    todayBtn: {
+      alignSelf: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      backgroundColor: colors.primaryLight,
+      marginBottom: spacing.md,
+    },
+    todayBtnText: {
+      ...typography.smallBold,
+      color: colors.primary,
+    },
+    monthOverview: {
+      marginBottom: spacing.md,
+      padding: spacing.md,
+    },
+    monthRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    monthWeek: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.sm,
+    },
+    monthWeekActive: {
+      backgroundColor: colors.primary,
+    },
+    monthWeekText: {
+      ...typography.caption,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    monthWeekTextActive: {
+      color: '#FFFFFF',
+    },
+    legend: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    legendDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 3,
+    },
+    legendText: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    occupancyCard: {
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    occupancyRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    occupancyLabel: {
+      ...typography.bodyBold,
+      color: colors.heading,
+    },
+    occupancyValue: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    occupancyDetail: {
+      ...typography.caption,
+      color: colors.textLight,
+      marginTop: spacing.xs,
+    },
+  }), [colors, isDark]);
+}

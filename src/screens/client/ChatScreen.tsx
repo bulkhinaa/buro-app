@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { ChatMessage } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { useChatStore, DEV_SENDER_NAMES } from '../../store/chatStore';
@@ -36,6 +38,8 @@ function getSenderName(senderId: string): string {
 }
 
 export function ChatScreen({ route }: Props) {
+  const { colors } = useTheme();
+  const styles = useChatScreenStyles(colors);
   const { user } = useAuthStore();
   const {
     loadMessages,
@@ -453,7 +457,10 @@ export function ChatScreen({ route }: Props) {
 
 // ─── Styles ───
 
-const styles = StyleSheet.create({
+function useChatScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -696,3 +703,7 @@ const styles = StyleSheet.create({
     right: 20,
   },
 });
+    [colors],
+  );
+}
+

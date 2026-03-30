@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, StatusBadge, AnimatedEntry, SharedHeader, GlassChip } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useMasterStore } from '../../store/masterStore';
 import { useTaskStore, type TaskItem } from '../../store/taskStore';
@@ -18,6 +19,8 @@ const JUMP_FINANCE_ENABLED = false;
 
 export function MasterHomeScreen({ navigation }: any) {
   const { t } = useTranslation();
+  const { colors, glass, isDark } = useTheme();
+  const styles = useMasterHomeStyles(colors, glass, isDark);
   const { user } = useAuthStore();
   const profile = useMasterStore((s) => s.profile);
   const { tasks, loadTasks } = useTaskStore();
@@ -287,207 +290,212 @@ export function MasterHomeScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  verificationBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.2)',
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  verificationIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verificationContent: {
-    flex: 1,
-  },
-  verificationTitle: {
-    ...typography.bodyBold,
-    color: colors.warning,
-    marginBottom: 2,
-  },
-  verificationText: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-  },
-  statNumber: {
-    ...typography.h2,
-    color: colors.primary,
-    marginBottom: 2,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  specsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.lg,
-  },
-  taskCard: {
-    marginBottom: spacing.md,
-  },
-  taskCardActive: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-  },
-  taskCardRejected: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.danger,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  deadline: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  taskTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  projectTitle: {
-    ...typography.body,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  taskFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  address: {
-    ...typography.small,
-    color: colors.textLight,
-    flex: 1,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg,
-  },
-  emptyIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: `${colors.primary}10`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  emptySubtext: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  checklistContainer: {
-    width: '100%',
-    marginBottom: spacing.xl,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  checklistItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: spacing.md,
-  },
-  checklistItemLast: {
-    borderBottomWidth: 0,
-  },
-  checklistBullet: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checklistContent: {
-    flex: 1,
-  },
-  checklistTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 1,
-  },
-  checklistSubtitle: {
-    ...typography.small,
-    color: colors.textLight,
-  },
-  fillProfileButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-  },
-  fillProfileButtonText: {
-    ...typography.bodyBold,
-    color: colors.white,
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    alignSelf: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  retryText: {
-    ...typography.small,
-    color: colors.primary,
-  },
-});
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
+function useMasterHomeStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    verificationBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 149, 0, 0.08)',
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 149, 0, 0.2)',
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      gap: spacing.md,
+    },
+    verificationIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 149, 0, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    verificationContent: {
+      flex: 1,
+    },
+    verificationTitle: {
+      ...typography.bodyBold,
+      color: colors.warning,
+      marginBottom: 2,
+    },
+    verificationText: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginBottom: spacing.xxl,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: glass.fill.regular,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: glass.border.light,
+    },
+    statNumber: {
+      ...typography.h2,
+      color: colors.primary,
+      marginBottom: 2,
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 2,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    specsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: spacing.xl,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.lg,
+    },
+    taskCard: {
+      marginBottom: spacing.md,
+    },
+    taskCardActive: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
+    },
+    taskCardRejected: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.danger,
+    },
+    taskHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    deadline: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    taskTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    projectTitle: {
+      ...typography.body,
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    taskFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    address: {
+      ...typography.small,
+      color: colors.textLight,
+      flex: 1,
+    },
+    emptyCard: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      paddingHorizontal: spacing.lg,
+    },
+    emptyIconWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: `${colors.primary}10`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.lg,
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginBottom: spacing.sm,
+    },
+    emptySubtext: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+    },
+    checklistContainer: {
+      width: '100%',
+      marginBottom: spacing.xl,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    checklistItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      backgroundColor: colors.bgCard,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: spacing.md,
+    },
+    checklistItemLast: {
+      borderBottomWidth: 0,
+    },
+    checklistBullet: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checklistContent: {
+      flex: 1,
+    },
+    checklistTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: 1,
+    },
+    checklistSubtitle: {
+      ...typography.small,
+      color: colors.textLight,
+    },
+    fillProfileButton: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.xl,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xxl,
+      alignItems: 'center',
+    },
+    fillProfileButtonText: {
+      ...typography.bodyBold,
+      color: colors.white,
+    },
+    retryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      alignSelf: 'center',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    retryText: {
+      ...typography.small,
+      color: colors.primary,
+    },
+  }), [colors, glass, isDark]);
+}

@@ -24,7 +24,8 @@ import {
 } from '../../components';
 import type { DialogButton } from '../../components';
 import type { DaDataSuggestion } from '../../components/AddressInput';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography, glass } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useToastStore } from '../../store/toastStore';
@@ -65,6 +66,7 @@ const ROOM_SCOPES: {
 const ALL_ROOM_VALUES: RenovationScope[] = ROOM_SCOPES.map((s) => s.value);
 
 export function CreateProjectScreen({ navigation, route }: Props) {
+  const { colors, glass, isDark } = useTheme();
   const { user } = useAuthStore();
   const { submitProject, isLoading } = useProjectStore();
   const showToast = useToastStore((s) => s.show);
@@ -122,7 +124,6 @@ export function CreateProjectScreen({ navigation, route }: Props) {
   const handleToggleScope = useCallback(
     (scope: RenovationScope) => {
       if (scope === 'full') {
-        // Toggle "Вся квартира"
         if (isFullSelected) {
           setSelectedScopes([]);
         } else {
@@ -134,11 +135,9 @@ export function CreateProjectScreen({ navigation, route }: Props) {
       setSelectedScopes((prev) => {
         let next: RenovationScope[];
         if (prev.includes(scope)) {
-          // Remove this scope and 'full' if present
           next = prev.filter((s) => s !== scope && s !== 'full');
         } else {
           next = [...prev.filter((s) => s !== 'full'), scope];
-          // If all rooms selected, also add 'full'
           const allRoomsNow = ALL_ROOM_VALUES.every((v) => next.includes(v));
           if (allRoomsNow) {
             next = ['full', ...ALL_ROOM_VALUES];
@@ -155,7 +154,6 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     addressValidated && areaText.trim().length > 0 && areaSqm > 0;
   const canProceedScope = selectedScopes.length > 0;
 
-  // Address error
   const addressError = useMemo(() => {
     if (!addressTouched) return undefined;
     if (!address.trim()) return 'Введите адрес';
@@ -163,7 +161,6 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     return undefined;
   }, [address, addressValidated, addressTouched]);
 
-  // Area error
   const areaError = useMemo(() => {
     if (!areaTouched) return undefined;
     if (!areaText.trim()) return 'Укажите площадь';
@@ -171,7 +168,6 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     return undefined;
   }, [areaText, areaSqm, areaTouched]);
 
-  // Auto-fill area from DaData suggestion (Maximum plan provides square data)
   const handleAddressSelected = useCallback((suggestion: DaDataSuggestion) => {
     if (suggestion.data.square && suggestion.data.square > 0) {
       setAreaText(String(Math.round(suggestion.data.square)));
@@ -232,7 +228,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
   const handleSubmit = useCallback(async () => {
     if (!user) return;
-    if (isLoading) return; // Prevent double submit
+    if (isLoading) return;
     Keyboard.dismiss();
 
     const finalAddress = hasObject ? (objectAddress || '') : address.trim();
@@ -291,12 +287,25 @@ export function CreateProjectScreen({ navigation, route }: Props) {
     showToast,
   ]);
 
+  // --- Theme-aware glass card helpers ---
+  const glassCard = {
+    backgroundColor: isDark ? glass.fill.regular : 'rgba(255, 255, 255, 0.6)',
+    borderColor: isDark ? glass.border.regular : 'rgba(255, 255, 255, 0.85)',
+    shadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(123, 45, 62, 0.06)',
+  };
+  const glassIconCircle = {
+    backgroundColor: isDark ? glass.fill.light : 'rgba(255, 255, 255, 0.8)',
+  };
+  const glassIconCircleSelected = {
+    backgroundColor: isDark ? colors.primaryLight : 'rgba(123, 45, 62, 0.1)',
+  };
+
   // ─── Step renderers ───
 
   const renderAddressStep = () => (
     <>
-      <Text style={styles.heading}>Расскажите об объекте</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.heading, { color: colors.heading }]}>Расскажите об объекте</Text>
+      <Text style={[styles.subtitle, { color: colors.textLight }]}>
         Чем точнее данные, тем точнее расчёт
       </Text>
 
@@ -318,7 +327,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
           value={areaText}
           onChangeText={(text) => {
             setAreaText(text);
-            setAreaAutoFilled(false); // User override clears badge
+            setAreaAutoFilled(false);
             if (text.length > 0) setAreaTouched(true);
           }}
           keyboardType="numeric"
@@ -329,7 +338,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
             areaAutoFilled ? (
               <View style={styles.autofilledBadge}>
                 <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                <Text style={styles.autofilledText}>из реестра</Text>
+                <Text style={[styles.autofilledText, { color: colors.success }]}>из реестра</Text>
               </View>
             ) : undefined
           }
@@ -341,8 +350,8 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
   const renderScopeStep = () => (
     <>
-      <Text style={styles.heading}>Что ремонтируем?</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.heading, { color: colors.heading }]}>Что ремонтируем?</Text>
+      <Text style={[styles.subtitle, { color: colors.textLight }]}>
         Выберите помещения для ремонта
       </Text>
 
@@ -352,17 +361,18 @@ export function CreateProjectScreen({ navigation, route }: Props) {
           onPress={() => handleToggleScope('full')}
           style={[
             styles.scopeCardFull,
-            isFullSelected && styles.scopeCardSelected,
+            glassCard,
+            isFullSelected && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
           ]}
         >
-          <View style={[styles.scopeIconCircle, isFullSelected && styles.scopeIconCircleSelected]}>
+          <View style={[styles.scopeIconCircle, glassIconCircle, isFullSelected && glassIconCircleSelected]}>
             <Ionicons
               name="home-outline"
               size={24}
               color={isFullSelected ? colors.primary : colors.textLight}
             />
           </View>
-          <Text style={[styles.scopeLabel, isFullSelected && styles.scopeLabelSelected]}>
+          <Text style={[styles.scopeLabel, { color: colors.heading }, isFullSelected && { color: colors.primary }]}>
             Вся квартира
           </Text>
           {isFullSelected && (
@@ -381,17 +391,18 @@ export function CreateProjectScreen({ navigation, route }: Props) {
               onPress={() => handleToggleScope(room.value)}
               style={[
                 styles.scopeCard,
-                isSelected && styles.scopeCardSelected,
+                glassCard,
+                isSelected && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
               ]}
             >
-              <View style={[styles.scopeIconCircle, isSelected && styles.scopeIconCircleSelected]}>
+              <View style={[styles.scopeIconCircle, glassIconCircle, isSelected && glassIconCircleSelected]}>
                 <Ionicons
                   name={room.icon}
                   size={22}
                   color={isSelected ? colors.primary : colors.textLight}
                 />
               </View>
-              <Text style={[styles.scopeLabel, isSelected && styles.scopeLabelSelected]}>
+              <Text style={[styles.scopeLabel, { color: colors.heading }, isSelected && { color: colors.primary }]}>
                 {room.label}
               </Text>
               {isSelected && (
@@ -408,8 +419,8 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
   const renderTypeStep = () => (
     <>
-      <Text style={styles.heading}>Тип ремонта</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.heading, { color: colors.heading }]}>Тип ремонта</Text>
+      <Text style={[styles.subtitle, { color: colors.textLight }]}>
         Мы рассчитаем примерную стоимость и сроки
       </Text>
 
@@ -432,7 +443,8 @@ export function CreateProjectScreen({ navigation, route }: Props) {
               key={type}
               style={[
                 styles.typeCard,
-                isSelected && styles.typeCardSelected,
+                glassCard,
+                isSelected && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
               ]}
               onPress={() => setRepairType(type)}
             >
@@ -445,12 +457,13 @@ export function CreateProjectScreen({ navigation, route }: Props) {
               <Text
                 style={[
                   styles.typeLabel,
-                  isSelected && styles.typeLabelSelected,
+                  { color: colors.heading },
+                  isSelected && { color: colors.primary },
                 ]}
               >
                 {config.label}
               </Text>
-              <Text style={styles.typeRate}>
+              <Text style={[styles.typeRate, { color: colors.textLight }]}>
                 от {(config.rateMin / 1000).toFixed(0)}т ₽/м²
               </Text>
             </Pressable>
@@ -460,35 +473,34 @@ export function CreateProjectScreen({ navigation, route }: Props) {
 
       {estimate && (
         <Card style={styles.estimateCard}>
-          {/* Show scope area if not full apartment */}
           {estimate.cost.scopeArea < areaSqm && (
             <>
               <View style={styles.estimateRow}>
-                <Text style={styles.estimateLabel}>Площадь ремонта</Text>
-                <Text style={styles.estimateValue}>
+                <Text style={[styles.estimateLabel, { color: colors.textLight }]}>Площадь ремонта</Text>
+                <Text style={[styles.estimateValue, { color: colors.heading }]}>
                   ~{estimate.cost.scopeArea} м² из {areaSqm} м²
                 </Text>
               </View>
-              <View style={styles.estimateDivider} />
+              <View style={[styles.estimateDivider, { backgroundColor: colors.border }]} />
             </>
           )}
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Стоимость</Text>
-            <Text style={styles.estimateValue} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.estimateLabel, { color: colors.textLight }]}>Стоимость</Text>
+            <Text style={[styles.estimateValue, { color: colors.heading }]} numberOfLines={1} adjustsFontSizeToFit>
               {formatRubles(estimate.cost.min)} – {formatRubles(estimate.cost.max)}
             </Text>
           </View>
-          <View style={styles.estimateDivider} />
+          <View style={[styles.estimateDivider, { backgroundColor: colors.border }]} />
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Сроки</Text>
-            <Text style={styles.estimateValueAccent}>
+            <Text style={[styles.estimateLabel, { color: colors.textLight }]}>Сроки</Text>
+            <Text style={[styles.estimateValueAccent, { color: colors.primary }]}>
               {formatTimeline(estimate.days)}
             </Text>
           </View>
-          <View style={styles.estimateDivider} />
+          <View style={[styles.estimateDivider, { backgroundColor: colors.border }]} />
           <View style={styles.estimateRow}>
-            <Text style={styles.estimateLabel}>Этапы</Text>
-            <Text style={styles.estimateValue}>
+            <Text style={[styles.estimateLabel, { color: colors.textLight }]}>Этапы</Text>
+            <Text style={[styles.estimateValue, { color: colors.heading }]}>
               {getStageCount(repairType)} этапов
             </Text>
           </View>
@@ -501,7 +513,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         onChangeText={setComment}
       />
 
-      <Text style={styles.disclaimer}>
+      <Text style={[styles.disclaimer, { color: colors.textLight }]}>
         * Расчёт приблизительный. Точную смету составит супервайзер после
         осмотра объекта.
       </Text>
@@ -527,11 +539,11 @@ export function CreateProjectScreen({ navigation, route }: Props) {
             title=""
             onPress={handleBack}
             variant="ghost"
-            icon={<Ionicons name="chevron-back" size={22} color={colors.heading} />}
+            icon={<Ionicons name="arrow-back" size={22} color={colors.heading} />}
             style={styles.backButton}
           />
           <View style={styles.progressArea}>
-            <Text style={styles.stepText}>Шаг {step} из {TOTAL_STEPS}</Text>
+            <Text style={[styles.stepText, { color: colors.textLight }]}>Шаг {step} из {TOTAL_STEPS}</Text>
             <ProgressBar progress={step / TOTAL_STEPS} height={4} />
           </View>
           <View style={{ width: 44 }} />
@@ -551,7 +563,7 @@ export function CreateProjectScreen({ navigation, route }: Props) {
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {step < TOTAL_STEPS ? (
             <Button
-              title={step === STEP_ADDRESS ? 'Далее: помещения →' : 'Далее: тип ремонта →'}
+              title="Далее →"
               onPress={handleNext}
               fullWidth
             />
@@ -608,7 +620,6 @@ const styles = StyleSheet.create({
   },
   stepText: {
     ...typography.caption,
-    color: colors.textLight,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
@@ -618,16 +629,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingBottom: 100, // Extra padding so content doesn't hide behind fixed bottomBar
+    paddingBottom: 100,
   },
   heading: {
     ...typography.h1,
-    color: colors.heading,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textLight,
     marginBottom: spacing.xxl,
     lineHeight: 22,
   },
@@ -647,13 +656,9 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -663,41 +668,25 @@ const styles = StyleSheet.create({
     width: '48%',
     flexGrow: 1,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 2,
   },
-  scopeCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
   scopeIconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  scopeIconCircleSelected: {
-    backgroundColor: 'rgba(123, 45, 62, 0.1)',
-  },
   scopeLabel: {
     ...typography.bodyBold,
-    color: colors.heading,
     textAlign: 'center',
-  },
-  scopeLabelSelected: {
-    color: colors.primary,
   },
   scopeCheck: {
     position: 'absolute',
@@ -715,40 +704,27 @@ const styles = StyleSheet.create({
   typeCard: {
     width: '48%',
     flexGrow: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
     padding: spacing.lg,
     alignItems: 'center',
-    // Glass shadow
-    shadowColor: 'rgba(123, 45, 62, 0.06)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 2,
   },
-  typeCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
   typeLabel: {
     ...typography.bodyBold,
-    color: colors.heading,
     marginBottom: 2,
-  },
-  typeLabelSelected: {
-    color: colors.primary,
   },
   typeRate: {
     ...typography.caption,
-    color: colors.textLight,
   },
 
   // ─── Estimate card ───
   estimateCard: {
     borderLeftWidth: 3,
-    borderLeftColor: colors.gold,
+    borderLeftColor: '#C5A55A',
     marginBottom: spacing.xxl,
   },
   estimateRow: {
@@ -759,28 +735,23 @@ const styles = StyleSheet.create({
   },
   estimateDivider: {
     height: 1,
-    backgroundColor: colors.border,
   },
   estimateLabel: {
     ...typography.body,
-    color: colors.textLight,
     marginRight: spacing.sm,
   },
   estimateValue: {
     ...typography.bodyBold,
-    color: colors.heading,
     flex: 1,
     textAlign: 'right',
   },
   estimateValueAccent: {
     ...typography.bodyBold,
-    color: colors.primary,
     flex: 1,
     textAlign: 'right',
   },
   disclaimer: {
     ...typography.small,
-    color: colors.textLight,
     textAlign: 'center',
     marginTop: spacing.xl,
     marginBottom: spacing.xxl,
@@ -802,7 +773,6 @@ const styles = StyleSheet.create({
   submitBtn: {
     flex: 2,
   },
-  // Auto-filled area badge
   autofilledBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -810,6 +780,5 @@ const styles = StyleSheet.create({
   },
   autofilledText: {
     ...typography.caption,
-    color: colors.success,
   },
 });

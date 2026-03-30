@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper, Button, GlassView, AppDialog } from '../../components';
-import { colors } from '../../theme/colors';
+
 import { spacing, radius } from '../../theme/spacing';
-import { glass } from '../../theme/glass';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
+
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../lib/supabase';
@@ -109,6 +111,8 @@ const DEV_MASTERS: MasterCandidate[] = [
 ];
 
 export function MasterMatchScreen() {
+  const { colors } = useTheme();
+  const styles = useMasterMatchScreenStyles(colors);
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
@@ -369,7 +373,10 @@ export function MasterMatchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function useMasterMatchScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -564,3 +571,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+    [colors],
+  );
+}
+

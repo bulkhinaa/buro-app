@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,9 @@ import {
   LabelMaster,
   SystemButton,
 } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useToastStore } from '../../store/toastStore';
 
@@ -292,6 +294,8 @@ const MOCK_CASES_DETAIL: Record<string, CaseData> = {
 const DEFAULT_CASE = MOCK_CASES_DETAIL['1'];
 
 export function CaseDetailScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useCaseDetailScreenStyles(colors);
   const caseId: string = route.params?.caseId || '1';
   const caseData = MOCK_CASES_DETAIL[caseId] || DEFAULT_CASE;
 
@@ -517,7 +521,10 @@ export function CaseDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function useCaseDetailScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -689,3 +696,7 @@ const styles = StyleSheet.create({
     right: 20,
   },
 });
+    [colors],
+  );
+}
+

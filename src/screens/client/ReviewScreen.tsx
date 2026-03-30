@@ -1,10 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { hapticSuccess, hapticError, hapticLight } from '../../utils/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper, Button, TextArea, Card, SystemButton } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useReviewStore } from '../../store/reviewStore';
 import { useAuthStore } from '../../store/authStore';
@@ -22,12 +24,14 @@ const MAX_PHOTOS = 5;
 function StarRating({
   rating,
   onRate,
+  colors,
 }: {
   rating: number;
   onRate: (n: number) => void;
+  colors: ThemeColors;
 }) {
   return (
-    <View style={styles.starsRow}>
+    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Pressable key={n} onPress={() => { onRate(n); hapticLight(); }} hitSlop={8}>
           <Ionicons
@@ -48,6 +52,8 @@ interface MasterItem {
 }
 
 export function ReviewScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useReviewScreenStyles(colors);
   const params = route.params || {};
   const projectId: string = params.projectId || '';
   const supervisorId: string = params.supervisorId || '';
@@ -214,6 +220,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       <StarRating
         rating={supervisorRating}
         onRate={setSupervisorRating}
+        colors={colors}
       />
       {supervisorRating > 0 && (
         <Text style={styles.ratingLabel}>
@@ -232,6 +239,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           <StarRating
             rating={masterRatings[master.id] || 0}
             onRate={(n) => handleMasterRating(master.id, n)}
+            colors={colors}
           />
         </View>
       ))}
@@ -301,7 +309,10 @@ export function ReviewScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function useReviewScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     marginTop: spacing.sm,
@@ -398,3 +409,7 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
 });
+    [colors],
+  );
+}
+

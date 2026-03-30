@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, AppDialog, SystemButton, Toggle } from '../../components';
 import type { DialogButton } from '../../components';
 import { hapticSuccess } from '../../utils/haptics';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { UserRole } from '../../types';
 import { useAdminStore, type AdminUser } from '../../store/adminStore';
 import { useAuthStore } from '../../store/authStore';
@@ -15,6 +16,11 @@ import {
   updateMasterVerification,
 } from '../../services/projectService';
 
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
+
+const ADMIN_PURPLE = '#7C3AED';
+
 const ROLE_LABELS: Record<string, string> = {
   client: 'Клиент',
   master: 'Мастер',
@@ -22,14 +28,17 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Администратор',
 };
 
-const ROLE_COLORS: Record<string, string> = {
-  client: colors.primary,
-  master: colors.success,
-  supervisor: colors.gold,
-  admin: colors.adminPurple,
-};
-
 export function AdminUserDetailScreen({ route, navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminUserDetailStyles(colors, glass, isDark);
+
+  const ROLE_COLORS: Record<string, string> = useMemo(() => ({
+    client: colors.primary,
+    master: colors.success,
+    supervisor: colors.gold,
+    admin: ADMIN_PURPLE,
+  }), [colors]);
+
   const { userId } = route.params;
   const currentUser = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
@@ -38,7 +47,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState('');
   const [dialogMessage, setDialogMessage] = useState('');
@@ -140,6 +148,14 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
 
   const roleColor = ROLE_COLORS[user.role];
 
+  const InfoRow = ({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) => (
+    <View style={styles.infoRow}>
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+
   return (
     <ScreenWrapper style={styles.container}>
       <View style={styles.backRow}>
@@ -147,7 +163,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile header */}
         <View style={styles.profileHeader}>
           <View style={[styles.avatar, { backgroundColor: `${roleColor}15` }]}>
             <Text style={[styles.avatarText, { color: roleColor }]}>
@@ -162,7 +177,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* Contact info */}
         <Card style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Контакты</Text>
           <InfoRow icon="call-outline" label="Телефон" value={user.phone} />
@@ -175,7 +189,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
           />
         </Card>
 
-        {/* Master-specific info */}
         {user.role === 'master' && (
           <Card style={styles.infoCard}>
             <Text style={styles.sectionTitle}>Мастер</Text>
@@ -204,7 +217,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
           </Card>
         )}
 
-        {/* Status */}
         <Card style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Статус</Text>
           <View style={styles.statusRow}>
@@ -216,7 +228,6 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
           </View>
         </Card>
 
-        {/* Actions */}
         <View style={styles.actions}>
           <Button
             title="Изменить роль"
@@ -239,120 +250,104 @@ export function AdminUserDetailScreen({ route, navigation }: any) {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
+function useAdminUserDetailStyles(colors: ThemeColors, _glass: GlassTokens, _isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      paddingBottom: 24,
+    },
+    backRow: {
+      flexDirection: 'row',
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 100,
+    },
+    loadingText: {
+      ...typography.body,
+      color: colors.textLight,
+    },
+    profileHeader: {
+      alignItems: 'center',
+      marginBottom: spacing.xxl,
+    },
+    avatar: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.md,
+    },
+    avatarText: {
+      fontSize: 28,
+      fontWeight: '700',
+    },
+    name: {
+      ...typography.h2,
+      color: colors.heading,
+      marginBottom: spacing.sm,
+    },
+    roleBadge: {
+      paddingHorizontal: 14,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    roleBadgeText: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    infoCard: {
+      marginBottom: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: spacing.md,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    infoLabel: {
+      ...typography.small,
+      color: colors.textLight,
+      width: 100,
+    },
+    infoValue: {
+      ...typography.body,
+      color: colors.heading,
+      flex: 1,
+    },
+    verifyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    verifyLabel: {
+      ...typography.body,
+      color: colors.heading,
+      flex: 1,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    statusLabel: {
+      ...typography.body,
+      color: colors.heading,
+    },
+    actions: {
+      gap: spacing.md,
+      marginTop: spacing.lg,
+      marginBottom: spacing.xxl,
+    },
+  }), [colors]);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 24,
-  },
-  backRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  name: {
-    ...typography.h2,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  roleBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoCard: {
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  infoLabel: {
-    ...typography.small,
-    color: colors.textLight,
-    width: 100,
-  },
-  infoValue: {
-    ...typography.body,
-    color: colors.heading,
-    flex: 1,
-  },
-  verifyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  verifyLabel: {
-    ...typography.body,
-    color: colors.heading,
-    flex: 1,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statusLabel: {
-    ...typography.body,
-    color: colors.heading,
-  },
-  actions: {
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xxl,
-  },
-});

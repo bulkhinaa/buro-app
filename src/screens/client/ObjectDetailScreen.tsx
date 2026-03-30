@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,9 @@ import {
   AppDialog,
 } from '../../components';
 import type { DialogButton } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { useObjectStore } from '../../store/objectStore';
 import { useProjectStore } from '../../store/projectStore';
 import { useToastStore } from '../../store/toastStore';
@@ -46,6 +48,8 @@ type Props = {
 };
 
 export function ObjectDetailScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useObjectDetailScreenStyles(colors);
   const object = route.params?.object as PropertyObject | undefined;
   const { removeObject } = useObjectStore();
   const showToast = useToastStore((s) => s.show);
@@ -298,7 +302,10 @@ export function ObjectDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function useObjectDetailScreenStyles(colors: ThemeColors) {
+  return useMemo(
+    () =>
+      StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,3 +442,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxxl,
   },
 });
+    [colors],
+  );
+}
+

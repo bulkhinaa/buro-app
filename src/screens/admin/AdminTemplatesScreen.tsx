@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, SystemButton, GlassChip, AppDialog } from '../../components';
 import { hapticLight, hapticSuccess } from '../../utils/haptics';
 import { useToastStore } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
-import { colors, spacing, typography, radius } from '../../theme';
+import { spacing, typography, radius } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import {
   fetchStageTemplates,
   createStageTemplate,
@@ -13,6 +14,9 @@ import {
   deleteStageTemplate,
 } from '../../services/projectService';
 import type { StageTemplate } from '../../types';
+
+import type { ThemeColors } from '../../theme/colors';
+import type { GlassTokens } from '../../theme/glass';
 
 // Local mock for dev users
 const DEFAULT_TEMPLATES: StageTemplate[] = [
@@ -35,6 +39,8 @@ const DEFAULT_TEMPLATES: StageTemplate[] = [
 const webInputStyle = Platform.OS === 'web' ? { outlineStyle: 'none' as any, outlineWidth: 0 } : {};
 
 export function AdminTemplatesScreen({ navigation }: any) {
+  const { colors, glass, isDark } = useTheme();
+  const styles = useAdminTemplatesStyles(colors, glass, isDark);
   const [templates, setTemplates] = useState<StageTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -49,7 +55,6 @@ export function AdminTemplatesScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const isDev = user?.id.startsWith('dev-');
 
-  // Load templates
   useEffect(() => {
     loadTemplates();
   }, []);
@@ -342,7 +347,6 @@ export function AdminTemplatesScreen({ navigation }: any) {
         />
       )}
 
-      {/* Delete confirmation dialog */}
       <AppDialog
         visible={!!deleteTarget}
         title="Удалить этап?"
@@ -357,175 +361,64 @@ export function AdminTemplatesScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 100,
-  },
-  backRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: spacing.huge,
-  },
-  card: {
-    marginBottom: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  indexCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: `${colors.primary}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  indexText: {
-    ...typography.bodyBold,
-    color: colors.primary,
-    fontSize: 14,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-  },
-  cardDesc: {
-    ...typography.small,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  expandedContent: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.04)',
-  },
-  checklistTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.sm,
-  },
-  checkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  checkText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
-  // Edit mode styles
-  editLabel: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-  },
-  editInput: {
-    backgroundColor: colors.bgInput || '#F9F7F4',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    ...typography.body,
-    color: colors.heading,
-    borderWidth: 0,
-  },
-  editInputMultiline: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  editCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  editCheckInput: {
-    flex: 1,
-    backgroundColor: colors.bgInput || '#F9F7F4',
-    borderRadius: radius.lg,
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    ...typography.body,
-    color: colors.heading,
-    borderWidth: 0,
-  },
-  editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
-  cancelBtn: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.textLight,
-  },
-  cancelBtnText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primary,
-  },
-  saveBtnText: {
-    ...typography.bodyBold,
-    color: colors.white,
-  },
-});
+function useAdminTemplatesStyles(colors: ThemeColors, _glass: GlassTokens, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: { paddingBottom: 100 },
+    backRow: { flexDirection: 'row', marginTop: spacing.sm, marginBottom: spacing.md },
+    titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
+    title: { ...typography.h1, color: colors.heading },
+    subtitle: { ...typography.body, color: colors.textLight, marginTop: 2 },
+    addBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.primary,
+      alignItems: 'center', justifyContent: 'center',
+      shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4,
+    },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: spacing.huge },
+    card: { marginBottom: spacing.sm },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    indexCircle: {
+      width: 32, height: 32, borderRadius: 16,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    indexText: { ...typography.bodyBold, color: colors.primary, fontSize: 14 },
+    cardInfo: { flex: 1 },
+    cardTitle: { ...typography.bodyBold, color: colors.heading },
+    cardDesc: { ...typography.small, color: colors.textLight, marginTop: 2 },
+    headerActions: { flexDirection: 'row', gap: spacing.md },
+    expandedContent: {
+      marginTop: spacing.lg, paddingTop: spacing.md,
+      borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+    },
+    checklistTitle: { ...typography.bodyBold, color: colors.heading, marginBottom: spacing.sm },
+    checkItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+    checkText: { ...typography.body, color: colors.text },
+    emptyText: { ...typography.body, color: colors.textLight, fontStyle: 'italic' },
+    editLabel: { ...typography.bodyBold, color: colors.heading, marginBottom: spacing.xs, marginTop: spacing.md },
+    editInput: {
+      backgroundColor: colors.bgInput,
+      borderRadius: radius.lg, padding: spacing.md,
+      ...typography.body, color: colors.heading, borderWidth: 0,
+    },
+    editInputMultiline: { minHeight: 80, textAlignVertical: 'top' },
+    editCheckRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+    editCheckInput: {
+      flex: 1, backgroundColor: colors.bgInput,
+      borderRadius: radius.lg, padding: spacing.sm, paddingHorizontal: spacing.md,
+      ...typography.body, color: colors.heading, borderWidth: 0,
+    },
+    editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.md, marginTop: spacing.xl },
+    cancelBtn: {
+      paddingVertical: spacing.sm, paddingHorizontal: spacing.lg,
+      borderRadius: radius.xl, borderWidth: 1, borderColor: colors.textLight,
+    },
+    cancelBtnText: { ...typography.body, color: colors.textLight },
+    saveBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+      paddingVertical: spacing.sm, paddingHorizontal: spacing.lg,
+      borderRadius: radius.xl, backgroundColor: colors.primary,
+    },
+    saveBtnText: { ...typography.bodyBold, color: colors.white },
+  }), [colors, isDark]);
+}

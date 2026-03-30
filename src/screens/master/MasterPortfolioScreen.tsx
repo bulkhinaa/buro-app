@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Button, Card, AppDialog, EmptyStateIllustration } from '../../components';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { useToastStore } from '../../store/toastStore';
 
@@ -25,6 +26,7 @@ function pluralRu(n: number, one: string, few: string, many: string): string {
 }
 import { hapticSuccess } from '../../utils/haptics';
 import type { PortfolioProject } from '../../types';
+import type { ThemeColors } from '../../theme/colors';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_GAP = spacing.md;
@@ -32,6 +34,8 @@ const CARD_PADDING = spacing.xl;
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 export function MasterPortfolioScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const styles = useMasterPortfolioStyles(colors, isDark);
   const profile = useMasterStore((s) => s.profile);
   const removePortfolioProject = useMasterStore((s) => s.removePortfolioProject);
   const showToast = useToastStore((s) => s.show);
@@ -155,106 +159,108 @@ export function MasterPortfolioScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  header: {
-    paddingTop: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.heading,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  row: {
-    gap: CARD_GAP,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  cardWrapper: {
-    width: CARD_WIDTH,
-    marginBottom: CARD_GAP,
-  },
-  projectCard: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  cardImage: {
-    width: '100%',
-    height: CARD_WIDTH * 0.75,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-  },
-  cardImagePlaceholder: {
-    width: '100%',
-    height: CARD_WIDTH * 0.75,
-    backgroundColor: colors.bgInput,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-  },
-  cardContent: {
-    padding: spacing.md,
-  },
-  cardTitle: {
-    ...typography.bodyBold,
-    color: colors.heading,
-    marginBottom: 2,
-  },
-  cardDate: {
-    ...typography.caption,
-    color: colors.textLight,
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 12,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xxl,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.heading,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  emptySubtitle: {
-    ...typography.body,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 110,
-    right: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-});
+function useMasterPortfolioStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    header: {
+      paddingTop: spacing.lg,
+      marginBottom: spacing.xl,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.heading,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      ...typography.body,
+      color: colors.textLight,
+    },
+    row: {
+      gap: CARD_GAP,
+    },
+    listContent: {
+      paddingBottom: 24,
+    },
+    cardWrapper: {
+      width: CARD_WIDTH,
+      marginBottom: CARD_GAP,
+    },
+    projectCard: {
+      padding: 0,
+      overflow: 'hidden',
+    },
+    cardImage: {
+      width: '100%',
+      height: CARD_WIDTH * 0.75,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+    },
+    cardImagePlaceholder: {
+      width: '100%',
+      height: CARD_WIDTH * 0.75,
+      backgroundColor: colors.bgInput,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+    },
+    cardContent: {
+      padding: spacing.md,
+    },
+    cardTitle: {
+      ...typography.bodyBold,
+      color: colors.heading,
+      marginBottom: 2,
+    },
+    cardDate: {
+      ...typography.caption,
+      color: colors.textLight,
+    },
+    deleteButton: {
+      position: 'absolute',
+      top: spacing.sm,
+      right: spacing.sm,
+      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)',
+      borderRadius: 12,
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xxl,
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.heading,
+      marginTop: spacing.xl,
+      marginBottom: spacing.sm,
+    },
+    emptySubtitle: {
+      ...typography.body,
+      color: colors.textLight,
+      textAlign: 'center',
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 110,
+      right: spacing.xl,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+  }), [colors, isDark]);
+}

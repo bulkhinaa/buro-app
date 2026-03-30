@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, radius, typography } from '../../theme';
+import { spacing, radius, typography } from '../../theme';
+import { useTheme } from '../../theme/ThemeContext';
 import { useMasterStore } from '../../store/masterStore';
 import { hapticLight } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
+import type { ThemeColors } from '../../theme/colors';
 
 interface SlideConfig {
   id: string;
@@ -40,6 +42,8 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const markWelcomeSeen = useMasterStore((s) => s.markWelcomeSeen);
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const styles = useMasterWelcomeStyles(colors, isDark);
 
   const isLastSlide = currentIndex === SLIDE_CONFIGS.length - 1;
   const slide = SLIDE_CONFIGS[currentIndex];
@@ -156,101 +160,103 @@ export function MasterWelcomeScreen({ onComplete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: spacing.xl,
-  },
-  skipText: {
-    ...typography.body,
-    color: colors.textLight,
-  },
-  slideContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  slide: {
-    paddingHorizontal: spacing.xxxl,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(123, 45, 62, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  slideTitle: {
-    ...typography.h1,
-    color: colors.heading,
-    textAlign: 'center',
-    marginBottom: spacing.xxl,
-    lineHeight: 36,
-  },
-  painCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    width: '100%',
-  },
-  painText: {
-    ...typography.body,
-    color: colors.text,
-    flex: 1,
-    fontStyle: 'italic',
-  },
-  solutionText: {
-    ...typography.body,
-    color: colors.text,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  bottomArea: {
-    paddingHorizontal: spacing.xxxl,
-    gap: spacing.xl,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(123, 45, 62, 0.2)',
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: colors.primary,
-  },
-  actionButton: {
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-  },
-  actionButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  actionButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
-  },
-  actionButtonText: {
-    ...typography.button,
-    color: colors.white,
-  },
-});
+function useMasterWelcomeStyles(colors: ThemeColors, isDark: boolean) {
+  return useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      paddingHorizontal: spacing.xl,
+    },
+    skipText: {
+      ...typography.body,
+      color: colors.textLight,
+    },
+    slideContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    slide: {
+      paddingHorizontal: spacing.xxxl,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    iconCircle: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.2)' : 'rgba(123, 45, 62, 0.08)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xxxl,
+    },
+    slideTitle: {
+      ...typography.h1,
+      color: colors.heading,
+      textAlign: 'center',
+      marginBottom: spacing.xxl,
+      lineHeight: 36,
+    },
+    painCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: isDark ? 'rgba(255, 149, 0, 0.15)' : 'rgba(255, 149, 0, 0.08)',
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.xl,
+      width: '100%',
+    },
+    painText: {
+      ...typography.body,
+      color: colors.text,
+      flex: 1,
+      fontStyle: 'italic',
+    },
+    solutionText: {
+      ...typography.body,
+      color: colors.text,
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+    bottomArea: {
+      paddingHorizontal: spacing.xxxl,
+      gap: spacing.xl,
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? 'rgba(123, 45, 62, 0.4)' : 'rgba(123, 45, 62, 0.2)',
+    },
+    dotActive: {
+      width: 24,
+      backgroundColor: colors.primary,
+    },
+    actionButton: {
+      borderRadius: radius.xl,
+      overflow: 'hidden',
+    },
+    actionButtonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    actionButtonGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.lg,
+      gap: spacing.sm,
+    },
+    actionButtonText: {
+      ...typography.button,
+      color: colors.white,
+    },
+  }), [colors, isDark]);
+}
