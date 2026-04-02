@@ -238,6 +238,45 @@ export async function fetchUsersByRole(
   return data || [];
 }
 
+/** Fetch master candidates for stage assignment (supervisor flow) */
+export async function fetchMasterCandidates(): Promise<{
+  id: string;
+  name: string;
+  specializations: string[];
+  rating: number;
+  reviews_count: number;
+}[]> {
+  const { data: profiles, error: pErr } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('role', 'master')
+    .eq('is_active', true);
+
+  if (pErr) throw pErr;
+  if (!profiles || profiles.length === 0) return [];
+
+  const ids = profiles.map((p) => p.id);
+  const { data: masterData, error: mErr } = await supabase
+    .from('master_profiles')
+    .select('id, specializations, rating, reviews_count')
+    .in('id', ids);
+
+  if (mErr) throw mErr;
+
+  const masterMap = new Map((masterData || []).map((m) => [m.id, m]));
+
+  return profiles.map((p) => {
+    const mp = masterMap.get(p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      specializations: mp?.specializations || [],
+      rating: mp?.rating || 0,
+      reviews_count: mp?.reviews_count || 0,
+    };
+  });
+}
+
 // ---------- MASTER ----------
 
 export async function fetchMasterStages(masterId: string): Promise<Stage[]> {

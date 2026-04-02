@@ -20,6 +20,7 @@ import { supabase } from '../../lib/supabase';
 import { UserRole } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { trackTap, trackForm } from '../../services/analyticsService';
+import { fetchProfile } from '../../services/projectService';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -41,8 +42,28 @@ const getRedirectUri = (): string => {
   return 'buroremontov://auth/callback';
 };
 
+// ── QA test accounts (real Supabase users, created by migration 034) ──
+const QA_TEST_ACCOUNTS: { role: UserRole; email: string; label: string }[] = [
+  { role: 'client', email: 'qa-client@test.buroremontov.ru', label: 'Клиент' },
+  { role: 'master', email: 'qa-master@test.buroremontov.ru', label: 'Мастер' },
+  { role: 'supervisor', email: 'qa-supervisor@test.buroremontov.ru', label: 'Супервайзер' },
+  { role: 'admin', email: 'qa-admin@test.buroremontov.ru', label: 'Админ' },
+];
+const QA_PASSWORD = 'QaTest2026!';
+
+/** Check if ?qa=1 is in URL (web only) */
+function isQaMode(): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    return new URL(window.location.href).searchParams.get('qa') === '1';
+  } catch {
+    return false;
+  }
+}
+
 export function LoginScreen() {
   const [loading, setLoading] = useState<'yandex' | null>(null);
+  const [qaLoading, setQaLoading] = useState<string | null>(null);
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentError, setConsentError] = useState(false);
   const { setUser, syncProfile } = useAuthStore();
@@ -50,6 +71,7 @@ export function LoginScreen() {
   const { t } = useTranslation();
   const { colors, glass, isDark } = useTheme();
   const styles = useLoginStyles(colors, glass, isDark);
+  const qaMode = isQaMode();
 
   // ── Handle OAuth redirect on web (page loads with ?code=xxx) ──
   // ── Also capture invite code from URL (?invite=ABC123) ──
@@ -269,6 +291,29 @@ export function LoginScreen() {
     });
   };
 
+  const handleQaLogin = async (account: typeof QA_TEST_ACCOUNTS[number]) => {
+    try {
+      setQaLoading(account.role);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: account.email,
+        password: QA_PASSWORD,
+      });
+      if (error) throw error;
+      if (data.user) {
+        await syncProfile({
+          id: data.user.id,
+          name: data.user.user_metadata?.name || `QA ${account.label}`,
+        });
+        showToast(`QA: вход как ${account.label}`, 'success');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'QA login failed';
+      showToast(msg, 'error');
+    } finally {
+      setQaLoading(null);
+    }
+  };
+
   return (
     <ScreenWrapper scroll={false}>
       <View style={styles.container}>
@@ -363,6 +408,28 @@ export function LoginScreen() {
                   </Pressable>
                 ),
               )}
+            </View>
+          </View>
+        )}
+
+        {qaMode && (
+          <View style={styles.devSection}>
+            <Text style={styles.devTitle}>QA Тестирование</Text>
+            <View style={styles.devButtons}>
+              {QA_TEST_ACCOUNTS.map((account) => (
+                <Pressable
+                  key={account.role}
+                  style={[styles.devButton, qaLoading === account.role && styles.yandexButtonDisabled]}
+                  onPress={() => handleQaLogin(account)}
+                  disabled={qaLoading !== null}
+                >
+                  {qaLoading === account.role ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text style={styles.devButtonText}>{account.label}</Text>
+                  )}
+                </Pressable>
+              ))}
             </View>
           </View>
         )}

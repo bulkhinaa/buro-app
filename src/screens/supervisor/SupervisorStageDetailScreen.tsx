@@ -30,7 +30,9 @@ import {
   supervisorApproveStage,
   supervisorRejectStage,
   assignMasterToStage,
+  fetchMasterCandidates,
 } from '../../services/projectService';
+import { SPECIALIZATION_MAP, type SpecializationId } from '../../data/specializations';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadFile, generateFilePath } from '../../services/storageService';
 import { hapticSuccess, hapticError } from '../../utils/haptics';
@@ -106,6 +108,8 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
   // Master select modal
   const [masterModalVisible, setMasterModalVisible] = useState(false);
   const [assignedMaster, setAssignedMaster] = useState<MasterCandidate | null>(null);
+  const [masterCandidates, setMasterCandidates] = useState<MasterCandidate[]>([]);
+  const [mastersLoading, setMastersLoading] = useState(false);
 
   // Supervisor photo upload
   const [supervisorPhotos, setSupervisorPhotos] = useState<{ uri: string; uploading?: boolean }[]>([]);
@@ -470,7 +474,31 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         ) : stage.status === 'pending' ? (
           <Button
             title="Назначить мастера"
-            onPress={() => setMasterModalVisible(true)}
+            loading={mastersLoading}
+            onPress={async () => {
+              if (masterCandidates.length === 0) {
+                setMastersLoading(true);
+                try {
+                  const raw = isDev ? [] : await fetchMasterCandidates();
+                  const candidates: MasterCandidate[] = raw.map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    specialization: m.specializations
+                      .map((s) => SPECIALIZATION_MAP[s as SpecializationId]?.label || s)
+                      .join(', ') || 'Разнорабочий',
+                    rating: Number(m.rating) || 0,
+                    reviewCount: m.reviews_count || 0,
+                    activeTasks: 0,
+                  }));
+                  setMasterCandidates(candidates);
+                } catch {
+                  showToast('Не удалось загрузить мастеров', 'error');
+                } finally {
+                  setMastersLoading(false);
+                }
+              }
+              setMasterModalVisible(true);
+            }}
             variant="outline"
             fullWidth
             icon={<Ionicons name="person-add-outline" size={18} color={colors.primary} />}
@@ -826,8 +854,9 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
         visible={masterModalVisible}
         onClose={() => setMasterModalVisible(false)}
         onSelect={handleAssignMaster}
-        masters={[]}
+        masters={masterCandidates}
         stageTitle={stage.title}
+        loading={mastersLoading}
       />
     </ScreenWrapper>
   );

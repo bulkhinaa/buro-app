@@ -92,6 +92,7 @@ export function AddressInput({
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           query,
@@ -100,12 +101,17 @@ export function AddressInput({
           to_bound: { value: level },
         }),
       });
+      if (!res.ok) {
+        // DaData proxy failed (401/500) — fall back to Nominatim
+        await searchNominatim(query);
+        return;
+      }
       const json = await res.json();
       const items: DaDataSuggestion[] = json.suggestions || [];
       setSuggestions(items);
       setShowDropdown(items.length > 0);
     } catch {
-      // Fallback to Nominatim if proxy is unavailable
+      // Network error — fallback to Nominatim
       await searchNominatim(query);
     } finally {
       setLoading(false);

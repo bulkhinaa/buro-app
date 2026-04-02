@@ -108,21 +108,14 @@ export function OnboardingScreen({ onComplete }: Props) {
     if (isScrolling.current) return;
     isScrolling.current = true;
 
-    const targetX = index * width;
+    setActiveIndex(index);
 
-    if (Platform.OS === 'web') {
-      const scrollNode = (scrollRef.current as any)?.getScrollableNode?.() ||
-        (scrollRef.current as any)?._nativeRef?.current;
-      if (scrollNode) {
-        scrollNode.scrollTo({ left: targetX, behavior: 'smooth' });
-      } else {
-        scrollRef.current?.scrollTo({ x: targetX, animated: true });
-      }
-    } else {
+    // On native, programmatically scroll the ScrollView
+    if (Platform.OS !== 'web') {
+      const targetX = index * width;
       scrollRef.current?.scrollTo({ x: targetX, animated: true });
     }
-
-    setActiveIndex(index);
+    // On web, we render only the active slide via activeIndex — no scroll needed
 
     setTimeout(() => {
       isScrolling.current = false;
@@ -178,22 +171,29 @@ export function OnboardingScreen({ onComplete }: Props) {
         </SafeAreaView>
       )}
 
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        bounces={false}
-        decelerationRate="fast"
-        snapToInterval={width}
-        snapToAlignment="start"
-        style={{ flex: 1 }}
-        testID="onboarding-slides"
-      >
-        {SLIDE_CONFIGS.map((item) => renderSlide(item))}
-      </ScrollView>
+      {Platform.OS === 'web' ? (
+        /* Web: render only the active slide — avoids ScrollView.scrollTo issues */
+        <View style={{ flex: 1 }} testID="onboarding-slides">
+          {renderSlide(SLIDE_CONFIGS[activeIndex])}
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          bounces={false}
+          decelerationRate="fast"
+          snapToInterval={width}
+          snapToAlignment="start"
+          style={{ flex: 1 }}
+          testID="onboarding-slides"
+        >
+          {SLIDE_CONFIGS.map((item) => renderSlide(item))}
+        </ScrollView>
+      )}
 
       {/* Footer with dots + button */}
       <SafeAreaView style={styles.footerSafe} edges={['bottom']} pointerEvents="box-none">

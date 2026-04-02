@@ -90,61 +90,82 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   syncProfile: async ({ id, name, phone, city, email, consent_version }) => {
     try {
-      // Read role chosen during onboarding (defaults to 'client')
-      let chosenRole: UserRole = 'client';
-      let roleFromStorage = false;
-      try {
-        const saved = await AsyncStorage.getItem(SELECTED_ROLE_KEY);
-        if (saved === 'master' || saved === 'supervisor') {
-          chosenRole = saved;
-          roleFromStorage = true;
-        }
-      } catch { /* ignore */ }
-
-      // If no explicit role was found in AsyncStorage (returning user on new device / reinstall),
-      // fetch the existing role from Supabase to avoid overwriting it with the default 'client'.
-      if (!roleFromStorage && !id.startsWith('dev-')) {
+      // 1. Check if profile already exists in Supabase
+      let existingProfile: ProfileRow | null = null;
+      if (!id.startsWith('dev-')) {
         try {
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', id)
-            .single();
-          if (data?.role && (data.role === 'master' || data.role === 'supervisor' || data.role === 'admin')) {
-            chosenRole = data.role as UserRole;
-          }
-        } catch { /* ignore — new user or network error, keep default */ }
+          existingProfile = await fetchProfile(id);
+        } catch { /* new user or network error */ }
       }
 
-      const extra: Record<string, string> = {};
-      if (consent_version) {
-        extra.consent_given_at = new Date().toISOString();
-        extra.consent_version = consent_version;
-      }
-      if (email) extra.email = email;
-      await upsertProfile({ id, name, phone, city, role: chosenRole, ...extra });
-      const profile = await fetchProfile(id);
-      if (profile) {
+      if (existingProfile) {
+        // ── EXISTING USER: update fields (name, phone, city, email), never touch role ──
+        // Role is set once at registration. RLS policy (migration 030)
+        // blocks role changes, so sending role would cause 400.
+        const updates: Record<string, string> = {};
+        if (name) updates.name = name;
+        if (phone) updates.phone = phone;
+        if (city) updates.city = city;
+        if (email) updates.email = email;
+
+        let profileForState: ProfileRow = existingProfile;
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await updateProfile(id, updates);
+            // Re-fetch to get fresh data after update
+            const freshProfile = await fetchProfile(id);
+            if (freshProfile) {
+              profileForState = freshProfile;
+            }
+          } catch { /* non-critical — profile exists, user can enter */ }
+        }
+
         set({
-          user: profileToUser(profile),
+          user: profileToUser(profileForState),
           isAuthenticated: true,
           isLoading: false,
         });
       } else {
-        // Profile created but not readable — set auth with basic data
-        // Session is valid (OTP verified), user must enter the app
-        set({
-          user: {
-            id,
-            name: name || '',
-            phone: phone || '',
-            role: chosenRole,
-            created_at: new Date().toISOString(),
-            is_active: true,
-          },
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        // ── NEW USER: create profile with role from onboarding ──
+        let chosenRole: UserRole = 'client';
+        try {
+          const saved = await AsyncStorage.getItem(SELECTED_ROLE_KEY);
+          if (saved === 'master' || saved === 'supervisor') {
+            chosenRole = saved;
+          }
+        } catch { /* ignore */ }
+
+        const extra: Record<string, string> = {};
+        if (consent_version) {
+          extra.consent_given_at = new Date().toISOString();
+          extra.consent_version = consent_version;
+        }
+        if (email) extra.email = email;
+
+        await upsertProfile({ id, name, phone, city, role: chosenRole, ...extra });
+        const profile = await fetchProfile(id);
+        if (profile) {
+          set({
+            user: profileToUser(profile),
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } else {
+          // Profile created but not readable — set auth with basic data
+          set({
+            user: {
+              id,
+              name: name || '',
+              phone: phone || '',
+              role: chosenRole,
+              created_at: new Date().toISOString(),
+              is_active: true,
+            },
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        }
       }
     } catch (err) {
       set({ isLoading: false });

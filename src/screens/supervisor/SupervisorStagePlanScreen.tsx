@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ScreenWrapper,
   Card,
@@ -268,6 +269,7 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   const { colors, glass, isDark } = useTheme();
   const styles = useStagePlanStyles(colors, glass, isDark);
   const dateStyles = useDatePickerStyles(colors, glass, isDark);
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const isDev = user?.id?.startsWith('dev-');
   const showToast = useToastStore((s) => s.show);
@@ -284,6 +286,7 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
   });
 
   const [saving, setSaving] = useState(false);
+  const [disabledStages, setDisabledStages] = useState<Set<number>>(new Set());
 
   // Dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -296,9 +299,21 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
     [repairType, areaSqm],
   );
 
-  const stagePlan = useMemo(
+  // Full plan with all stages (for toggle UI)
+  const fullStagePlan = useMemo(
     () => calculateStagePlan(rawStages, startDate),
     [rawStages, startDate],
+  );
+
+  // Filtered plan — only enabled stages, recalculated dates
+  const enabledRawStages = useMemo(
+    () => rawStages.filter((s) => !disabledStages.has(s.orderIndex)),
+    [rawStages, disabledStages],
+  );
+
+  const stagePlan = useMemo(
+    () => calculateStagePlan(enabledRawStages, startDate),
+    [enabledRawStages, startDate],
   );
 
   const totalDays = useMemo(() => {
@@ -313,8 +328,20 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
     return stagePlan.reduce((latest, s) => (s.endDate > latest ? s.endDate : latest), stagePlan[0].endDate);
   }, [stagePlan, startDate]);
 
-  const totalCostMin = rawStages.reduce((sum, s) => sum + s.costMin, 0);
-  const totalCostMax = rawStages.reduce((sum, s) => sum + s.costMax, 0);
+  const totalCostMin = enabledRawStages.reduce((sum, s) => sum + s.costMin, 0);
+  const totalCostMax = enabledRawStages.reduce((sum, s) => sum + s.costMax, 0);
+
+  const toggleStage = useCallback((orderIndex: number) => {
+    setDisabledStages((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderIndex)) {
+        next.delete(orderIndex);
+      } else {
+        next.add(orderIndex);
+      }
+      return next;
+    });
+  }, []);
 
   const handleSave = useCallback(async () => {
     setDialogTitle('Сохранить план?');
@@ -361,69 +388,91 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
     setDialogVisible(true);
   }, [stagePlan, totalDays, startDate, estimatedEnd, isDev, projectId, navigation, showToast]);
 
-  const renderStageCard = (stage: StagePlanItem, idx: number) => {
-    const isParallel = stage.isParallel;
+  const renderStageCard = (stage: StagePlanItem, idx: number, isDisabled: boolean) => {
+    const isParallel = stage.isParallel && !isDisabled;
 
     return (
-      <View key={`stage-${idx}`} style={styles.stageRow}>
+      <View key={`stage-${stage.orderIndex}`} style={[styles.stageRow, isDisabled && { opacity: 0.45 }]}>
         {/* Timeline connector */}
         <View style={styles.timelineCol}>
           {idx > 0 && <View style={styles.timelineLineTop} />}
           <View style={[
             styles.timelineDot,
             isParallel && styles.timelineDotParallel,
+            isDisabled && { backgroundColor: colors.textLight },
           ]}>
-            <Text style={styles.timelineDotText}>{idx + 1}</Text>
+            <Text style={styles.timelineDotText}>{isDisabled ? '–' : (() => { const i = stagePlan.findIndex((s) => s.orderIndex === stage.orderIndex); return i >= 0 ? String(i + 1) : ''; })()}</Text>
           </View>
-          {idx < stagePlan.length - 1 && <View style={styles.timelineLineBottom} />}
+          {idx < fullStagePlan.length - 1 && <View style={styles.timelineLineBottom} />}
         </View>
 
         {/* Stage card */}
         <View style={[styles.stageCard, isParallel && styles.stageCardParallel]}>
           <View style={styles.stageHeader}>
-            <Text style={styles.stageTitle} numberOfLines={1}>{stage.title}</Text>
-            <View style={styles.daysBadge}>
-              <Text style={styles.daysBadgeText}>{stage.days} дн.</Text>
-            </View>
+            <Text style={[styles.stageTitle, isDisabled && { textDecorationLine: 'line-through' }]} numberOfLines={1}>{stage.title}</Text>
+            <Pressable
+              onPress={() => toggleStage(stage.orderIndex)}
+              hitSlop={8}
+              style={{
+                paddingHorizontal: spacing.sm,
+                paddingVertical: 4,
+                borderRadius: radius.full,
+                backgroundColor: isDisabled ? colors.successLight || 'rgba(42,157,92,0.1)' : colors.dangerLight || 'rgba(196,64,64,0.1)',
+              }}
+            >
+              <Text style={{
+                ...typography.caption,
+                color: isDisabled ? colors.success : colors.danger,
+                fontWeight: '700',
+                fontSize: 11,
+              }}>
+                {isDisabled ? 'Вернуть' : 'Убрать'}
+              </Text>
+            </Pressable>
           </View>
 
-          <View style={styles.stageDates}>
-            <View style={styles.stageDateItem}>
-              <Ionicons name="play-outline" size={12} color={colors.success} />
-              <Text style={styles.stageDateText}>{formatDateShort(stage.startDate)}</Text>
-            </View>
-            <Ionicons name="arrow-forward" size={10} color={colors.textLight} />
-            <View style={styles.stageDateItem}>
-              <Ionicons name="flag-outline" size={12} color={colors.primary} />
-              <Text style={styles.stageDateText}>{formatDateShort(stage.endDate)}</Text>
-            </View>
-          </View>
+          {!isDisabled && (
+            <>
+              <View style={styles.stageDates}>
+                <View style={styles.stageDateItem}>
+                  <Ionicons name="play-outline" size={12} color={colors.success} />
+                  <Text style={styles.stageDateText}>{formatDateShort(stage.startDate)}</Text>
+                </View>
+                <Ionicons name="arrow-forward" size={10} color={colors.textLight} />
+                <View style={styles.stageDateItem}>
+                  <Ionicons name="flag-outline" size={12} color={colors.primary} />
+                  <Text style={styles.stageDateText}>{formatDateShort(stage.endDate)}</Text>
+                </View>
+              </View>
 
-          <View style={styles.stageCost}>
-            <Ionicons name="cash-outline" size={12} color={colors.textLight} />
-            <Text style={styles.stageCostText}>
-              {formatRublesShort(stage.costMin)} – {formatRublesShort(stage.costMax)}
-            </Text>
-          </View>
+              <View style={styles.stageCost}>
+                <Ionicons name="cash-outline" size={12} color={colors.textLight} />
+                <Text style={styles.stageCostText}>
+                  {formatRublesShort(stage.costMin)} – {formatRublesShort(stage.costMax)}
+                </Text>
+              </View>
 
-          {isParallel && (
-            <View style={styles.parallelBadge}>
-              <Ionicons name="git-branch-outline" size={12} color={colors.accent} />
-              <Text style={styles.parallelText}>Параллельно</Text>
-            </View>
+              {isParallel && (
+                <View style={styles.parallelBadge}>
+                  <Ionicons name="git-branch-outline" size={12} color={colors.accent} />
+                  <Text style={styles.parallelText}>Параллельно</Text>
+                </View>
+              )}
+
+              <Text style={styles.stageDesc} numberOfLines={2}>{stage.description}</Text>
+            </>
           )}
-
-          <Text style={styles.stageDesc} numberOfLines={2}>{stage.description}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper scroll={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        style={{ flex: 1 }}
       >
         <Card style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
@@ -434,7 +483,9 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNum}>{stagePlan.length}</Text>
-              <Text style={styles.summaryLabel}>этапов</Text>
+              <Text style={styles.summaryLabel}>
+                {disabledStages.size > 0 ? `из ${fullStagePlan.length} этапов` : 'этапов'}
+              </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNum}>{totalDays}</Text>
@@ -473,11 +524,21 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
 
         <View style={styles.timelineSection}>
           <Text style={styles.sectionTitle}>Этапы работ</Text>
-          {stagePlan.map((stage, idx) => renderStageCard(stage, idx))}
+          <Text style={{ ...typography.caption, color: colors.textLight, marginBottom: spacing.xs }}>
+            Нажмите «Убрать» чтобы исключить этап из плана
+          </Text>
+          {fullStagePlan.map((stage, idx) => {
+            const isDisabled = disabledStages.has(stage.orderIndex);
+            // For enabled stages, use recalculated dates from stagePlan
+            const recalculated = !isDisabled
+              ? stagePlan.find((s) => s.orderIndex === stage.orderIndex) || stage
+              : stage;
+            return renderStageCard(recalculated, idx, isDisabled);
+          })}
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <Button
           title="Сохранить план"
           onPress={handleSave}
@@ -486,7 +547,6 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
           icon={<Ionicons name="checkmark-circle" size={18} color={colors.white} />}
         />
       </View>
-
       <AppDialog
         visible={dialogVisible}
         title={dialogTitle}
@@ -503,7 +563,7 @@ export function SupervisorStagePlanScreen({ route, navigation }: any) {
 function useStagePlanStyles(colors: ThemeColors, glass: GlassTokens, isDark: boolean) {
   return useMemo(() => StyleSheet.create({
     scrollContent: {
-      paddingBottom: 24,
+      paddingBottom: 100,
       gap: spacing.lg,
     },
 
@@ -688,14 +748,8 @@ function useStagePlanStyles(colors: ThemeColors, glass: GlassTokens, isDark: boo
     },
 
     bottomBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.md,
-      paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
-      backgroundColor: isDark ? 'rgba(10,10,16,0.95)' : 'rgba(243,237,232,0.95)',
       borderTopWidth: 1,
       borderTopColor: glass.border.light,
     },
