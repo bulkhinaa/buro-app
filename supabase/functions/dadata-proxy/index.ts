@@ -1,14 +1,28 @@
+/**
+ * dadata-proxy — Supabase Edge Function
+ *
+ * Proxy to DaData address suggestion API.
+ * Keeps the DaData API token server-side.
+ *
+ * SEC-7: Requires authentication — any authenticated user can use.
+ */
+
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { verifyAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 const DADATA_TOKEN = Deno.env.get('DADATA_API_TOKEN')!;
 const DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address';
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight (no auth required)
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
   const corsHeaders = getCorsHeaders(req);
+
+  // SEC-7: Verify authentication — any authenticated user
+  const auth = await verifyAuth(req);
+  if (auth.error) return unauthorizedResponse(corsHeaders);
 
   if (req.method !== 'POST') {
     return new Response(

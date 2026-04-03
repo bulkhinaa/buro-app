@@ -4,6 +4,10 @@
  * Proxy to Jump Finance API for self-employed (samozanyatiy) verification.
  * Actions: create_contractor, check_status, get_contractor.
  *
+ * SEC-7: Requires authentication.
+ *   - Any authenticated user can use (masters check their own status).
+ *   - Service secret also accepted for server-to-server calls.
+ *
  * Flow:
  * 1. create_contractor — register master with INN in Jump Finance
  * 2. Master accepts invitation from «Jump.Работа» in «Мой налог» app
@@ -11,6 +15,7 @@
  */
 
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { verifyAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 const JUMP_BASE_URL = 'https://api.jump.finance/services/openapi';
 
@@ -35,11 +40,15 @@ async function getAgentId(headers: Record<string, string>): Promise<number> {
 }
 
 Deno.serve(async (req: Request) => {
-  // CORS preflight
+  // CORS preflight (no auth required)
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
   const corsHeaders = getCorsHeaders(req);
+
+  // SEC-7: Verify authentication — any authenticated user or service secret
+  const auth = await verifyAuth(req);
+  if (auth.error) return unauthorizedResponse(corsHeaders);
 
   try {
     const clientKey = Deno.env.get('JUMP_FINANCE_CLIENT_KEY');

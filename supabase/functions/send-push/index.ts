@@ -5,6 +5,8 @@
  * Accepts a list of user IDs + notification content,
  * looks up Expo push tokens, and delivers the notification.
  *
+ * SEC-7: Requires authentication (service secret OR admin/supervisor JWT).
+ *
  * POST /send-push
  * Body: {
  *   userIds: string[],           // Target user IDs
@@ -19,6 +21,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { verifyAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -43,11 +46,18 @@ interface ExpoPushMessage {
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
+  // Handle CORS preflight (no auth required)
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
   const corsHeaders = getCorsHeaders(req);
+
+  // SEC-7: Verify authentication — service secret OR admin/supervisor role
+  const auth = await verifyAuth(req);
+  if (auth.error) return unauthorizedResponse(corsHeaders);
+  if (auth.user?.role !== 'service' && !['admin', 'supervisor'].includes(auth.user?.role || '')) {
+    return unauthorizedResponse(corsHeaders, 'Insufficient permissions');
+  }
 
   try {
     const { userIds, title, body, data, badge, channelId }: PushRequest = await req.json();

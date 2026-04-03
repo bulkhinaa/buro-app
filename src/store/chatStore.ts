@@ -80,7 +80,7 @@ async function persistMessages(projectId: string, messages: ChatMessage[]) {
   try {
     await AsyncStorage.setItem(CHAT_KEY_PREFIX + projectId, JSON.stringify(messages));
   } catch {
-    // Ignore storage errors
+    // Non-critical: cache write
   }
 }
 
@@ -108,7 +108,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       }
     } catch {
-      // Ignore
+      // Non-critical: cache read
     }
 
     // Try Supabase for real users
@@ -127,8 +127,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         await persistMessages(projectId, data as ChatMessage[]);
         return;
       }
-    } catch {
-      // Supabase not available — use mock data
+    } catch (err) {
+      console.warn('[chatStore.loadMessages]', err);
     }
 
     // Fallback to mock data for dev users (if not already loaded from cache)
@@ -188,8 +188,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
         const { error } = await supabase.from('chat_messages').insert(insertData);
         if (error) console.warn('Chat send error:', error.message);
-      } catch {
-        // Already saved locally
+      } catch (err) {
+        console.warn('[chatStore.sendMessage]', err);
       }
     }
   },
@@ -215,8 +215,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           .from('chat_messages')
           .update({ text: newText.trim() })
           .eq('id', messageId);
-      } catch {
-        // Already updated locally
+      } catch (err) {
+        console.warn('[chatStore.editMessage]', err);
       }
     }
   },
@@ -237,8 +237,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (msg && !isDev(msg.sender_id)) {
       try {
         await supabase.from('chat_messages').delete().eq('id', messageId);
-      } catch {
-        // Already deleted locally
+      } catch (err) {
+        console.warn('[chatStore.deleteMessage]', err);
       }
     }
   },

@@ -6,6 +6,8 @@
  * Score = 0.30xSpecialization + 0.25xAvailability + 0.15xRating +
  *         0.10xWorkload + 0.10xPrice + 0.05xExperience + 0.05xGeography
  *
+ * SEC-7: Requires authentication — supervisor or admin role only.
+ *
  * POST /match-masters
  * Body: {
  *   stageIndex: number,          // 0-13 stage template index
@@ -21,6 +23,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { verifyAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 // Specialization -> stage index mapping (mirrors client-side specializations.ts)
 const SPECIALIZATION_STAGES: Record<string, number[]> = {
@@ -86,10 +89,17 @@ function getSpecializationsForStage(stageIndex: number): string[] {
 }
 
 serve(async (req: Request) => {
+  // CORS preflight passes without auth
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
   const corsHeaders = getCorsHeaders(req);
+
+  // SEC-7: Verify authentication — supervisor or admin role required
+  const auth = await verifyAuth(req);
+  if (auth.error || !['supervisor', 'admin', 'service'].includes(auth.user?.role || '')) {
+    return unauthorizedResponse(corsHeaders, 'Supervisor or admin role required');
+  }
 
   try {
     const body: MatchRequest = await req.json();

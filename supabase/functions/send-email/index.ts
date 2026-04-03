@@ -4,6 +4,9 @@
  * Sends transactional emails via Resend API.
  * Used for notifications, invitations, and system alerts.
  *
+ * SEC-7: Requires authentication (service secret OR admin/supervisor JWT).
+ * SEC-12: All template variables are HTML-escaped before insertion.
+ *
  * POST /send-email
  * Body: {
  *   to: string,                    // Recipient email
@@ -22,8 +25,34 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { verifyAuth, unauthorizedResponse } from '../_shared/auth.ts';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
+
+/**
+ * SEC-12: Escape HTML special characters to prevent HTML injection
+ * in email templates when inserting user-provided data.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * SEC-12: Sanitize URL to prevent javascript: and data: URI injection.
+ * Only allows https:// URLs.
+ */
+function sanitizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return '#';
+}
 
 type EmailType =
   | 'stage_status_changed'
@@ -73,18 +102,24 @@ function baseLayout(title: string, content: string): string {
 }
 
 function getEmailContent(type: EmailType, data: Record<string, string> = {}): { subject: string; html: string } {
+  // SEC-12: Escape all user-provided data before inserting into HTML
+  const safe: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    safe[key] = escapeHtml(value || '');
+  }
+
   switch (type) {
     case 'stage_status_changed':
       return {
-        subject: `Этап «${data.stage_name || 'этап'}» — ${data.new_status || 'обновление'}`,
+        subject: `Этап «${safe.stage_name || 'этап'}» — ${safe.new_status || 'обновление'}`,
         html: baseLayout('Статус этапа изменён', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            Этап <strong>«${data.stage_name || '—'}»</strong> в проекте
-            <strong>«${data.project_name || '—'}»</strong> изменил статус:
+            Этап <strong>«${safe.stage_name || '—'}»</strong> в проекте
+            <strong>«${safe.project_name || '—'}»</strong> изменил статус:
           </p>
           <div style="background:${BG};border-radius:12px;padding:16px;margin:16px 0;text-align:center;">
-            <span style="font-size:14px;color:${TEXT_LIGHT};">${data.old_status || ''} →</span>
-            <span style="font-size:16px;font-weight:700;color:${PRIMARY};"> ${data.new_status || ''}</span>
+            <span style="font-size:14px;color:${TEXT_LIGHT};">${safe.old_status || ''} →</span>
+            <span style="font-size:16px;font-weight:700;color:${PRIMARY};"> ${safe.new_status || ''}</span>
           </div>
           <p style="color:${TEXT_LIGHT};font-size:13px;">Откройте приложение для подробностей.</p>
         `),
@@ -92,15 +127,15 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
 
     case 'new_message':
       return {
-        subject: `Новое сообщение от ${data.sender_name || 'участника'}`,
+        subject: `Новое сообщение от ${safe.sender_name || 'участника'}`,
         html: baseLayout('Новое сообщение', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            <strong>${data.sender_name || 'Участник'}</strong> написал в чате проекта
-            <strong>«${data.project_name || '—'}»</strong>:
+            <strong>${safe.sender_name || 'Участник'}</strong> написал в чате проекта
+            <strong>«${safe.project_name || '—'}»</strong>:
           </p>
           <div style="background:${BG};border-radius:12px;padding:16px;margin:16px 0;">
             <p style="margin:0;color:${TEXT_COLOR};font-size:14px;font-style:italic;">
-              «${(data.message_preview || '').substring(0, 200)}»
+              «${escapeHtml((data.message_preview || '').substring(0, 200))}»
             </p>
           </div>
           <p style="color:${TEXT_LIGHT};font-size:13px;">Откройте приложение, чтобы ответить.</p>
@@ -109,29 +144,29 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
 
     case 'master_assigned':
       return {
-        subject: `Вам назначен мастер на этап «${data.stage_name || ''}»`,
+        subject: `Вам назначен мастер на этап «${safe.stage_name || ''}»`,
         html: baseLayout('Мастер назначен', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            На этап <strong>«${data.stage_name || '—'}»</strong> проекта
-            <strong>«${data.project_name || '—'}»</strong> назначен мастер:
+            На этап <strong>«${safe.stage_name || '—'}»</strong> проекта
+            <strong>«${safe.project_name || '—'}»</strong> назначен мастер:
           </p>
           <div style="background:${BG};border-radius:12px;padding:16px;margin:16px 0;text-align:center;">
-            <p style="margin:0;font-size:16px;font-weight:700;color:${PRIMARY};">${data.master_name || '—'}</p>
-            <p style="margin:4px 0 0;font-size:13px;color:${TEXT_LIGHT};">${data.specialization || ''}</p>
+            <p style="margin:0;font-size:16px;font-weight:700;color:${PRIMARY};">${safe.master_name || '—'}</p>
+            <p style="margin:4px 0 0;font-size:13px;color:${TEXT_LIGHT};">${safe.specialization || ''}</p>
           </div>
         `),
       };
 
     case 'project_created':
       return {
-        subject: `Проект «${data.project_name || ''}» создан`,
+        subject: `Проект «${safe.project_name || ''}» создан`,
         html: baseLayout('Новый проект', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            Ваш проект <strong>«${data.project_name || '—'}»</strong> успешно создан.
+            Ваш проект <strong>«${safe.project_name || '—'}»</strong> успешно создан.
           </p>
           <p style="color:${TEXT_COLOR};font-size:14px;">
-            Адрес: ${data.address || '—'}<br/>
-            Тип ремонта: ${data.repair_type || '—'}
+            Адрес: ${safe.address || '—'}<br/>
+            Тип ремонта: ${safe.repair_type || '—'}
           </p>
           <p style="color:${TEXT_LIGHT};font-size:13px;">Супервайзер будет назначен в ближайшее время.</p>
         `),
@@ -139,16 +174,16 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
 
     case 'master_offer':
       return {
-        subject: `Новое предложение работы — ${data.stage_name || 'этап'}`,
+        subject: `Новое предложение работы — ${safe.stage_name || 'этап'}`,
         html: baseLayout('Предложение работы', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            Вам предложена работа на этапе <strong>«${data.stage_name || '—'}»</strong>
-            проекта <strong>«${data.project_name || '—'}»</strong>.
+            Вам предложена работа на этапе <strong>«${safe.stage_name || '—'}»</strong>
+            проекта <strong>«${safe.project_name || '—'}»</strong>.
           </p>
           <div style="background:${BG};border-radius:12px;padding:16px;margin:16px 0;">
             <p style="margin:0;font-size:14px;color:${TEXT_COLOR};">
-              📍 ${data.address || '—'}<br/>
-              📅 Срок: ${data.deadline || '—'}
+              📍 ${safe.address || '—'}<br/>
+              📅 Срок: ${safe.deadline || '—'}
             </p>
           </div>
           <p style="color:${PRIMARY};font-size:14px;font-weight:600;">
@@ -162,11 +197,11 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
         subject: 'Приглашение на платформу «Бюро ремонтов»',
         html: baseLayout('Вас пригласили!', `
           <p style="color:${TEXT_COLOR};font-size:15px;line-height:1.6;">
-            <strong>${data.supervisor_name || 'Супервайзер'}</strong> приглашает вас
+            <strong>${safe.supervisor_name || 'Супервайзер'}</strong> приглашает вас
             присоединиться к платформе «Бюро ремонтов» в качестве мастера.
           </p>
           <div style="text-align:center;margin:24px 0;">
-            <a href="${data.invite_url || '#'}"
+            <a href="${sanitizeUrl(data.invite_url || '#')}"
                style="display:inline-block;background:${PRIMARY};color:#ffffff;
                       padding:14px 32px;border-radius:24px;text-decoration:none;
                       font-size:15px;font-weight:600;">
@@ -190,10 +225,18 @@ function getEmailContent(type: EmailType, data: Record<string, string> = {}): { 
 }
 
 serve(async (req: Request) => {
+  // CORS preflight passes without auth
   const preflightResponse = handleCorsPreflightIfNeeded(req);
   if (preflightResponse) return preflightResponse;
 
   const corsHeaders = getCorsHeaders(req);
+
+  // SEC-7: Verify authentication — service secret OR admin/supervisor role
+  const auth = await verifyAuth(req);
+  if (auth.error) return unauthorizedResponse(corsHeaders);
+  if (auth.user?.role !== 'service' && !['admin', 'supervisor'].includes(auth.user?.role || '')) {
+    return unauthorizedResponse(corsHeaders, 'Insufficient permissions');
+  }
 
   try {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');

@@ -103,6 +103,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         );
         set({ slots: weekSlots, isLoading: false });
       } catch {
+        // Non-critical: cache read
         set({ isLoading: false });
       }
       return;
@@ -118,7 +119,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
       if (error) throw error;
       set({ slots: (data as ScheduleSlot[]) || [], isLoading: false });
-    } catch {
+    } catch (err) {
+      console.warn('[scheduleStore.fetchWeek]', err);
       set({ isLoading: false });
     }
   },
@@ -164,7 +166,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
           });
         }
         await AsyncStorage.setItem(SCHEDULE_KEY, JSON.stringify(otherSlots));
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache write
+      }
       return;
     }
 
@@ -201,7 +205,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
           .single();
         if (data) set({ slots: [...slots, data as ScheduleSlot] });
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.toggleSlot]', err);
+    }
   },
 
   batchToggleSlots: async (masterId, slotsToToggle, status) => {
@@ -234,7 +240,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         const allSlots: ScheduleSlot[] = raw ? JSON.parse(raw) : [];
         const otherUserSlots = allSlots.filter((s) => s.master_id !== masterId);
         await AsyncStorage.setItem(SCHEDULE_KEY, JSON.stringify([...otherUserSlots, ...updatedSlots]));
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache write
+      }
       return;
     }
 
@@ -264,7 +272,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       // Refresh
       const weekStart = getWeekStart(new Date(slotsToToggle[0].date));
       await get().fetchWeek(masterId, weekStart);
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.batchToggleSlots]', err);
+    }
   },
 
   fetchTemplate: async (masterId: string) => {
@@ -273,7 +283,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         const raw = await AsyncStorage.getItem(TEMPLATE_KEY);
         const all: ScheduleTemplate[] = raw ? JSON.parse(raw) : [];
         set({ template: all.filter((t) => t.master_id === masterId) });
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache read
+      }
       return;
     }
 
@@ -283,7 +295,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         .select('*')
         .eq('master_id', masterId);
       set({ template: (data as ScheduleTemplate[]) || [] });
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.fetchTemplate]', err);
+    }
   },
 
   saveTemplate: async (masterId: string, workingSlots: { day: number; hour: number }[]) => {
@@ -301,7 +315,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         const all: ScheduleTemplate[] = raw ? JSON.parse(raw) : [];
         const others = all.filter((t) => t.master_id !== masterId);
         await AsyncStorage.setItem(TEMPLATE_KEY, JSON.stringify([...others, ...entries]));
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache write
+      }
       return;
     }
 
@@ -315,7 +331,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       if (error) throw error;
 
       await get().fetchTemplate(masterId);
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.saveTemplate]', err);
+    }
   },
 
   applyTemplate: async (masterId: string, fromDate: Date) => {
@@ -344,7 +362,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         const raw = await AsyncStorage.getItem(VACATIONS_KEY);
         const all: MasterVacation[] = raw ? JSON.parse(raw) : [];
         set({ vacations: all.filter((v) => v.master_id === masterId) });
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache read
+      }
       return;
     }
 
@@ -355,7 +375,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         .eq('master_id', masterId)
         .order('date_from', { ascending: true });
       set({ vacations: (data as MasterVacation[]) || [] });
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.fetchVacations]', err);
+    }
   },
 
   addVacation: async (masterId: string, dateFrom: string, dateTo: string, reason?: string) => {
@@ -376,7 +398,9 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         const raw = await AsyncStorage.getItem(VACATIONS_KEY);
         const all: MasterVacation[] = raw ? JSON.parse(raw) : [];
         await AsyncStorage.setItem(VACATIONS_KEY, JSON.stringify([...all, vacation]));
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache write
+      }
       return vacation;
     }
 
@@ -390,7 +414,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const { vacations } = get();
       set({ vacations: [...vacations, data as MasterVacation] });
       return data as MasterVacation;
-    } catch {
+    } catch (err) {
+      console.warn('[scheduleStore.addVacation]', err);
       return null;
     }
   },
@@ -407,13 +432,17 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
           VACATIONS_KEY,
           JSON.stringify(all.filter((v) => v.id !== vacationId))
         );
-      } catch { /* ignore */ }
+      } catch {
+        // Non-critical: cache write
+      }
       return;
     }
 
     try {
       await supabase.from('master_vacations').delete().eq('id', vacationId);
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.warn('[scheduleStore.removeVacation]', err);
+    }
   },
 
   getOccupancy: (weekStart: Date) => {

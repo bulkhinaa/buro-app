@@ -47,7 +47,9 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       ]);
       if (bm) set({ bookmarks: new Set(JSON.parse(bm)) });
       if (lk) set({ likes: JSON.parse(lk) });
-    } catch {}
+    } catch {
+      // Non-critical: cache hydration
+    }
   },
 }));
 

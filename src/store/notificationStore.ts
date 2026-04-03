@@ -118,6 +118,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
           set({ notifications: DEV_MOCK_NOTIFICATIONS, isLoading: false });
         }
       } catch {
+        // Non-critical: cache read
         set({ notifications: DEV_MOCK_NOTIFICATIONS, isLoading: false });
       }
     } else {
@@ -140,7 +141,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         } else {
           set({ notifications: [], isLoading: false });
         }
-      } catch {
+      } catch (err) {
+        console.warn('[notificationStore.loadNotifications]', err);
         // Fallback to stored cache
         try {
           const stored = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
@@ -149,6 +151,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             isLoading: false,
           });
         } catch {
+          // Non-critical: cache read
           set({ notifications: [], isLoading: false });
         }
       }
@@ -166,7 +169,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       await AsyncStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
     } catch {
-      // Ignore
+      // Non-critical: cache write
     }
 
     // Try Supabase (non-blocking)
@@ -175,8 +178,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .from('notifications')
         .update({ is_read: true })
         .eq('id', notificationId);
-    } catch {
-      // Dev fallback — already saved locally
+    } catch (err) {
+      console.warn('[notificationStore.markAsRead]', err);
     }
   },
 
@@ -189,7 +192,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       await AsyncStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
     } catch {
-      // Ignore
+      // Non-critical: cache write
     }
 
     // Try Supabase (non-blocking)
@@ -199,8 +202,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         .update({ is_read: true })
         .eq('user_id', userId)
         .eq('is_read', false);
-    } catch {
-      // Dev fallback
+    } catch (err) {
+      console.warn('[notificationStore.markAllAsRead]', err);
     }
   },
 

@@ -94,6 +94,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           set({ tasks: DEV_MOCK_TASKS, isLoading: false });
         }
       } catch {
+        // Non-critical: cache read
         set({ tasks: DEV_MOCK_TASKS, isLoading: false });
       }
     } else {
@@ -145,12 +146,14 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         }));
 
         set({ tasks: taskItems, isLoading: false });
-      } catch {
+      } catch (err) {
+        console.warn('[taskStore.loadTasks]', err);
         // Fallback to stored tasks
         try {
           const stored = await AsyncStorage.getItem(TASKS_KEY);
           set({ tasks: stored ? JSON.parse(stored) : [], isLoading: false });
         } catch {
+          // Non-critical: cache read
           set({ tasks: [], isLoading: false });
         }
       }
@@ -163,7 +166,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         set({ photoReports: JSON.parse(storedPhotos) });
       }
     } catch {
-      // Ignore
+      // Non-critical: cache read
     }
   },
 
@@ -188,14 +191,14 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     try {
       await AsyncStorage.setItem(TASKS_KEY, JSON.stringify(updatedTasks));
     } catch {
-      // Ignore
+      // Non-critical: cache write
     }
 
     // Try to update in Supabase (non-blocking for dev users)
     try {
       await updateStageStatusApi(stageId, status);
-    } catch {
-      // Dev mode fallback — already updated locally
+    } catch (err) {
+      console.warn('[taskStore.updateStatus]', err);
     }
   },
 

@@ -82,8 +82,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           return;
         }
       }
-    } catch {
-      // Session restore failed
+    } catch (err) {
+      console.warn('[authStore.initAuth] Session restore failed:', err);
     }
     set({ isLoading: false });
   },
@@ -95,7 +95,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (!id.startsWith('dev-')) {
         try {
           existingProfile = await fetchProfile(id);
-        } catch { /* new user or network error */ }
+        } catch (err) {
+          console.warn('[authStore.syncProfile] fetchProfile failed:', err);
+        }
       }
 
       if (existingProfile) {
@@ -118,7 +120,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             if (freshProfile) {
               profileForState = freshProfile;
             }
-          } catch { /* non-critical — profile exists, user can enter */ }
+          } catch (err) {
+            console.warn('[authStore.syncProfile] updateProfile failed:', err);
+          }
         }
 
         set({
@@ -134,7 +138,9 @@ export const useAuthStore = create<AuthState>((set) => ({
           if (saved === 'master' || saved === 'supervisor') {
             chosenRole = saved;
           }
-        } catch { /* ignore */ }
+        } catch {
+          // Non-critical: cache read
+        }
 
         const extra: Record<string, string> = {};
         if (consent_version) {
@@ -191,7 +197,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       await updateProfile(user.id, updates);
-    } catch {
+    } catch (err) {
+      console.warn('[authStore.saveProfile]', err);
       // Revert on failure
       set({ user });
       throw new Error('Failed to save profile');
