@@ -46,7 +46,7 @@ interface MasterState {
   activeView: 'client' | 'master' | 'supervisor';
 
   // Actions
-  init: (userId: string) => Promise<void>;
+  init: (userId: string, userRole?: string) => Promise<void>;
   markWelcomeSeen: () => Promise<void>;
   setActiveView: (view: 'client' | 'master' | 'supervisor') => Promise<void>;
   saveDraft: (draft: Partial<MasterSetupData>) => Promise<void>;
@@ -139,7 +139,7 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   isLoading: false,
   activeView: 'client',
 
-  init: async (userId: string) => {
+  init: async (userId: string, userRole?: string) => {
     _currentUserId = userId;
     set({ isLoading: true });
     try {
@@ -164,14 +164,25 @@ export const useMasterStore = create<MasterState>((set, get) => ({
         }
       }
 
+      // Default activeView: stored value if valid, otherwise user DB role
+      const defaultView = (userRole === 'master' || userRole === 'supervisor') ? userRole : 'client';
+      let resolvedView: 'client' | 'master' | 'supervisor';
+      if (activeViewValue === 'supervisor') {
+        resolvedView = 'supervisor';
+      } else if (activeViewValue === 'master' && (isSetupDone || !!remoteProfile)) {
+        resolvedView = 'master';
+      } else if (activeViewValue === 'client') {
+        resolvedView = 'client';
+      } else {
+        resolvedView = defaultView as 'client' | 'master' | 'supervisor';
+      }
+
       set({
         welcomeSeen: welcomeSeen === 'true',
         setupComplete: isSetupDone || !!remoteProfile,
         setupDraft: draftJson ? JSON.parse(draftJson) : null,
         profile,
-        activeView: activeViewValue === 'supervisor'
-          ? 'supervisor'
-          : (activeViewValue === 'master' && (isSetupDone || !!remoteProfile)) ? 'master' : 'client',
+        activeView: resolvedView,
         isLoading: false,
       });
     } catch {
@@ -185,6 +196,10 @@ export const useMasterStore = create<MasterState>((set, get) => ({
   },
 
   setActiveView: async (view: 'client' | 'master' | 'supervisor') => {
+    // SEC-ROLE-2: Validate allowed values
+    const allowed: ReadonlyArray<string> = ['client', 'master', 'supervisor'];
+    if (!allowed.includes(view)) return;
+
     set({ activeView: view });
     await AsyncStorage.setItem(ACTIVE_VIEW_KEY, view);
   },

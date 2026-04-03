@@ -41,12 +41,7 @@ export function ProfileScreen() {
   };
 
   // For dual-role users, show active role
-  const displayRole = (() => {
-    if (user?.role === 'client' && setupComplete) {
-      return activeView === 'master' ? t('profile.roleMaster') : t('profile.roleClient');
-    }
-    return t(roleKeys[user?.role || 'client']);
-  })();
+  const displayRole = t(roleKeys[activeView] || roleKeys[user?.role || 'client']);
 
   // Current language display name
   const currentLangName = LANGUAGES.find((l) => l.code === language)?.name || 'Русский';
@@ -56,7 +51,7 @@ export function ProfileScreen() {
   };
 
   const isClient = user?.role === 'client';
-  const isMasterView = (isClient && setupComplete && activeView === 'master') || user?.role === 'master';
+  const isMasterView = setupComplete && activeView === 'master';
 
   // Glass menu card style (theme-aware)
   const glassMenuCardStyle = {
@@ -314,26 +309,27 @@ export function ProfileScreen() {
             colors={colors}
             isDark={isDark}
             roleCardStyle={roleCardStyle}
-            onPress={() => navigation.navigate('MasterWelcome')}
-          />
-        )}
-
-        {/* Supervisor role — available for supervisors or any user with role access */}
-        {(user?.role === 'supervisor' || user?.role === 'admin') && (
-          <RoleCard
-            icon="eye-outline"
-            activeIcon="eye"
-            label={t('profile.roleSupervisor')}
-            isActive={activeView === 'supervisor'}
-            colors={colors}
-            isDark={isDark}
-            roleCardStyle={roleCardStyle}
             onPress={() => {
-              setActiveView('supervisor');
-              showToast('Кабинет супервайзера', 'info');
+              setActiveView('master');
+              showToast('Настройка мастера', 'info');
             }}
           />
         )}
+
+        {/* Supervisor role — available for all authenticated users */}
+        <RoleCard
+          icon="eye-outline"
+          activeIcon="eye"
+          label={t('profile.roleSupervisor')}
+          isActive={activeView === 'supervisor'}
+          colors={colors}
+          isDark={isDark}
+          roleCardStyle={roleCardStyle}
+          onPress={() => {
+            setActiveView('supervisor');
+            showToast('Кабинет супервайзера', 'info');
+          }}
+        />
       </View>
 
       <Button

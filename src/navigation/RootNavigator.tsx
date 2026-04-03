@@ -19,6 +19,8 @@ import { MasterWelcomeScreen } from '../screens/master/MasterWelcomeScreen';
 import { MasterSetupScreen } from '../screens/master/MasterSetupScreen';
 import { SupervisorWelcomeScreen } from '../screens/supervisor/SupervisorWelcomeScreen';
 import { SupervisorSetupScreen, SUPERVISOR_SETUP_KEY } from '../screens/supervisor/SupervisorSetupScreen';
+
+const SUPERVISOR_WELCOME_KEY = 'supervisor_welcome_seen';
 import { colors } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -83,13 +85,14 @@ export function RootNavigator() {
   // Initialize master store for all authenticated users (dual-role support)
   useEffect(() => {
     if (isAuthenticated && user) {
-      initMaster(user.id).then(() => setMasterInitDone(true));
-      // Check supervisor setup
-      if (user.role === 'supervisor') {
-        AsyncStorage.getItem(SUPERVISOR_SETUP_KEY).then((val) => {
-          setSupervisorSetupDone(val === 'true');
-        });
-      }
+      initMaster(user.id, user.role).then(() => setMasterInitDone(true));
+      // Check supervisor welcome and setup for ALL users (any role can switch to supervisor)
+      AsyncStorage.getItem(SUPERVISOR_WELCOME_KEY).then((val) => {
+        setSupervisorWelcomeDone(val === 'true');
+      });
+      AsyncStorage.getItem(SUPERVISOR_SETUP_KEY).then((val) => {
+        setSupervisorSetupDone(val === 'true');
+      });
     } else {
       setMasterInitDone(true);
     }
@@ -146,18 +149,20 @@ export function RootNavigator() {
     if (showOnboarding && !isAuthenticated) return 'onboarding';
     if (!isAuthenticated || !user) return 'auth';
     if (!masterInitDone) return 'master-loading';
-    if (user.role === 'master') {
+    // Welcome/setup guards — apply when switching to that view (any role)
+    if (activeView === 'master') {
       if (!masterWelcomeDone) return 'master-welcome';
       if (!masterSetupDone) return 'master-setup';
-      return 'master';
     }
-    if (user.role === 'supervisor') {
+    if (activeView === 'supervisor') {
       if (!supervisorWelcomeDone) return 'supervisor-welcome';
       if (!supervisorSetupDone) return 'supervisor-setup';
-      return 'supervisor';
     }
-    if (user.role === 'client' && setupComplete && activeView === 'master') return 'master-view';
-    if (activeView === 'supervisor' && user.role !== 'admin') return 'supervisor-view';
+
+    // SEC-ROLE-1 + navKey update for fade animation on ALL role switches
+    if (activeView === 'client') return 'client-view';
+    if (activeView === 'master') return 'master-view';
+    if (activeView === 'supervisor') return 'supervisor-view';
     return user.role;
   })();
 
@@ -210,39 +215,44 @@ export function RootNavigator() {
       return <View style={styles.placeholder} />;
     }
 
-    // Direct master role: welcome → setup → navigator
-    if (user.role === 'master') {
+    // Welcome/setup guards — apply when switching to that view (any role)
+    if (activeView === 'master') {
       if (!masterWelcomeDone) {
         return <MasterWelcomeScreen onComplete={() => setMasterWelcomeDone(true)} />;
       }
       if (!masterSetupDone) {
         return <MasterSetupScreen onComplete={() => setMasterSetupDone(true)} />;
       }
-      return <MasterNavigator />;
     }
-
-    // Direct supervisor role: welcome → setup → navigator
-    if (user.role === 'supervisor') {
+    if (activeView === 'supervisor') {
       if (!supervisorWelcomeDone) {
-        return <SupervisorWelcomeScreen onComplete={() => setSupervisorWelcomeDone(true)} />;
+        return <SupervisorWelcomeScreen onComplete={() => {
+            setSupervisorWelcomeDone(true);
+            AsyncStorage.setItem(SUPERVISOR_WELCOME_KEY, 'true');
+          }} />;
       }
       if (!supervisorSetupDone) {
         return <SupervisorSetupScreen onComplete={() => setSupervisorSetupDone(true)} />;
       }
-      return <SupervisorNavigator />;
     }
 
-    // Dual-role: client who completed master setup and switched to master view
-    if (user.role === 'client' && setupComplete && activeView === 'master') {
+    // SEC-ROLE-1: Route by activeView for all roles
+    if (activeView === 'client') {
+      return <ClientNavigator />;
+    }
+    if (activeView === 'master' && setupComplete) {
       return <MasterNavigator />;
     }
-
-    // Multi-role: switch to supervisor view (for supervisors or assigned users)
     if (activeView === 'supervisor' && user.role !== 'admin') {
       return <SupervisorNavigator />;
     }
 
+    // Fallback: route by user.role
     switch (user.role) {
+      case 'master':
+        return <MasterNavigator />;
+      case 'supervisor':
+        return <SupervisorNavigator />;
       case 'admin':
         return <AdminNavigator />;
       case 'client':
