@@ -16,7 +16,6 @@ export function AuthNavigator() {
         headerShown: false,
         cardStyle: { backgroundColor: colors.bg },
         gestureEnabled: Platform.OS !== 'web',
-        animationEnabled: Platform.OS !== 'web',
         animation: Platform.OS === 'web' ? 'none' as any : 'slide_from_right' as any,
       }}
     >

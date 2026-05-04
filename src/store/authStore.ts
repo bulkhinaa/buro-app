@@ -40,13 +40,13 @@ function profileToUser(profile: ProfileRow): User {
     id: profile.id,
     phone: profile.phone || '',
     name: profile.name || '',
-    role: profile.role as UserRole,
-    email: profile.email,
-    city: profile.city,
-    preferred_language: profile.preferred_language as SupportedLanguage | undefined,
-    avatar_url: profile.avatar_url,
-    created_at: profile.created_at,
-    is_active: profile.is_active,
+    role: (profile.role as UserRole) || 'client',
+    email: profile.email ?? undefined,
+    city: profile.city ?? undefined,
+    preferred_language: (profile.preferred_language as SupportedLanguage | null) ?? undefined,
+    avatar_url: profile.avatar_url ?? undefined,
+    created_at: profile.created_at || new Date().toISOString(),
+    is_active: profile.is_active ?? true,
   };
 }
 

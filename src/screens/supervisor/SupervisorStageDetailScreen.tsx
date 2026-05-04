@@ -488,7 +488,7 @@ export function SupervisorStageDetailScreen({ route, navigation }: any) {
                       .join(', ') || 'Разнорабочий',
                     rating: Number(m.rating) || 0,
                     reviewCount: m.reviews_count || 0,
-                    activeTasks: 0,
+                    activeTasksCount: 0,
                   }));
                   setMasterCandidates(candidates);
                 } catch {

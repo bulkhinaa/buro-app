@@ -10,12 +10,7 @@ const WebView = Platform.OS !== 'web'
   ? require('react-native-webview').WebView
   : null;
 
-interface Props {
-  route: { params: { uri: string; title?: string } };
-  navigation: { goBack: () => void };
-}
-
-export function DocumentViewerScreen({ route, navigation }: Props) {
+export function DocumentViewerScreen({ route, navigation }: any) {
   const { uri, title } = route.params;
   const { colors } = useTheme();
   const { t } = useTranslation();

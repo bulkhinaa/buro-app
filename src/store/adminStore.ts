@@ -263,7 +263,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           phone: row.phone,
           email: row.email,
           city: row.city,
-          role: row.role,
+          role: row.role as UserRole,
           is_active: row.is_active,
           is_verified: mp?.is_verified ?? row.is_verified,
           created_at: row.created_at,

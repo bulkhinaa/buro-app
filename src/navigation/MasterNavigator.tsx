@@ -39,7 +39,6 @@ export function MasterNavigator() {
         headerTitleStyle: { color: colors.heading, fontWeight: '700' },
         cardStyle: { backgroundColor: colors.bgGradientEnd },
         gestureEnabled: Platform.OS !== 'web',
-        animationEnabled: Platform.OS !== 'web',
         animation: Platform.OS === 'web' ? 'none' as any : 'slide_from_right' as any,
       }}
     >

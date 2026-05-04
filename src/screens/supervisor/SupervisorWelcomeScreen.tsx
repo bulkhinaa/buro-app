@@ -70,7 +70,7 @@ export function SupervisorWelcomeScreen({ onComplete }: Props) {
   const isLastSlide = currentIndex === SLIDES.length - 1;
   const slide = SLIDES[currentIndex];
 
-  const gradientColors = isDark
+  const gradientColors: readonly [string, string, string] = isDark
     ? ['#0E0E16', '#0A0A10', '#12121A'] as const
     : ['#F3EDE8', '#EDE5DF', '#F8F5F2'] as const;
 
@@ -110,7 +110,7 @@ export function SupervisorWelcomeScreen({ onComplete }: Props) {
 
   return (
     <LinearGradient
-      colors={gradientColors as unknown as string[]}
+      colors={gradientColors}
       style={[styles.container, { paddingTop: insets.top + spacing.lg }]}
     >
       {/* Skip button */}
